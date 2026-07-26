@@ -52,7 +52,7 @@ pass `--entry`. A lone file is wrapped as `index.html`. The card's `html:` link 
 
 ## GitHub Pages / base path
 
-This project repo publishes under the **subpath** `https://bossjones.github.io/oh-my-html-docs/`. So
+This project repo publishes under the **subpath** `https://tonydark.io/oh-my-html-docs/ (bossjones' verified Pages custom domain)`. So
 root-absolute links (`/pages/...`) would break there. `mkdocs.yml` sets
 `validation.links.absolute_links: relative_to_docs`, which rewrites such links to be docs-relative and
 therefore correct under the subpath. Deploy is via `.github/workflows/deploy.yml` (build → Pagefind →
