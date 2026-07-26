@@ -1,0 +1,44 @@
+[project]
+name = "oh-my-html-docs"
+version = "0.1.0"
+description = "Standalone HTML documentation, browsable + searchable (MkDocs Material + Pagefind)"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [{ name = "Malcolm Jones", email = "bossjones@theblacktonystark.com" }]
+# No runtime dependencies: this repo is a static-site build, not a distributable package.
+dependencies = []
+
+[dependency-groups]
+# Docs toolchain (PEP 735). Kept minimal + standard for an eventual Material -> Zensical migration.
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    # [extended] pulls the Pagefind binary (with CJK segmentation); the bare package is API-only.
+    "pagefind[extended]>=1.1",
+]
+dev = [
+    "ruff>=0.9",
+    "rumdl>=0.0.166",
+    "pre-commit>=4.0",
+    "pytest>=8.0",
+]
+
+[tool.uv]
+# Not a distributable package — just a docs site + helper scripts.
+package = false
+# `uv sync` (and `just install`) resolves the docs toolchain + dev tools together.
+default-groups = ["dev", "docs"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+fix = true
+# Only our own Python lives in scripts/ and tests/.
+src = ["scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]

@@ -1,0 +1,25 @@
+# rumdl configuration — token-lean, agent-safe, well-formed markdown
+#
+# Philosophy: whitespace is tokens to an LLM. Enable the rules that STRIP
+# whitespace and the structural rules that keep markdown parseable; never enable
+# rules that PAD with whitespace or are purely cosmetic.
+
+[global]
+respect-gitignore = true
+
+# Inclusion allowlist — the site's authored markdown (cards + landing pages) and the README.
+# Verbatim HTML bundles under docs/pages/ are NOT markdown and are intentionally excluded.
+include = [
+    "./README.md",
+    "docs/**/*.md",
+    "specs/**/*.md",
+]
+
+# Rules turned OFF. All other default-on rules — including the token-strippers
+# (MD009, MD012, MD027, MD038/39) and structural rules (MD022, MD031, MD032, MD058) — stay enabled.
+disable = [
+    "MD013", # line length: wrapping is token-neutral→additive; long lines are fine for agents
+    "MD033", # inline HTML: cards use attr_list buttons / raw HTML embeds; linting them is hostile
+    "MD041", # first line must be H1: pages lead with YAML frontmatter
+    "MD046", # code-block style: avoid false "opened but never closed" on nested fence demos
+]

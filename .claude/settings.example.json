@@ -1,0 +1,25 @@
+{
+    "permissions": {
+        "allow": [
+            "Bash(git *)",
+            "Bash(gh:*)",
+            "Bash(just:*)",
+            "Bash(mkdocs:*)",
+            "Bash(uv:*)",
+            "Bash(uv run:*)",
+            "Bash(uvx:*)",
+            "Bash(ruff check:*)",
+            "Bash(pre-commit run:*)",
+            "Bash(lychee:*)",
+            "Edit",
+            "Write",
+            "WebSearch"
+        ],
+        "deny": [],
+        "additionalDirectories": []
+    },
+    "enabledPlugins": {
+        "superpowers@claude-plugins-official": true,
+        "code-review@claude-plugins-official": true
+    }
+}

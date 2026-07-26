@@ -1,0 +1,47 @@
+site_name: oh-my-html-docs
+site_url: https://bossjones.github.io/oh-my-html-docs/
+site_description: Standalone HTML documentation, browsable + searchable.
+repo_url: https://github.com/bossjones/oh-my-html-docs
+docs_dir: docs
+# Kept deliberately standard/minimal — search is Pagefind (framework-independent) and content
+# is served verbatim, so a future Material -> Zensical migration is a config/theme swap.
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  # Built-in lunr search for `mkdocs serve` dev convenience. Production full-text search
+  # over the verbatim HTML bundles is provided by Pagefind (post-build), see justfile `search`.
+  - search
+  # The tags index renders at the `<!-- material/tags -->` marker in docs/tags.md.
+  - tags
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.highlight
+
+nav:
+  - Home: index.md
+  - Library: library/index.md
+  - Tags: tags.md
