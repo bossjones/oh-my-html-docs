@@ -21,9 +21,9 @@ repos:
         exclude: ^docs/pages/
       - id: check-yaml
       - id: check-added-large-files
-        # Standalone HTML docs ship with sibling raster assets (~1.1 MB PNGs). Allow them
+        # Standalone HTML docs ship with sibling raster assets (PNGs up to ~1.2 MB). Allow them
         # as normal git objects; the 9.9 MB cmux PDF is excluded from import instead.
-        args: ["--maxkb=1200"]
+        args: ["--maxkb=2048"]
       - id: check-shebang-scripts-are-executable
       - id: detect-private-key
       - id: detect-aws-credentials

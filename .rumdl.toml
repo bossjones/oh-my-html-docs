@@ -22,4 +22,5 @@ disable = [
     "MD033", # inline HTML: cards use attr_list buttons / raw HTML embeds; linting them is hostile
     "MD041", # first line must be H1: pages lead with YAML frontmatter
     "MD046", # code-block style: avoid false "opened but never closed" on nested fence demos
+    "MD025", # cards intentionally carry a front-matter `title:` AND a body `# H1` (title drives nav, H1 renders the page heading)
 ]

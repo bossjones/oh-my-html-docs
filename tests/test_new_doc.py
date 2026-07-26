@@ -58,8 +58,8 @@ def test_import_bundle_directory(tmp_path):
     assert 'title: "cmux Guide"' in card
     assert "tags: [cmux, agents]" in card
     assert "category: " in card
-    assert "html: /pages/cmux-guide/" in card
-    assert "[Open the document →](/pages/cmux-guide/)" in card
+    assert "html: /pages/cmux-guide/index.html" in card
+    assert "[Open the document →](/pages/cmux-guide/index.html)" in card
 
 
 def test_import_single_file_wrapped_as_index(tmp_path):
@@ -75,9 +75,30 @@ def test_import_single_file_wrapped_as_index(tmp_path):
         docs_root=docs_root,
     )
 
-    # Lone file is wrapped so the URL is a clean /pages/<slug>/.
+    # Lone file is wrapped so the URL is a clean /pages/<slug>/index.html.
     assert (pages_dir / "index.html").read_text(encoding="utf-8") == "<h1>report body</h1>"
-    assert card_path.exists()
+    assert "html: /pages/my-report/index.html" in card_path.read_text(encoding="utf-8")
+
+
+def test_import_bundle_non_index_entry(tmp_path):
+    # A bundle whose entry HTML is NOT index.html (e.g. the boss-ai-monitoring case).
+    src = tmp_path / "boss-ai-monitoring"
+    src.mkdir()
+    (src / "boss-ai-monitoring.html").write_text("<h1>obs</h1><img src='hero.png'>", encoding="utf-8")
+    (src / "hero.png").write_bytes(b"\x89PNG\r\n")
+
+    docs_root = tmp_path / "docs"
+    _, card_path = new_doc.import_doc(
+        src,
+        title="boss-ai-monitoring",
+        category="specs",
+        tags=["observability"],
+        docs_root=docs_root,
+    )
+    card = card_path.read_text(encoding="utf-8")
+    # The detected entry (not index.html) is what the card links to.
+    assert "html: /pages/boss-ai-monitoring/boss-ai-monitoring.html" in card
+    assert "[Open the document →](/pages/boss-ai-monitoring/boss-ai-monitoring.html)" in card
 
 
 def test_refuses_overwrite_without_force(tmp_path):

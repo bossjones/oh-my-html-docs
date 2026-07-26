@@ -45,3 +45,15 @@ nav:
   - Home: index.md
   - Library: library/index.md
   - Tags: tags.md
+
+validation:
+  nav:
+    # Library cards live under library/<category>/ and are browsed via the Library
+    # landing + Tags index, not listed individually in nav. Keep --strict green.
+    omitted_files: info
+  links:
+    # GitHub Pages serves this project under the /oh-my-html-docs/ subpath. Root-absolute
+    # links like /pages/<slug>/<entry>.html are rewritten to be docs-relative (subpath-safe).
+    absolute_links: relative_to_docs
+    unrecognized_links: warn
+    anchors: warn

@@ -1,7 +1,7 @@
 # oh-my-html-docs — task runner
 # Run `just` (or `just --list`) to see all recipes.
 
-set shell := ["bash", "-uc"]
+set shell := ["zsh", "-uc"]
 
 # Show available recipes.
 default:

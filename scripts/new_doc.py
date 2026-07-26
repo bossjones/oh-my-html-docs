@@ -27,7 +27,6 @@ import argparse
 import datetime
 import re
 import shutil
-import sys
 from pathlib import Path
 
 # Repo root = parent of scripts/. docs/ lives at the root.
@@ -80,6 +79,22 @@ def render_card(
     return front_matter + "\n\n" + "\n".join(body_lines)
 
 
+def _detect_entry(pages_dir: Path, entry: str | None) -> str:
+    """Pick the HTML file the card links to inside a copied bundle directory."""
+    if entry:
+        if not (pages_dir / entry).exists():
+            raise FileNotFoundError(f"--entry '{entry}' not found in {pages_dir}")
+        return entry
+    if (pages_dir / "index.html").exists():
+        return "index.html"
+    htmls = sorted(p.name for p in pages_dir.glob("*.html"))
+    if len(htmls) == 1:
+        return htmls[0]
+    if not htmls:
+        raise FileNotFoundError(f"no .html file found in {pages_dir}; pass --entry")
+    raise ValueError(f"multiple .html files in {pages_dir} ({', '.join(htmls)}); pass --entry")
+
+
 def import_doc(
     source: Path,
     *,
@@ -90,6 +105,7 @@ def import_doc(
     source_label: str = "",
     slug: str | None = None,
     added: str | None = None,
+    entry: str | None = None,
     docs_root: Path = DEFAULT_DOCS_ROOT,
     force: bool = False,
 ) -> tuple[Path, Path]:
@@ -109,16 +125,17 @@ def import_doc(
     if not force and (pages_dir.exists() or card_path.exists()):
         raise FileExistsError(f"slug '{slug}' already imported (use force=True to overwrite)")
 
-    # Copy the verbatim content.
+    # Copy the verbatim content, then determine the entry file the card links to.
     if source.is_dir():
         shutil.copytree(source, pages_dir, dirs_exist_ok=force)
-        if not (pages_dir / "index.html").exists():
-            print(f"warning: {pages_dir} has no index.html; the URL /pages/{slug}/ may 404", file=sys.stderr)
+        entry_file = _detect_entry(pages_dir, entry)
     else:
+        # A lone self-contained file is wrapped as index.html for a clean /pages/<slug>/ URL.
         pages_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, pages_dir / "index.html")
+        entry_file = "index.html"
 
-    html_url = f"/pages/{slug}/"
+    html_url = f"/pages/{slug}/{entry_file}"
     card_path.parent.mkdir(parents=True, exist_ok=True)
     card_path.write_text(
         render_card(
@@ -149,6 +166,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source", dest="source_label", default="", help="Provenance note.")
     parser.add_argument("--slug", default=None, help="Override the derived slug.")
     parser.add_argument("--added", default=None, help="ISO date (default: today).")
+    parser.add_argument("--entry", default=None, help="Entry HTML file inside a bundle (default: auto).")
     parser.add_argument("--force", action="store_true", help="Overwrite an existing import.")
     args = parser.parse_args(argv)
 
@@ -161,6 +179,7 @@ def main(argv: list[str] | None = None) -> int:
         source_label=args.source_label,
         slug=args.slug,
         added=args.added,
+        entry=args.entry,
         force=args.force,
     )
     print(f"bundle: {pages_dir}")
