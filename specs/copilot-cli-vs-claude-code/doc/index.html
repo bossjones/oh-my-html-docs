@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A conversion field guide between GitHub Copilot CLI and Claude Code: config files, CLI flags, slash commands, hooks, skills, MCP, permissions, CI — and what each tool has that the other doesn't.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0C10">
+<title>Copilot CLI vs Claude Code — A Conversion Field Guide</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C10; --bg-soft:#0E1116; --surface:#12161C; --surface-2:#161B22;
+    --border:#232A33; --border-bright:#33404D;
+    --text:#F4F7FB; --muted:#CDD6E0; --faint:#8B96A5;
+    --accent:#A371F7;                 /* the ONE accent — Copilot purple */
+    --accent-dim:#5E3B9E;
+    --accent-glow:rgba(163,113,247,.16);
+    --accent-2:#E0B357;               /* secondary — amber (partial / caution) */
+    --accent-2-dim:rgba(224,179,87,.14);
+    --ok:#4FE3A3;                     /* green — yes / confirmed */
+    --maxw:1225px;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Space Grotesk','Inter',ui-rounded,system-ui,sans-serif;
+    --body:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+  body{
+    color:var(--text); font-family:var(--body);
+    font-size:19px; line-height:1.7; -webkit-font-smoothing:antialiased;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(900px 500px at 78% -8%, var(--accent-glow), transparent 60%),
+      radial-gradient(700px 420px at 8% 30%, rgba(163,113,247,.05), transparent 65%);
+    background-repeat:no-repeat;
+  }
+  ::selection{background:var(--accent);color:var(--bg)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+  /* ---- top nav ---- */
+  .topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(11px);
+    background:color-mix(in srgb, var(--bg) 78%, transparent);border-bottom:1px solid var(--border)}
+  .topbar .inner{max-width:1180px;margin:0 auto;padding:11px 26px;display:flex;align-items:center;gap:20px}
+  .brand{font-family:var(--mono);font-size:12.5px;letter-spacing:.16em;color:var(--text);white-space:nowrap;font-weight:700}
+  .brand b{color:var(--accent)}
+  .navlinks{display:flex;gap:15px;flex-wrap:wrap;margin-left:auto}
+  .navlinks a{font-family:var(--mono);font-size:11.5px;letter-spacing:.07em;color:var(--muted);text-transform:uppercase}
+  .navlinks a:hover{color:var(--accent);text-decoration:none}
+  @media(max-width:960px){.navlinks{display:none}}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+  section{scroll-margin-top:72px}
+
+  /* ---- hero ---- */
+  .hero{border-bottom:1px solid var(--border);padding:48px 0 64px;text-align:center}
+  .hero-copy{display:flex;flex-direction:column;align-items:center}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.26em;color:var(--accent);text-transform:uppercase;font-weight:500}
+  .hero h1{font-family:var(--disp);font-weight:700;line-height:1.06;letter-spacing:-.012em;text-transform:uppercase;
+    font-size:clamp(32px,6vw,64px);margin:14px auto 26px;max-width:24ch}
+  .hero h1 .gc{color:var(--accent)}
+  .hero .lede{font-size:clamp(17px,2.3vw,22px);color:var(--muted);max-width:60ch;margin:0 auto;font-weight:500}
+  .hero .lede strong{color:var(--accent);font-weight:700}
+  .badges{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:22px 0 0}
+  .badge{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--border-bright);background:var(--bg-soft);padding:5px 13px;border-radius:999px}
+  .badge b{color:var(--accent);font-weight:700}
+  .hero-bullets{list-style:none;margin:18px auto 0;padding:0;display:inline-block;text-align:left}
+  .hero-bullets li{position:relative;padding-left:30px;margin:12px 0;font-size:clamp(16px,2vw,20px);
+    color:var(--muted);font-weight:500;line-height:1.35}
+  .hero-bullets li::before{content:"";position:absolute;left:5px;top:.58em;width:9px;height:9px;border-radius:2px;
+    background:var(--accent);transform:rotate(45deg)}
+  .hero-bullets li strong{color:var(--accent);font-weight:700}
+
+  /* ---- stat trio ---- */
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:34px auto 0;max-width:920px;width:100%}
+  @media(max-width:760px){.grid-3{grid-template-columns:1fr}}
+  .stat{background:linear-gradient(180deg,var(--surface-2),var(--surface));border:1px solid var(--border);
+    border-radius:14px;padding:24px 22px;position:relative;overflow:hidden;text-align:left}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+  .stat .big{font-family:var(--disp);font-weight:700;font-size:38px;line-height:1;color:var(--accent);letter-spacing:-.02em}
+  .stat .lbl{color:var(--muted);font-size:14.5px;margin-top:9px}
+
+  /* ---- table of contents ---- */
+  .toc{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:24px 26px 14px;margin:34px 0 8px}
+  .toc-h{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  .toc ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+  @media(max-width:760px){.toc ol{grid-template-columns:1fr}}
+  .toc a{display:block;padding:10px 10px;border-radius:9px;border:1px solid transparent}
+  .toc a:hover{background:var(--accent-glow);border-color:var(--border);text-decoration:none}
+  .toc .trow{display:flex;align-items:baseline;gap:11px}
+  .toc .tnum{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent)}
+  .toc .tt{font-family:var(--disp);font-weight:600;font-size:15.5px;color:var(--text);letter-spacing:-.005em}
+  .toc .td{display:block;font-size:12.5px;color:var(--muted);margin:3px 0 0 23px;line-height:1.42}
+
+  /* ---- sections ---- */
+  section{padding:104px 0 24px;border-top:1px solid var(--border)}
+  section:first-of-type{border-top:none}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+  .sec-num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700;letter-spacing:.05em}
+  h2{font-family:var(--disp);font-weight:700;letter-spacing:-.01em;font-size:clamp(30px,4vw,46px);line-height:1.08}
+  h3{font-family:var(--disp);font-weight:600;font-size:24px;margin:32px 0 10px;letter-spacing:-.005em}
+  .sub{color:var(--muted);font-size:20.5px;max-width:74ch;margin:16px 0 8px;line-height:1.6}
+  p{margin:15px 0;color:var(--text);opacity:.92}
+  strong{color:var(--text);font-weight:600}
+  .lead-rule{height:2px;width:64px;background:linear-gradient(90deg,var(--accent),transparent);margin:18px 0 6px;border-radius:2px}
+
+  /* ---- subpoints ---- */
+  .subpoints{list-style:none;margin:18px 0 8px;padding:0;max-width:76ch}
+  .subpoints li{position:relative;padding-left:26px;margin:13px 0;color:var(--muted);font-size:18px;line-height:1.58}
+  .subpoints li::before{content:"";position:absolute;left:3px;top:9px;width:7px;height:7px;border-radius:2px;
+    background:var(--accent);transform:rotate(45deg)}
+  .subpoints li b,.subpoints li strong{color:var(--text);font-weight:600}
+  .subpoints li code{font-size:.86em}
+
+  /* ---- callout & pull-quote ---- */
+  .callout{background:var(--bg-soft);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;padding:18px 22px;margin:34px 0 22px}
+  .callout.alt{border-left-color:var(--accent-2)}
+  .callout .ct{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
+  .callout.alt .ct{color:var(--accent-2)}
+  .callout p{margin:5px 0;font-size:17px}
+  .pquote{font-family:var(--disp);font-weight:500;font-size:clamp(20px,2.8vw,27px);line-height:1.32;
+    color:var(--text);border-left:3px solid var(--accent);padding:6px 0 6px 22px;margin:30px 0;letter-spacing:-.01em}
+  .pquote .src{display:block;font-family:var(--mono);font-size:12px;color:var(--faint);font-weight:400;margin-top:12px;letter-spacing:.05em}
+
+  /* ---- table ---- */
+  .tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--border);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:620px}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--border)}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--bg-soft)}
+  tr:last-child td{border-bottom:none}
+  td b{color:var(--text)}
+  td .mono,.mono{font-family:var(--mono);color:var(--accent);font-size:13px}
+  tbody tr:hover{background:var(--accent-glow)}
+  td small{display:block;color:var(--muted);font-size:11.5px;line-height:1.4;margin-top:2px}
+
+  /* ---- comparison matrix: the Copilot column is the subject under examination ---- */
+  .matrix td:first-child,.matrix th:first-child{color:var(--text);font-weight:600}
+  .matrix .cp{background:rgba(163,113,247,.07);border-left:1px solid var(--accent-dim);border-right:1px solid var(--accent-dim)}
+  .matrix thead .cp{color:var(--accent);background:rgba(163,113,247,.12)}
+  .matrix tbody tr:hover .cp{background:rgba(163,113,247,.15)}
+  .gy{color:var(--ok);font-weight:700}
+  .gp{color:var(--accent-2);font-weight:700}
+  .gn{color:var(--faint);font-weight:700}
+
+  /* ---- checklist ---- */
+  .check{list-style:none;margin:18px 0;display:grid;gap:9px}
+  .check li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:13px 16px;font-size:15px;color:var(--text)}
+  .check li::before{content:"";flex:none;width:17px;height:17px;border:1.5px solid var(--accent);border-radius:5px;margin-top:3px;background:var(--accent-glow)}
+  .check li b{color:var(--text)}
+  .chk-h{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent-2);margin:26px 0 4px}
+
+  /* ---- code block ---- */
+  .code{background:#070A0D;border:1px solid var(--border);border-radius:12px;margin:22px 0;overflow:hidden}
+  .code .cbar{display:flex;align-items:center;gap:8px;padding:9px 15px;border-bottom:1px solid var(--border);background:var(--bg-soft)}
+  .code .cbar .dot{width:9px;height:9px;border-radius:50%;background:var(--border-bright)}
+  .code .cbar .cl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-left:6px}
+  .code pre{margin:0;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:var(--text);tab-size:2}
+  .code pre .c{color:var(--accent)}
+  .code pre .m{color:var(--faint)}
+  .code pre .s{color:var(--accent-2)}
+  .code pre .g{color:var(--ok)}
+  code{font-family:var(--mono);font-size:.88em;color:var(--accent);background:var(--accent-glow);
+    border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);padding:1px 6px;border-radius:5px}
+  .code-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.code-pair{grid-template-columns:1fr}}
+  .code-pair .code{margin:10px 0}
+
+  /* ---- problem -> solution flow rows + flip cards (switching gotchas) ---- */
+  .flow{display:grid;gap:18px;margin:32px 0 10px}
+  .flow-item{display:grid;grid-template-columns:60px 1fr;background:var(--surface);
+    border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .15s ease}
+  .flow-item:hover{border-color:var(--border-bright)}
+  .flow-rail{display:flex;align-items:center;justify-content:center;background:var(--bg-soft);
+    border-right:1px solid var(--border);font-family:var(--disp);font-size:28px;font-weight:700;color:var(--border-bright)}
+  .flow-grid{display:grid;grid-template-columns:1fr 52px 1.18fr;align-items:stretch}
+  .flow-cell{padding:24px 26px}
+  .flow-k{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px}
+  .flow-prob .flow-k{color:var(--accent-2)}
+  .flow-sol .flow-k{color:var(--ok)}
+  .flow-h{font-family:var(--disp);font-size:20px;font-weight:600;color:var(--text);line-height:1.22;margin-bottom:7px}
+  .flow-sol .flow-h{color:var(--ok)}
+  .flow-p{font-size:16.5px;color:var(--muted);line-height:1.52}
+  .flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--accent-2);font-size:26px;
+    background:var(--bg-soft);border-left:1px solid var(--border);border-right:1px solid var(--border)}
+  .flow-arrow::before{content:"?";font-weight:700}
+  .flow-item.flipped .flow-arrow{color:var(--ok)}
+  .flow-item.flipped .flow-arrow::before{content:"\279E";font-weight:400}
+  .flow-sol{background:linear-gradient(180deg,var(--accent-2-dim),transparent 72%)}
+  .flow-item.flipped .flow-sol{background:linear-gradient(180deg,rgba(79,227,163,.16),transparent 72%)}
+  .flow-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .flow-chip{font-family:var(--mono);font-size:12.5px;color:var(--ok);background:var(--surface);
+    border:1px solid color-mix(in srgb,var(--ok) 38%,transparent);padding:4px 12px;border-radius:20px}
+  @media(max-width:760px){
+    .flow-item{grid-template-columns:1fr}
+    .flow-rail{flex-direction:row;justify-content:flex-start;padding:10px 22px;border-right:none;border-bottom:1px solid var(--border);font-size:20px}
+    .flow-grid{grid-template-columns:1fr}
+    /* rotate only the glyph, not the whole cell — rotating the full-width cell
+       turns it into a tall strip that overlaps the neighboring text */
+    .flow-arrow{padding:6px;border:none;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .flow-arrow::before{display:inline-block}
+    .flow-item.flipped .flow-arrow::before{transform:rotate(90deg)}
+  }
+
+  /* flip card: front = amber question, back = green answer */
+  .flow-sol.flip-cell{padding:0}
+  .flip{perspective:1200px}
+  .flip-inner{display:grid;transition:transform .55s cubic-bezier(.2,.75,.25,1);transform-style:preserve-3d}
+  .flow-item.flipped .flip-inner{transform:rotateY(180deg)}
+  @media (prefers-reduced-motion:reduce){.flip-inner{transition:none}}
+  .flip-front,.flip-back{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:24px 26px}
+  .flip-front{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px;
+    min-height:158px;width:100%;border:0;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .flip-q{font-family:var(--disp);font-weight:700;font-size:21px;color:var(--accent-2);letter-spacing:-.01em;line-height:1.22}
+  .flip-front:hover .flip-q{color:var(--text)}
+  .flip-cta{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);
+    background:var(--accent-2-dim);border:1px solid color-mix(in srgb,var(--accent-2) 42%,transparent);
+    padding:8px 15px;border-radius:999px;transition:all .15s ease}
+  .flip-front:hover .flip-cta{background:var(--accent-2);color:var(--bg);border-color:var(--accent-2)}
+  .flip-back{transform:rotateY(180deg);position:relative}
+  .flip-reset{position:absolute;top:12px;right:14px;font-family:var(--mono);font-size:13px;line-height:1;color:var(--faint);
+    background:transparent;border:1px solid var(--border);border-radius:7px;padding:5px 9px;cursor:pointer;transition:all .15s ease}
+  .flip-reset:hover{color:var(--accent);border-color:var(--accent)}
+  @media print{
+    .flip-inner{transform:none !important}
+    .flip-front{display:none !important}
+    .flip-back{transform:none !important;position:static !important;-webkit-backface-visibility:visible !important;backface-visibility:visible !important}
+    .flip-reset{display:none !important}
+  }
+
+  /* ---- cheat-sheet rows + copy buttons ---- */
+  .prompt-list{display:grid;gap:10px;margin:18px 0 6px}
+  .prow{display:flex;align-items:flex-start;gap:16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:15px 18px;transition:border-color .15s ease,background .15s ease}
+  .prow:hover{border-color:var(--border-bright);background:var(--surface-2)}
+  .prow-main{flex:1;min-width:0}
+  .prow-id{display:flex;align-items:baseline;gap:11px}
+  .prow-id .pnum{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);flex:none}
+  .prow-id .ptitle{font-family:var(--disp);font-weight:600;font-size:18px;color:var(--text);letter-spacing:-.005em}
+  .pdesc{font-size:15.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .pdesc code{font-size:.84em}
+  .ptext{margin-top:12px;padding:13px 16px;background:var(--bg-soft);border:1px solid var(--border);
+    border-left:2px solid var(--accent);border-radius:0 9px 9px 0;font-size:14px;line-height:1.62;
+    color:var(--text);opacity:.94;font-family:var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+  .copy-btn{flex:none;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-glow);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);
+    padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .15s ease}
+  .copy-btn:hover{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  .copy-btn.copied{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  @media(max-width:620px){
+    .prow{flex-direction:column;align-items:stretch;gap:12px}
+    .copy-btn{align-self:flex-start}
+  }
+
+  /* ---- misc ---- */
+  ul.clean{margin:14px 0 14px 2px;padding-left:20px}
+  ul.clean li{margin:8px 0;color:var(--text);opacity:.92}
+  ul.clean li::marker{color:var(--accent)}
+  .cap-note{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.03em;margin:10px 0 0}
+  figure{margin:38px 0}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--faint);text-align:center;margin-top:11px;letter-spacing:.04em}
+
+  footer{margin-top:70px;border-top:1px solid var(--border);padding:46px 0 70px;text-align:center}
+  footer .fq{font-family:var(--disp);font-size:22px;font-weight:600;color:var(--text)}
+  footer .fm{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:14px;letter-spacing:.05em;line-height:2}
+
+  /* ---- print fidelity ---- */
+  @media print{
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    @page{ size:Letter; margin:0; }
+    html,body{ background:var(--bg) !important; }
+    section{ break-before:page; page-break-before:always; padding:54px 0 26px; }
+    figure,.stat,.callout,.pquote,.toc,.tbl-wrap,.check li,.code,.grid-3 .stat,.prow,.flow-item{
+      break-inside:avoid; page-break-inside:avoid;
+    }
+    .sec-head,h2,h3,.chk-h,.sub,.lead-rule{ break-after:avoid; page-break-after:avoid; }
+    figure{ margin:24px 0; }
+    a{ color:var(--accent) !important; text-decoration:none; }
+    .copy-btn{ display:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP NAV ===== -->
+<nav class="topbar" aria-label="Site">
+  <div class="inner">
+    <span class="brand">COPILOT CLI <b>vs</b> CLAUDE CODE</span>
+    <div class="navlinks">
+      <a href="#s0">Verdict</a>
+      <a href="#s2">Files</a>
+      <a href="#s3">Flags</a>
+      <a href="#s4">Commands</a>
+      <a href="#s5">Customize</a>
+      <a href="#s6">Permissions</a>
+      <a href="#s7">CI</a>
+      <a href="#s8">Gotchas</a>
+      <a href="#s11">Cheat Sheet</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="wrap hero-copy">
+    <span class="eyebrow">A Conversion Field Guide</span>
+    <h1>Same Machine,<br><span class="gc">Different Labels</span></h1>
+    <p class="lede">GitHub Copilot CLI and Claude Code have converged on the <strong>same shape</strong> — TUI + plan mode, headless <code>-p</code>, MCP, skills, agents, hooks, plugins. This guide maps every concept from one to the other, then names what each has that the other doesn&#x27;t.</p>
+    <div class="badges">
+      <span class="badge">As of <b>July 2026</b></span>
+      <span class="badge">Copilot CLI · <b>public preview</b></span>
+      <span class="badge">Claude Code · <b>v2.x</b></span>
+      <span class="badge">every claim <b>doc-cited</b></span>
+    </div>
+    <ul class="hero-bullets">
+      <li><strong>SAME SHAPE:</strong> conversion tables for files, flags, commands, and hooks</li>
+      <li><strong>ZERO MIGRATION:</strong> Copilot reads your <code>.claude/</code> setup natively</li>
+      <li><strong>HONEST TRADE-OFFS:</strong> real exclusives on both sides, citations included</li>
+    </ul>
+    <!-- image slot (hero): two terminal windows side by side — purple "copilot" prompt, green "claude" prompt — joined by a bright bidirectional arrow -->
+    <div class="grid-3">
+      <div class="stat"><div class="big">0</div><div class="lbl">files to migrate — Copilot CLI reads <code>CLAUDE.md</code>, <code>.claude/skills</code>, <code>.claude/agents</code>, <code>.claude/commands</code> as native locations</div></div>
+      <div class="stat"><div class="big">30 · 7</div><div class="lbl">documented hook events, Claude Code vs Copilot CLI — the biggest real capability gap in either direction</div></div>
+      <div class="stat"><div class="big">8</div><div class="lbl">models on Copilot&#x27;s menu (Claude, GPT, Gemini, MAI) — and its default is an Anthropic model</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== TABLE OF CONTENTS ===== -->
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-h">Contents</div>
+    <ol>
+      <li><a href="#s0"><span class="trow"><span class="tnum">00</span><span class="tt">Verdict at a Glance</span></span><span class="td">Sixteen capabilities, one matrix, no marketing.</span></a></li>
+      <li><a href="#s1"><span class="trow"><span class="tnum">01</span><span class="tt">Two Agents, One Shape</span></span><span class="td">The terminology map and where the mental models split.</span></a></li>
+      <li><a href="#s2"><span class="trow"><span class="tnum">02</span><span class="tt">Config &amp; Context Files</span></span><span class="td">CLAUDE.md ↔ AGENTS.md, settings, homes, and trees.</span></a></li>
+      <li><a href="#s3"><span class="trow"><span class="tnum">03</span><span class="tt">CLI Invocation &amp; Flags</span></span><span class="td">claude → copilot, flag by flag.</span></a></li>
+      <li><a href="#s4"><span class="trow"><span class="tnum">04</span><span class="tt">Slash Commands &amp; Keys</span></span><span class="td">In-session commands, prefixes, and the Shift+Tab trap.</span></a></li>
+      <li><a href="#s5"><span class="trow"><span class="tnum">05</span><span class="tt">Customization Surfaces</span></span><span class="td">Hooks, skills, agents, MCP, plugins — and the event map.</span></a></li>
+      <li><a href="#s6"><span class="trow"><span class="tnum">06</span><span class="tt">Permissions &amp; Safety</span></span><span class="td">Allow/deny, yolo flags, sandboxes, kill-switches.</span></a></li>
+      <li><a href="#s7"><span class="trow"><span class="tnum">07</span><span class="tt">Headless, CI &amp; Actions</span></span><span class="td">Programmatic mode and the GITHUB_TOKEN advantage.</span></a></li>
+      <li><a href="#s8"><span class="trow"><span class="tnum">08</span><span class="tt">Switching Gotchas</span></span><span class="td">Six habits that translate wrong. Flip each card.</span></a></li>
+      <li><a href="#s9"><span class="trow"><span class="tnum">09</span><span class="tt">Copilot Exclusives</span></span><span class="td">What Copilot CLI has that Claude Code doesn&#x27;t.</span></a></li>
+      <li><a href="#s10"><span class="trow"><span class="tnum">10</span><span class="tt">Claude Code Exclusives</span></span><span class="td">What Claude Code has that Copilot CLI doesn&#x27;t.</span></a></li>
+      <li><a href="#s11"><span class="trow"><span class="tnum">11</span><span class="tt">The Cheat Sheet</span></span><span class="td">Ten equivalent command pairs, each with a copy button.</span></a></li>
+      <li><a href="#s12"><span class="trow"><span class="tnum">12</span><span class="tt">Sources &amp; Provenance</span></span><span class="td">Every doc page this guide is built from, dated.</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ===== SECTION 00: VERDICT AT A GLANCE ===== -->
+  <section id="s0">
+    <div class="sec-head"><span class="sec-num">00</span><h2>Verdict at a Glance</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Sixteen capabilities, both tools, three glyphs: <span class="gy">✓</span> documented, <span class="gp">◐</span> partial or under-documented, <span class="gn">—</span> not documented. The tinted column is the subject under examination. No <span class="gn">—</span> appears here without a checked citation (section 12).</p>
+
+    <div class="tbl-wrap">
+      <table class="matrix">
+        <thead>
+          <tr><th>Capability</th><th>Claude Code</th><th class="cp">Copilot CLI</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Interactive TUI + plan mode</td><td><span class="gy">✓</span> <small>permission modes, Shift+Tab</small></td><td class="cp"><span class="gy">✓</span> <small>standard / plan / autopilot modes</small></td></tr>
+          <tr><td>Headless one-shot mode</td><td><span class="gy">✓</span> <small><code>claude -p</code></small></td><td class="cp"><span class="gy">✓</span> <small><code>copilot -p</code>, <code>-s</code> for script-clean output</small></td></tr>
+          <tr><td>MCP servers</td><td><span class="gy">✓</span> <small><code>.mcp.json</code>, <code>claude mcp</code></small></td><td class="cp"><span class="gy">✓</span> <small><code>.mcp.json</code> works here too</small></td></tr>
+          <tr><td>Skills (SKILL.md format)</td><td><span class="gy">✓</span></td><td class="cp"><span class="gy">✓</span> <small>same format, reads <code>.claude/skills/</code></small></td></tr>
+          <tr><td>Custom subagents</td><td><span class="gy">✓</span> <small><code>.claude/agents/</code></small></td><td class="cp"><span class="gy">✓</span> <small><code>.github/agents/</code> + <code>.claude/agents/</code></small></td></tr>
+          <tr><td>Custom slash commands</td><td><span class="gy">✓</span> <small>merged into skills; <code>.claude/commands/</code> still works</small></td><td class="cp"><span class="gy">✓</span> <small>reads <code>.claude/commands/</code> as “alternative skill format”</small></td></tr>
+          <tr><td>Hooks</td><td><span class="gy">✓</span> <small>30 events, allow/deny/ask/defer, input+output rewrite</small></td><td class="cp"><span class="gp">◐</span> <small>7 documented events; decision-control page not yet public-complete</small></td></tr>
+          <tr><td>Plugins + marketplaces</td><td><span class="gy">✓</span></td><td class="cp"><span class="gy">✓</span> <small>reads <code>.claude-plugin/</code> manifests</small></td></tr>
+          <tr><td>Checkpoints / rewind</td><td><span class="gy">✓</span> <small><code>/rewind</code>, double-Esc menu</small></td><td class="cp"><span class="gy">✓</span> <small><code>/undo</code> (alias <code>/rewind</code>), git-free file tracking</small></td></tr>
+          <tr><td>Persistent memory</td><td><span class="gy">✓</span> <small>auto memory + <code>MEMORY.md</code> index</small></td><td class="cp"><span class="gp">◐</span> <small>Copilot Memory + <code>--enable-memory</code>; mechanics thinly documented</small></td></tr>
+          <tr><td>OS-level sandboxing</td><td><span class="gy">✓</span> <small>Seatbelt / bubblewrap, documented internals</small></td><td class="cp"><span class="gy">✓</span> <small><code>/sandbox</code> local + <code>--cloud</code>; primitives undocumented</small></td></tr>
+          <tr><td>Structured output</td><td><span class="gy">✓</span> <small><code>json</code>, <code>stream-json</code>, <code>--json-schema</code></small></td><td class="cp"><span class="gp">◐</span> <small><code>--output-format json</code> emits JSONL only</small></td></tr>
+          <tr><td>Multi-vendor model menu</td><td><span class="gn">—</span> <small>Anthropic models (incl. via Bedrock/Vertex)</small></td><td class="cp"><span class="gy">✓</span> <small>Claude, GPT, Gemini, MAI + BYOK</small></td></tr>
+          <tr><td>Native GitHub integration</td><td><span class="gp">◐</span> <small>via <code>gh</code>, MCP, or the Actions app</small></td><td class="cp"><span class="gy">✓</span> <small><code>#123</code> context, <code>/pr</code>, <code>/delegate</code>, mobile <code>/remote</code></small></td></tr>
+          <tr><td>Agent SDK</td><td><span class="gy">✓</span> <small>TypeScript / Python Agent SDK</small></td><td class="cp"><span class="gp">◐</span> <small>ACP server mode (<code>--acp</code>) + JSONL, no SDK</small></td></tr>
+          <tr><td>Enterprise policy controls</td><td><span class="gy">✓</span> <small>managed settings: file, MDM, server</small></td><td class="cp"><span class="gy">✓</span> <small>org/enterprise AI controls + MDM + managed settings</small></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap-note">Glyphs are claims about documentation, not telemetry — a ◐ means the docs underspecify it, and section 12 tells you exactly which page to re-check.</p>
+  </section>
+
+  <!-- ===== SECTION 01: TWO AGENTS, ONE SHAPE ===== -->
+  <section id="s1">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Two Agents, One Shape</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Both tools are the same species: a terminal agent that reads instruction files, asks permission per tool, extends via MCP/skills/plugins, and runs headless in CI. Most concepts translate one-to-one — learn the vocabulary and you know both tools.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Concept</th><th>Claude Code says…</th><th>Copilot CLI says…</th></tr></thead>
+        <tbody>
+          <tr><td><b>Repo instruction file</b></td><td><code>CLAUDE.md</code></td><td><code>AGENTS.md</code> / <code>.github/copilot-instructions.md</code> <small>and it reads <code>CLAUDE.md</code> too</small></td></tr>
+          <tr><td><b>Agent home directory</b></td><td><code>~/.claude</code> (<code>CLAUDE_CONFIG_DIR</code>)</td><td><code>~/.copilot</code> (<code>COPILOT_HOME</code>)</td></tr>
+          <tr><td><b>“Skip all prompts”</b></td><td><code>--dangerously-skip-permissions</code></td><td><code>--allow-all-tools</code> / <code>--yolo</code></td></tr>
+          <tr><td><b>Mode wheel (Shift+Tab)</b></td><td>permission modes <small>default → auto-accept → plan</small></td><td>interaction modes <small>standard → plan → autopilot</small></td></tr>
+          <tr><td><b>Delegated specialist</b></td><td>subagent</td><td>custom agent <small>(subagents; <code>/fleet</code> runs them in parallel)</small></td></tr>
+          <tr><td><b>Headless run</b></td><td>print mode (<code>-p</code>)</td><td>programmatic / prompt mode (<code>-p</code>)</td></tr>
+          <tr><td><b>Undo the last turn</b></td><td><code>/rewind</code> (checkpoints)</td><td><code>/undo</code> (alias <code>/rewind</code>)</td></tr>
+          <tr><td><b>Session memory</b></td><td>auto memory</td><td>Copilot Memory</td></tr>
+          <tr><td><b>Cloud hand-off</b></td><td>web/background sessions <small>(&amp; Actions app)</small></td><td><code>/delegate</code> → Copilot cloud agent</td></tr>
+          <tr><td><b>Reasoning depth dial</b></td><td><code>--effort low…max</code></td><td><code>--effort low…max</code> <small>identical values — no translation needed</small></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <div class="ct">Where the mental models actually split</div>
+      <p><strong>Identity &amp; billing.</strong> Claude Code authenticates to Anthropic (subscription or API key) and runs Anthropic models. Copilot CLI authenticates to GitHub (OAuth or fine-grained PAT) and puts <strong>eight models from four vendors</strong> behind one subscription — with an Anthropic model as its documented default. Everything else — files, flags, hooks, skills — is dialect, not philosophy.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 02: CONFIG & CONTEXT FILES ===== -->
+  <section id="s2">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Config &amp; Context Files</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">The question that started this guide — <em>“where is CLAUDE.md in Copilot?”</em> — has a two-part answer: <code>copilot init</code> writes <code>.github/copilot-instructions.md</code>, but Copilot also merges <code>AGENTS.md</code>, <code>CLAUDE.md</code>, and even <code>GEMINI.md</code> if they exist. All instruction files <strong>combine</strong>; there is no precedence order between them.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Concept</th><th>Claude Code</th><th>Copilot CLI</th></tr></thead>
+        <tbody>
+          <tr><td><b>Project instructions</b></td><td><code>CLAUDE.md</code>, <code>.claude/CLAUDE.md</code>, <code>CLAUDE.local.md</code> (+ <code>AGENTS.md</code> support)</td><td><code>AGENTS.md</code>, <code>.github/copilot-instructions.md</code>, <code>CLAUDE.md</code>, <code>GEMINI.md</code> — all merged</td></tr>
+          <tr><td><b>Path-scoped instructions</b></td><td><code>.claude/rules/</code></td><td><code>.github/instructions/*.instructions.md</code> with <code>applyTo:</code> globs</td></tr>
+          <tr><td><b>Instruction scaffolder</b></td><td><code>/init</code></td><td><code>copilot init</code> or <code>/init</code></td></tr>
+          <tr><td><b>User-global instructions</b></td><td><code>~/.claude/CLAUDE.md</code></td><td><code>~/.copilot/copilot-instructions.md</code> + <code>~/.copilot/instructions/</code></td></tr>
+          <tr><td><b>User settings</b></td><td><code>~/.claude/settings.json</code></td><td><code>~/.copilot/settings.json</code></td></tr>
+          <tr><td><b>Repo settings</b></td><td><code>.claude/settings.json</code></td><td><code>.github/copilot/settings.json</code></td></tr>
+          <tr><td><b>Local (gitignored) settings</b></td><td><code>.claude/settings.local.json</code></td><td><code>.github/copilot/settings.local.json</code></td></tr>
+          <tr><td><b>Managed / enterprise settings</b></td><td><code>managed-settings.json</code> + <code>managed-settings.d/</code>, MDM, server-managed</td><td>MDM plist / registry / file + server-fetched managed settings</td></tr>
+          <tr><td><b>MCP servers</b></td><td><code>.mcp.json</code>; <code>claude mcp add</code> → user scope</td><td><code>.mcp.json</code> or <code>.github/mcp.json</code>; <code>copilot mcp add</code> → <code>~/.copilot/mcp-config.json</code></td></tr>
+          <tr><td><b>Skills</b></td><td><code>.claude/skills/&lt;name&gt;/SKILL.md</code>, <code>~/.claude/skills/</code></td><td><code>.github/skills/</code>, <code>.agents/skills/</code>, <code>.claude/skills/</code>, <code>~/.copilot/skills/</code> — same <code>SKILL.md</code> format</td></tr>
+          <tr><td><b>Subagents</b></td><td><code>.claude/agents/*.md</code>, <code>~/.claude/agents/</code></td><td><code>.github/agents/*.agent.md</code>, <code>.claude/agents/</code>, <code>~/.copilot/agents/</code></td></tr>
+          <tr><td><b>Commands</b></td><td><code>.claude/commands/*.md</code> (merged into skills)</td><td><code>.claude/commands/*.md</code> — yes, literally the same path</td></tr>
+          <tr><td><b>Hooks</b></td><td><code>hooks</code> key in settings files</td><td><code>.github/hooks/*.json</code>, <code>~/.copilot/hooks/</code></td></tr>
+          <tr><td><b>LSP servers</b></td><td>via plugins (<code>.lsp.json</code>)</td><td><code>.github/lsp.json</code>, <code>~/.copilot/lsp-config.json</code>, plugins</td></tr>
+          <tr><td><b>Auth env vars</b></td><td><code>ANTHROPIC_API_KEY</code>, <code>CLAUDE_CODE_OAUTH_TOKEN</code></td><td><code>COPILOT_GITHUB_TOKEN</code> → <code>GH_TOKEN</code> → <code>GITHUB_TOKEN</code> (fine-grained PATs only)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>One repo, two readers</h3>
+    <div class="code-pair">
+      <div class="code">
+        <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">what Claude Code reads</span></div>
+        <pre><span class="c">repo/</span>
+├── CLAUDE.md              <span class="m"># repo instructions (+ AGENTS.md)</span>
+├── .mcp.json              <span class="m"># project MCP servers</span>
+└── .claude/
+    ├── settings.json      <span class="m"># repo settings (hooks live here)</span>
+    ├── settings.local.json
+    ├── rules/             <span class="m"># path-scoped rules</span>
+    ├── skills/…/SKILL.md
+    ├── agents/*.md
+    └── commands/*.md      <span class="m"># legacy commands, still honored</span></pre>
+      </div>
+      <div class="code">
+        <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">what Copilot CLI reads — note the overlap</span></div>
+        <pre><span class="c">repo/</span>
+├── AGENTS.md              <span class="m"># merged…</span>
+├── CLAUDE.md              <span class="m"># …with this — yes, natively</span>
+├── .mcp.json              <span class="m"># same file works</span>
+├── .github/
+│   ├── copilot-instructions.md   <span class="m"># what `copilot init` writes</span>
+│   ├── instructions/*.instructions.md
+│   ├── copilot/settings.json
+│   ├── skills/ · agents/ · hooks/ · mcp.json · lsp.json
+└── .claude/
+    ├── skills/ · agents/ · commands/   <span class="g"># read as native locations</span></pre>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="ct">The migration that isn&#x27;t</div>
+      <p>Copilot CLI treats <code>.claude/skills/</code>, <code>.claude/agents/</code>, <code>.claude/commands/</code>, and <code>.claude-plugin/</code> manifests as first-class locations, and merges <code>CLAUDE.md</code> into instructions. A Claude Code repo is <strong>already</strong> a Copilot CLI repo. The reverse is not symmetric — Claude Code does not read <code>.github/copilot-instructions.md</code> or <code>.github/skills/</code>.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 03: CLI INVOCATION & FLAGS ===== -->
+  <section id="s3">
+    <div class="sec-head"><span class="sec-num">03</span><h2>CLI Invocation &amp; Flags</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">The flag dialects are close enough to bite: several flags are <em>identical</em> (<code>--add-dir</code>, <code>--effort</code>, <code>--resume</code>), a few translate cleanly, and two look alike but behave differently.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Task</th><th>Claude Code</th><th>Copilot CLI</th></tr></thead>
+        <tbody>
+          <tr><td><b>Interactive session</b></td><td><code>claude</code></td><td><code>copilot</code></td></tr>
+          <tr><td><b>One-shot prompt</b></td><td><code>claude -p "…"</code></td><td><code>copilot -p "…"</code> <small>add <code>-s</code> to suppress usage stats</small></td></tr>
+          <tr><td><b>Continue last session</b></td><td><code>claude -c</code> / <code>--continue</code></td><td><code>copilot --continue</code></td></tr>
+          <tr><td><b>Resume by ID / picker</b></td><td><code>claude -r [id|name]</code></td><td><code>copilot -r [id|name]</code> <small>both support <code>--session-id</code>, <code>-n</code> names</small></td></tr>
+          <tr><td><b>Allow specific tools</b></td><td><code>--allowedTools "Bash(git:*)"</code></td><td><code>--allow-tool 'shell(git:*)'</code></td></tr>
+          <tr><td><b>Deny tools</b></td><td><code>--disallowedTools</code></td><td><code>--deny-tool</code> <small>deny beats allow in both</small></td></tr>
+          <tr><td><b>Skip all permission prompts</b></td><td><code>--dangerously-skip-permissions</code></td><td><code>--allow-all-tools</code> / <code>--yolo</code></td></tr>
+          <tr><td><b>Start in plan mode</b></td><td><code>--permission-mode plan</code></td><td><code>--mode plan</code> / <code>--plan</code></td></tr>
+          <tr><td><b>Pick a model</b></td><td><code>--model sonnet|opus|haiku|fable</code></td><td><code>--model claude-sonnet-4.6|gpt-5.4|…|auto</code></td></tr>
+          <tr><td><b>Reasoning depth</b></td><td><code>--effort low|medium|high|xhigh|max</code></td><td><code>--effort low|medium|high|xhigh|max</code> <small>identical</small></td></tr>
+          <tr><td><b>Extra directories</b></td><td><code>--add-dir</code></td><td><code>--add-dir</code> <small>identical</small></td></tr>
+          <tr><td><b>Structured output</b></td><td><code>--output-format json|stream-json</code></td><td><code>--output-format json</code> <small>emits JSONL — closer to Claude&#x27;s <code>stream-json</code></small></td></tr>
+          <tr><td><b>Custom system prompt</b></td><td><code>--append-system-prompt</code> (+ 3 more flags)</td><td>no documented flag — use instruction files or <code>--agent</code></td></tr>
+          <tr><td><b>Git worktree isolation</b></td><td><code>-w</code> / <code>--worktree</code></td><td><code>-w</code> / <code>--worktree</code> <small>experimental</small></td></tr>
+          <tr><td><b>Update the CLI</b></td><td><code>claude update</code></td><td><code>copilot update</code></td></tr>
+          <tr><td><b>Diagnostics</b></td><td><code>claude doctor</code></td><td>no single command — <code>copilot help logging|monitoring</code>, <code>/env</code></td></tr>
+          <tr><td><b>Shell completion</b></td><td>not documented</td><td><code>copilot completion bash|zsh|fish</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout alt">
+      <div class="ct">False friends</div>
+      <p><strong><code>--output-format json</code></strong> means a single result document in Claude Code but line-delimited JSONL in Copilot — pipe to <code>jq -s</code> if you need one array. <strong>Shift+Tab</strong> exists in both TUIs but cycles different wheels (section 04). And Copilot&#x27;s <code>--resume</code> under <code>-p</code> without a TTY <em>errors out</em> rather than silently starting a fresh session.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 04: SLASH COMMANDS & KEYS ===== -->
+  <section id="s4">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Slash Commands &amp; Keys</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">In-session vocabulary translates almost mechanically — Copilot is generous with aliases, so your first guess usually works.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Intent</th><th>Claude Code</th><th>Copilot CLI</th></tr></thead>
+        <tbody>
+          <tr><td><b>Help</b></td><td><code>/help</code></td><td><code>/help</code></td></tr>
+          <tr><td><b>Settings</b></td><td><code>/config</code></td><td><code>/settings</code> <small>alias <code>/config</code></small></td></tr>
+          <tr><td><b>Switch model</b></td><td><code>/model</code></td><td><code>/model</code> <small><code>--session</code>, <code>--repo</code>, <code>--local</code> scopes</small></td></tr>
+          <tr><td><b>Clear conversation</b></td><td><code>/clear</code></td><td><code>/clear</code> <small>aliases <code>/new</code>, <code>/reset</code></small></td></tr>
+          <tr><td><b>Compact context</b></td><td><code>/compact [focus]</code></td><td><code>/compact [focus]</code> <small>also auto-compacts at 95%</small></td></tr>
+          <tr><td><b>MCP management</b></td><td><code>/mcp</code></td><td><code>/mcp [list|add|edit|auth|…]</code></td></tr>
+          <tr><td><b>Subagents</b></td><td><code>/agents</code></td><td><code>/agent</code> · <code>/subagents</code></td></tr>
+          <tr><td><b>Permissions</b></td><td><code>/permissions</code></td><td><code>/permissions [show|reset]</code></td></tr>
+          <tr><td><b>Undo / checkpoint</b></td><td><code>/rewind</code> <small>or double-Esc menu</small></td><td><code>/undo</code> <small>alias <code>/rewind</code>; <code>/session checkpoints</code></small></td></tr>
+          <tr><td><b>Memory</b></td><td><code>/memory</code></td><td>automatic <small>(Copilot Memory; no slash command documented)</small></td></tr>
+          <tr><td><b>Scaffold instructions</b></td><td><code>/init</code></td><td><code>/init</code></td></tr>
+          <tr><td><b>Auth</b></td><td><code>/login</code> · <code>/logout</code></td><td><code>/login</code> · <code>/logout</code> · <code>/user switch</code></td></tr>
+          <tr><td><b>Status line</b></td><td><code>statusLine</code> setting</td><td><code>/statusline</code> <small>alias <code>/footer</code></small></td></tr>
+          <tr><td><b>Sandbox</b></td><td><code>/sandbox</code></td><td><code>/sandbox [enable|disable]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Prompt prefixes &amp; keys</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Key / prefix</th><th>Claude Code</th><th>Copilot CLI</th></tr></thead>
+        <tbody>
+          <tr><td><b><code>!</code></b></td><td>run a shell command</td><td>run a shell command <small><code>$</code> hands over the whole terminal (opt-in)</small></td></tr>
+          <tr><td><b><code>@</code></b></td><td>file path mention</td><td>file path mention</td></tr>
+          <tr><td><b><code>#</code></b></td><td>(no longer documented)</td><td>pull GitHub issue/PR <code>#123</code> into context</td></tr>
+          <tr><td><b>Shift+Tab</b></td><td>cycle <em>permission</em> modes</td><td>cycle <em>interaction</em> modes (standard → plan → autopilot)</td></tr>
+          <tr><td><b>Esc Esc</b></td><td>open the rewind menu</td><td>interrupt the running turn</td></tr>
+          <tr><td><b>Tab completion</b></td><td>in-UI</td><td>in-UI (Tab / Ctrl+Y) + terminal-level via <code>copilot completion</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout alt">
+      <div class="ct">Muscle-memory hazard</div>
+      <p>Shift+Tab is the same reflex in both tools but steers different wheels: in Claude Code you&#x27;re changing <em>how much it may do without asking</em>; in Copilot you&#x27;re changing <em>how it works</em> — including <strong>autopilot</strong>, which keeps going without pausing for approval between steps. Double-Esc is the sharper trap: rewind menu in one, interrupt in the other.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 05: CUSTOMIZATION SURFACES ===== -->
+  <section id="s5">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Customization Surfaces</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Every extension mechanism exists on both sides — the difference is depth. Skills are literally interchangeable; hooks are where the gap is real.</p>
+
+    <div class="tbl-wrap">
+      <table class="matrix">
+        <thead>
+          <tr><th>Surface</th><th>Claude Code</th><th class="cp">Copilot CLI</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Custom instructions</td><td><span class="gy">✓</span> <small>CLAUDE.md family, <code>@</code> imports</small></td><td class="cp"><span class="gy">✓</span> <small>7 file types merged, <code>@</code> imports, <code>applyTo</code> globs</small></td></tr>
+          <tr><td>Skills</td><td><span class="gy">✓</span> <small>SKILL.md + frontmatter</small></td><td class="cp"><span class="gy">✓</span> <small>identical format; <code>copilot skill</code> CLI</small></td></tr>
+          <tr><td>Subagents</td><td><span class="gy">✓</span> <small>markdown + frontmatter</small></td><td class="cp"><span class="gy">✓</span> <small><code>.agent.md</code>, <code>tools</code>, <code>infer</code>, <code>mcp-servers</code></small></td></tr>
+          <tr><td>Hooks</td><td><span class="gy">✓</span> <small>30 events, JSON decision control</small></td><td class="cp"><span class="gp">◐</span> <small>7 events, JSON stdin/stdout, 30s default timeout</small></td></tr>
+          <tr><td>MCP</td><td><span class="gy">✓</span></td><td class="cp"><span class="gy">✓</span> <small>+ enterprise registry/allowlist</small></td></tr>
+          <tr><td>Plugins &amp; marketplaces</td><td><span class="gy">✓</span> <small>can bundle LSP, monitors, settings</small></td><td class="cp"><span class="gy">✓</span> <small>Open Plugin Spec; installs Claude-format plugins</small></td></tr>
+          <tr><td>LSP servers</td><td><span class="gp">◐</span> <small>plugins only</small></td><td class="cp"><span class="gy">✓</span> <small>first-class config files + <code>/lsp</code></small></td></tr>
+          <tr><td>Status line</td><td><span class="gy">✓</span> <small><code>statusLine</code> command hook</small></td><td class="cp"><span class="gy">✓</span> <small><code>/statusline</code></small></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The hook event map</h3>
+    <p>Copilot&#x27;s seven camelCase events all have a direct PascalCase counterpart in Claude Code. The reverse is very much not true — Claude Code documents <strong>30 events</strong>, including permission, subagent, compaction, worktree, and config-change lifecycles with allow/deny/ask/defer decisions and input/output rewriting.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Copilot CLI event</th><th>Claude Code event</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">sessionStart</td><td class="mono">SessionStart</td><td>direct</td></tr>
+          <tr><td class="mono">sessionEnd</td><td class="mono">SessionEnd</td><td>direct</td></tr>
+          <tr><td class="mono">userPromptSubmitted</td><td class="mono">UserPromptSubmit</td><td>direct</td></tr>
+          <tr><td class="mono">preToolUse</td><td class="mono">PreToolUse</td><td>Claude adds allow/deny/ask/defer + input rewrite</td></tr>
+          <tr><td class="mono">postToolUse</td><td class="mono">PostToolUse</td><td>Claude adds output rewrite</td></tr>
+          <tr><td class="mono">agentStop</td><td class="mono">Stop</td><td>fires when the agent finishes responding</td></tr>
+          <tr><td class="mono">errorOccurred</td><td class="mono">—</td><td>closest: <code>PostToolUseFailure</code> / <code>StopFailure</code></td></tr>
+          <tr><td class="mono">—</td><td class="mono">23 more</td><td><small>Setup, PermissionRequest, SubagentStart/Stop, PreCompact/PostCompact, WorktreeCreate/Remove, ConfigChange, FileChanged, Elicitation, …</small></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Minimal hook, both dialects</h3>
+    <div class="code-pair">
+      <div class="code">
+        <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">claude · .claude/settings.json</span></div>
+        <pre>{
+  <span class="c">"hooks"</span>: {
+    <span class="c">"PostToolUse"</span>: [{
+      <span class="c">"matcher"</span>: <span class="s">"Edit|Write"</span>,
+      <span class="c">"hooks"</span>: [{
+        <span class="c">"type"</span>: <span class="s">"command"</span>,
+        <span class="c">"command"</span>: <span class="s">"just lint"</span>
+      }]
+    }]
+  }
+}</pre>
+      </div>
+      <div class="code">
+        <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">copilot · .github/hooks/lint.json</span></div>
+        <pre>{
+  <span class="c">"version"</span>: 1,
+  <span class="c">"hooks"</span>: {
+    <span class="c">"postToolUse"</span>: [{
+      <span class="c">"type"</span>: <span class="s">"command"</span>,
+      <span class="c">"bash"</span>: <span class="s">"just lint"</span>,
+      <span class="c">"timeoutSec"</span>: 60
+    }]
+  }
+}</pre>
+      </div>
+    </div>
+    <p class="cap-note">Copilot hooks have no per-tool matcher in the config — filter inside your script from the JSON stdin payload (toolName, toolArgs). Repo hooks in prompt mode need a trusted folder or GITHUB_COPILOT_PROMPT_MODE_REPO_HOOKS=true.</p>
+  </section>
+
+  <!-- ===== SECTION 06: PERMISSIONS & SAFETY ===== -->
+  <section id="s6">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Permissions &amp; Safety</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Near-parity, with different persistence shapes: Claude Code scopes rules through its settings-file hierarchy; Copilot adds a per-location middle tier right in the approval dialog.</p>
+
+    <div class="tbl-wrap">
+      <table class="matrix">
+        <thead>
+          <tr><th>Mechanism</th><th>Claude Code</th><th class="cp">Copilot CLI</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Per-tool approval prompt</td><td><span class="gy">✓</span></td><td class="cp"><span class="gy">✓</span> <small><code>y</code> / <code>n</code> / <code>!</code> allow-all-similar / <code>#</code> deny-all-similar</small></td></tr>
+          <tr><td>Session-scoped “always allow”</td><td><span class="gy">✓</span></td><td class="cp"><span class="gy">✓</span> <small>re-asks in new or resumed sessions</small></td></tr>
+          <tr><td>Per-location persistence</td><td><span class="gp">◐</span> <small>via settings-file scoping</small></td><td class="cp"><span class="gy">✓</span> <small>“This location” tier, keyed to git root / directory</small></td></tr>
+          <tr><td>Config-persisted allow/deny rules</td><td><span class="gy">✓</span> <small><code>permissions.allow/deny</code></small></td><td class="cp"><span class="gy">✓</span> <small><code>Kind(argument)</code> patterns: <code>shell(git:*)</code>, <code>write(src/*.ts)</code>, <code>url(…)</code></small></td></tr>
+          <tr><td>Deny beats allow</td><td><span class="gy">✓</span></td><td class="cp"><span class="gy">✓</span> <small>even under <code>--allow-all</code></small></td></tr>
+          <tr><td>Read-only / plan mode</td><td><span class="gy">✓</span></td><td class="cp"><span class="gy">✓</span></td></tr>
+          <tr><td>Yolo kill-switch for admins</td><td><span class="gy">✓</span> <small>managed settings</small></td><td class="cp"><span class="gy">✓</span> <small><code>permissions.disableBypassPermissionsMode</code></small></td></tr>
+          <tr><td>OS sandbox for shell</td><td><span class="gy">✓</span> <small>Seatbelt (macOS), bubblewrap (Linux/WSL2)</small></td><td class="cp"><span class="gy">✓</span> <small><code>/sandbox</code>; MCP servers spawn sandboxed; + cloud sandbox</small></td></tr>
+          <tr><td>Env-var hardening</td><td><span class="gp">◐</span> <small>sandbox credential masking</small></td><td class="cp"><span class="gy">✓</span> <small>blocks inline <code>LD_*</code>, <code>DYLD_*</code>, <code>PATH</code>, <code>BASH_ENV</code> assignments</small></td></tr>
+          <tr><td>Enterprise MCP allowlist</td><td><span class="gp">◐</span> <small><code>managed-mcp.json</code></small></td><td class="cp"><span class="gy">✓</span> <small>fail-closed fingerprint check against policy endpoint</small></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout alt">
+      <div class="ct">The yolo equivalence — and its leash</div>
+      <p><code>copilot --allow-all-tools</code> is <code>claude --dangerously-skip-permissions</code> wearing a friendlier name — both give the agent your full shell. Both vendors also gave admins the same leash: a managed setting that disables bypass mode entirely, and in both tools <strong>deny rules survive yolo</strong>. If you script one, script the other with the same care.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 07: HEADLESS, CI & ACTIONS ===== -->
+  <section id="s7">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Headless, CI &amp; GitHub Actions</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Both run headless with allowlisted tools. The strategic difference is auth: in GitHub Actions, Copilot can bill the org and authenticate with the workflow&#x27;s <strong>built-in <code>GITHUB_TOKEN</code></strong> — zero extra secrets. Claude Code answers with richer machine-readable output.</p>
+
+    <div class="code-pair">
+      <div class="code">
+        <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">claude · headless with structured output</span></div>
+        <pre>claude -p <span class="s">"Summarize this week's commits"</span> \
+  --allowedTools <span class="s">"Bash(git:*)"</span> \
+  --output-format stream-json \
+  --include-partial-messages --verbose
+
+<span class="m"># single-document result instead:</span>
+claude -p <span class="s">"…"</span> --output-format json --json-schema schema.json</pre>
+      </div>
+      <div class="code">
+        <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">copilot · headless with allowlist</span></div>
+        <pre>copilot -p <span class="s">"Summarize this week's commits"</span> \
+  --allow-tool <span class="s">'shell(git:*)'</span> \
+  --output-format json -s
+
+<span class="m"># JSONL out — one JSON object per line; collect with:</span>
+copilot -p <span class="s">"…"</span> --output-format json -s | jq -s <span class="s">'.'</span></pre>
+      </div>
+    </div>
+
+    <h3>In GitHub Actions</h3>
+    <div class="code-pair">
+      <div class="code">
+        <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">claude-code-action · needs a repo secret</span></div>
+        <pre><span class="c">jobs:</span>
+  <span class="c">claude:</span>
+    <span class="c">runs-on:</span> ubuntu-latest
+    <span class="c">steps:</span>
+      - <span class="c">uses:</span> anthropics/claude-code-action@v1
+        <span class="c">with:</span>
+          <span class="c">anthropic_api_key:</span> <span class="s">${{ secrets.ANTHROPIC_API_KEY }}</span>
+<span class="m"># setup: /install-github-app from a Claude Code session,</span>
+<span class="m"># then mention @claude in issues/PRs</span></pre>
+      </div>
+      <div class="code">
+        <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">copilot cli · built-in GITHUB_TOKEN</span></div>
+        <pre><span class="c">jobs:</span>
+  <span class="c">copilot:</span>
+    <span class="c">runs-on:</span> ubuntu-latest
+    <span class="c">steps:</span>
+      - <span class="c">run:</span> |
+          npm install -g @github/copilot-cli
+          copilot -p <span class="s">"triage new issues"</span> --allow-all-tools
+        <span class="c">env:</span>
+          <span class="c">GITHUB_TOKEN:</span> <span class="s">${{ github.token }}</span>
+<span class="g"># zero extra secrets — org policy “billed to the organization”</span></pre>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Headless concern</th><th>Claude Code</th><th>Copilot CLI</th></tr></thead>
+        <tbody>
+          <tr><td><b>CI auth</b></td><td><code>ANTHROPIC_API_KEY</code> secret; <code>claude setup-token</code> for long-lived OAuth</td><td>workflow <code>GITHUB_TOKEN</code> (org policy) or fine-grained PAT</td></tr>
+          <tr><td><b>Machine output</b></td><td><code>json</code> · <code>stream-json</code> · <code>--json-schema</code> validation</td><td>JSONL via <code>--output-format json</code>; <code>-s</code> strips usage stats</td></tr>
+          <tr><td><b>Unattended approval</b></td><td><code>--dangerously-skip-permissions</code> or explicit <code>--allowedTools</code></td><td><code>--allow-all-tools</code> (env <code>COPILOT_ALLOW_ALL</code>) or explicit <code>--allow-tool</code></td></tr>
+          <tr><td><b>Logs / telemetry</b></td><td>OTel support via settings</td><td><code>--log-dir</code>/<code>--log-level</code> + full OpenTelemetry GenAI traces</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 08: SWITCHING GOTCHAS ===== -->
+  <section id="s8">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Switching Gotchas</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Six Claude Code habits, translated. The front of each card is the habit; flip it for what actually happens in Copilot CLI.</p>
+
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-rail">1</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">The habit</div>
+            <div class="flow-h">“My project rules live in CLAUDE.md”</div>
+            <div class="flow-p">Years of curated repo instructions, gotchas, and conventions in one file at the repo root.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What happens in Copilot?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">In Copilot CLI</div>
+                  <div class="flow-h">It just works — and then some</div>
+                  <div class="flow-p">Copilot merges <code>CLAUDE.md</code> natively alongside <code>AGENTS.md</code> and <code>.github/copilot-instructions.md</code>. Careful: <em>all</em> instruction files combine with no precedence — contradictions between them become the model&#x27;s problem.</div>
+                  <button type="button" class="flip-reset" aria-label="Show the habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">2</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">The habit</div>
+            <div class="flow-h">“Shift+Tab until I&#x27;m in plan mode”</div>
+            <div class="flow-p">The reflex: cycle modes until the agent is read-only, then think out loud safely.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What happens in Copilot?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">In Copilot CLI</div>
+                  <div class="flow-h">Same key, extra stop on the wheel</div>
+                  <div class="flow-p">The cycle is standard → plan → <strong>autopilot</strong> — and autopilot continues without approval pauses. One extra Shift+Tab past plan mode puts you in the <em>most</em> autonomous mode, not the safest. Copilot&#x27;s own docs call plan mode “a safety net, not a guarantee.”</div>
+                  <button type="button" class="flip-reset" aria-label="Show the habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">3</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">The habit</div>
+            <div class="flow-h">“I&#x27;ll auth with a token in CI”</div>
+            <div class="flow-p">Drop an API key in the secrets store, export it in the workflow, done.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What happens in Copilot?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">In Copilot CLI</div>
+                  <div class="flow-h">Classic PATs are rejected</div>
+                  <div class="flow-p">Copilot checks <code>COPILOT_GITHUB_TOKEN</code> → <code>GH_TOKEN</code> → <code>GITHUB_TOKEN</code>, and accepts <strong>fine-grained PATs only</strong> (with the “Copilot Requests” permission) — a <code>ghp_</code> classic token fails. In Actions, skip PATs entirely: the built-in <code>GITHUB_TOKEN</code> works once the org policy is on.</div>
+                  <button type="button" class="flip-reset" aria-label="Show the habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">4</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">The habit</div>
+            <div class="flow-h">“# saves a memory”</div>
+            <div class="flow-p">Old Claude Code reflex: prefix a line with <code>#</code> to stash a fact for later sessions.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What happens in Copilot?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">In Copilot CLI</div>
+                  <div class="flow-h">#123 pulls in an issue instead</div>
+                  <div class="flow-p"><code>#</code> means <em>GitHub reference</em>: <code>#123</code> loads that issue or PR into context. (At a permission prompt, <code>#</code> means “deny all similar”!) Memory needs no shortcut in either tool now — Claude&#x27;s auto memory and Copilot Memory both just watch you work.</div>
+                  <button type="button" class="flip-reset" aria-label="Show the habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">5</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">The habit</div>
+            <div class="flow-h">“Double-Esc opens the rewind menu”</div>
+            <div class="flow-p">Empty prompt, Esc Esc, pick a checkpoint, restore code and conversation.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What happens in Copilot?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">In Copilot CLI</div>
+                  <div class="flow-h">Esc Esc interrupts; type /undo instead</div>
+                  <div class="flow-p">Double-Esc <em>stops the running turn</em> (and idle background agents). The checkpoint feature is <code>/undo</code> — alias <code>/rewind</code>, so your old command name still lands — with <code>/session checkpoints</code> to browse, and file tracking that works without git.</div>
+                  <button type="button" class="flip-reset" aria-label="Show the habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">6</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">The habit</div>
+            <div class="flow-h">“My hooks gate every tool call”</div>
+            <div class="flow-p">PreToolUse matchers with JSON allow/deny/ask decisions enforce policy before anything runs.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What happens in Copilot?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">In Copilot CLI</div>
+                  <div class="flow-h">preToolUse exists — matchers don&#x27;t</div>
+                  <div class="flow-p">Copilot&#x27;s <code>preToolUse</code> hook receives <code>toolName</code>/<code>toolArgs</code> as JSON on stdin, but there&#x27;s no config-level matcher — your script filters. Port the policy logic into the script body, and lean on <code>--deny-tool</code> patterns for the hard guarantees (deny always wins).</div>
+                  <button type="button" class="flip-reset" aria-label="Show the habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 09: COPILOT EXCLUSIVES ===== -->
+  <section id="s9">
+    <div class="sec-head"><span class="sec-num">09</span><h2>What Copilot CLI Has That Claude Code Doesn&#x27;t</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">The honest list — every item cited to a docs page in section 12. If you live inside GitHub&#x27;s ecosystem, several of these are decisive.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Advantage</th><th>What it gives you</th></tr></thead>
+        <tbody>
+          <tr><td><b>Multi-vendor model menu</b></td><td>Claude, GPT, Gemini, and MAI models under one subscription — plus BYOK (<code>COPILOT_PROVIDER_*</code>) for your own endpoint. Switch mid-session with <code>/model --session</code>.</td></tr>
+          <tr><td><b><code>GITHUB_TOKEN</code> auth in Actions</b></td><td>CI runs with the workflow&#x27;s built-in token, billed to the org — no secret provisioning, no key rotation.</td></tr>
+          <tr><td><b>GitHub-native context</b></td><td><code>#123</code> pulls issues/PRs into the prompt; <code>/pr view|create|fix|auto|automerge</code> drives a pull request to green from the terminal.</td></tr>
+          <tr><td><b><code>/delegate</code> + cloud sandbox</b></td><td>Hand a task to the Copilot cloud coding agent, or run the whole session in an isolated cloud environment with <code>copilot --cloud</code>. Steer remotely from GitHub Mobile with <code>/remote</code>.</td></tr>
+          <tr><td><b><code>/rubber-duck</code> &amp; <code>/fleet</code></b></td><td>A second-opinion review agent that deliberately runs a <em>complementary</em> model, and parallel subagent fan-out as a built-in command.</td></tr>
+          <tr><td><b>Scheduled prompts</b></td><td><code>/every</code> and <code>/after</code> run prompts on a schedule or after a delay — recurring chores without cron.</td></tr>
+          <tr><td><b>Session sharing</b></td><td><code>/share</code> / <code>--share-gist</code> export a session transcript (even straight to a gist); <code>--connect</code> attaches to remote sessions.</td></tr>
+          <tr><td><b>First-class LSP config</b></td><td><code>.github/lsp.json</code> + <code>/lsp test|logs|reload</code> — code intelligence without writing a plugin.</td></tr>
+          <tr><td><b>Env-var hardening</b></td><td>Inline <code>LD_*</code>/<code>DYLD_*</code>/<code>PATH</code>/<code>BASH_ENV</code> assignments in shell commands are blocked outright.</td></tr>
+          <tr><td><b>Fail-closed enterprise MCP allowlist</b></td><td>Server fingerprints verified against a policy endpoint; unverifiable servers are blocked, not waved through.</td></tr>
+          <tr><td><b>Terminal quality-of-life</b></td><td><code>copilot completion</code> shell completions, <code>/voice</code> input, <code>/theme</code>, <code>$</code> full-shell handoff, ACP server mode (<code>--acp</code>) for editor embedding.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <div class="ct">The pattern</div>
+      <p>Copilot CLI&#x27;s edge is <strong>the platform around the agent</strong>: GitHub identity, GitHub data, GitHub compute, many models. It competes less on agent internals and more on where the agent is plugged in.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 10: CLAUDE CODE EXCLUSIVES ===== -->
+  <section id="s10">
+    <div class="sec-head"><span class="sec-num">10</span><h2>What Claude Code Has That Copilot CLI Doesn&#x27;t</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">The mirror list — the depth column. Claude Code&#x27;s advantages cluster around programmability and documented control.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Advantage</th><th>What it gives you</th></tr></thead>
+        <tbody>
+          <tr><td><b>The hook system</b></td><td>30 documented events vs 7 — permission, subagent, compaction, worktree, and config lifecycles; JSON decision control (allow/deny/ask/defer); rewriting tool inputs <em>and</em> outputs; exit-code-2 blocking.</td></tr>
+          <tr><td><b>Agent SDK</b></td><td>A real TypeScript/Python SDK for building custom agents on the Claude Code runtime — Copilot&#x27;s closest analogue is ACP server mode plus JSONL parsing.</td></tr>
+          <tr><td><b>Structured output, properly</b></td><td><code>--output-format json</code> (single document) <em>and</em> <code>stream-json</code>, plus <code>--json-schema</code> for validated, typed results in scripts.</td></tr>
+          <tr><td><b>System-prompt control</b></td><td><code>--append-system-prompt</code> and three sibling flags; Copilot documents no system-prompt flag at all — you work through instruction files and custom agents.</td></tr>
+          <tr><td><b>Documented sandbox internals</b></td><td>Seatbelt on macOS, bubblewrap on Linux/WSL2, per-domain network proxy — auditable, and available standalone as <code>@anthropic-ai/sandbox-runtime</code>.</td></tr>
+          <tr><td><b>Auto memory with an index</b></td><td>Per-project memory directory with a <code>MEMORY.md</code> index loaded every session, browsable and editable via <code>/memory</code> — Copilot Memory exposes no equivalent surface.</td></tr>
+          <tr><td><b>Managed-settings depth</b></td><td>File + <code>managed-settings.d/</code> drop-ins + MDM + server-managed, and <code>managed-mcp.json</code> — policy-as-files an enterprise can diff and deploy.</td></tr>
+          <tr><td><b><code>claude doctor</code></b></td><td>One diagnostics command for install health and settings validation; Copilot spreads this across help topics, logs, and <code>/env</code>.</td></tr>
+          <tr><td><b>Session plumbing</b></td><td><code>--fork-session</code>, <code>--from-pr</code> (resume the session tied to a PR), <code>--fallback-model</code> chains, <code>--tmux</code> worktree panes.</td></tr>
+          <tr><td><b>Plugin payload breadth</b></td><td>Plugins can ship skills, agents, hooks, MCP servers, LSP servers, background monitors, and default settings in one bundle.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <div class="ct">The pattern</div>
+      <p>Claude Code&#x27;s edge is <strong>the agent as an engineering substrate</strong>: deeper events, richer machine output, documented internals, an SDK. It competes less on surrounding platform and more on how much of the agent you can program.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 11: THE CHEAT SHEET ===== -->
+  <section id="s11">
+    <div class="sec-head"><span class="sec-num">11</span><h2>The Cheat Sheet</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Ten tasks, both dialects. Each copy button grabs the pair — paste into your notes, or straight into a terminal and delete the line you don&#x27;t need.</p>
+
+    <div class="prompt-list">
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">01</span><span class="ptitle">One-shot with a git allowlist</span></div>
+          <div class="pdesc">Headless run that can only touch git.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude -p &quot;Summarize this week's commits&quot; --allowedTools &quot;Bash(git:*)&quot;
+copilot -p &quot;Summarize this week's commits&quot; --allow-tool 'shell(git:*)'" aria-label="Copy: one-shot with a git allowlist">Copy pair</button>
+      </div>
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">02</span><span class="ptitle">Full-trust one-shot (yolo)</span></div>
+          <div class="pdesc">Skip every permission prompt. Same blast radius in both.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude -p &quot;fix the failing tests&quot; --dangerously-skip-permissions
+copilot -p &quot;fix the failing tests&quot; --allow-all-tools" aria-label="Copy: full-trust one-shot">Copy pair</button>
+      </div>
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">03</span><span class="ptitle">Continue / resume</span></div>
+          <div class="pdesc">Pick up where you left off; bare resume opens a picker in both.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude --continue        # or: claude -r my-session-name
+copilot --continue       # or: copilot -r my-session-name" aria-label="Copy: continue or resume">Copy pair</button>
+      </div>
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">04</span><span class="ptitle">Add an MCP server</span></div>
+          <div class="pdesc">User-scope install of a stdio server. The project-level <code>.mcp.json</code> file is shared syntax.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude mcp add playwright -- npx @playwright/mcp@latest
+copilot mcp add playwright --type stdio -- npx @playwright/mcp@latest" aria-label="Copy: add an MCP server">Copy pair</button>
+      </div>
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">05</span><span class="ptitle">Start in plan mode</span></div>
+          <div class="pdesc">Read-only planning from the first prompt.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude --permission-mode plan
+copilot --plan" aria-label="Copy: start in plan mode">Copy pair</button>
+      </div>
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">06</span><span class="ptitle">Dial the effort</span></div>
+          <div class="pdesc">The one flag that needs no translation at all.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude --effort low
+copilot --effort low" aria-label="Copy: dial the effort">Copy pair</button>
+      </div>
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">07</span><span class="ptitle">Machine-readable output</span></div>
+          <div class="pdesc">Remember: Claude&#x27;s <code>json</code> is one document; Copilot&#x27;s is JSONL.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude -p &quot;list the TODOs&quot; --output-format json
+copilot -p &quot;list the TODOs&quot; --output-format json -s | jq -s '.'" aria-label="Copy: machine-readable output">Copy pair</button>
+      </div>
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">08</span><span class="ptitle">Isolate in a git worktree</span></div>
+          <div class="pdesc">Same flag, both tools; Copilot&#x27;s is experimental.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude -w feature-auth
+copilot -w feature-auth" aria-label="Copy: isolate in a git worktree">Copy pair</button>
+      </div>
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">09</span><span class="ptitle">Scaffold repo instructions</span></div>
+          <div class="pdesc">Generate the instruction file each tool prefers.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude   # then: /init     → writes CLAUDE.md
+copilot init              # writes .github/copilot-instructions.md" aria-label="Copy: scaffold repo instructions">Copy pair</button>
+      </div>
+      <div class="prow">
+        <div class="prow-main">
+          <div class="prow-id"><span class="pnum">10</span><span class="ptitle">Update the CLI</span></div>
+          <div class="pdesc">Keep both current — the preview one changes weekly.</div>
+        </div>
+        <button class="copy-btn" data-prompt="claude update
+copilot update" aria-label="Copy: update the CLI">Copy pair</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 12: SOURCES & PROVENANCE ===== -->
+  <section id="s12">
+    <div class="sec-head"><span class="sec-num">12</span><h2>Sources &amp; Provenance</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Every claim in this guide traces to one of these pages, fetched <strong>2026-07-27</strong>. Copilot CLI is a fast-moving public preview — re-check the cited page before betting on any single cell.</p>
+
+    <h3>GitHub Docs — Copilot CLI</h3>
+    <ul class="clean">
+      <li><a href="https://docs.github.com/en/copilot/concepts/agents/copilot-cli/about-copilot-cli">About GitHub Copilot CLI</a> · <a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference">Command reference</a> · <a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference">Plugin reference</a></li>
+      <li><a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/overview">Customizing overview</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions">Custom instructions</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-hooks">Hooks</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills">Skills</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli">Custom agents</a></li>
+      <li><a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli">Install</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli">Authenticate</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/cli-getting-started">Getting started</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/overview">Using</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/cli-best-practices">Best practices</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/steer-agents">Steering agents</a></li>
+      <li><a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli-in-actions">Actions with GITHUB_TOKEN</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/quickstart">Automation quickstart</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically">Run programmatically</a> · <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/administer-copilot-cli-for-your-enterprise">Enterprise administration</a> · <a href="https://docs.github.com/en/copilot/concepts/agents/copilot-cli/lsp-servers">LSP servers</a></li>
+    </ul>
+
+    <h3>Claude Code Docs</h3>
+    <ul class="clean">
+      <li><a href="https://code.claude.com/docs/en/cli-reference">CLI reference</a> · <a href="https://code.claude.com/docs/en/settings">Settings</a> · <a href="https://code.claude.com/docs/en/hooks">Hooks reference</a> · <a href="https://code.claude.com/docs/en/interactive-mode">Interactive mode</a></li>
+      <li><a href="https://code.claude.com/docs/en/skills">Skills</a> · <a href="https://code.claude.com/docs/en/sub-agents">Subagents</a> · <a href="https://code.claude.com/docs/en/mcp">MCP</a> · <a href="https://code.claude.com/docs/en/plugins">Plugins</a> · <a href="https://code.claude.com/docs/en/memory">Memory</a> · <a href="https://code.claude.com/docs/en/sandboxing">Sandboxing</a></li>
+      <li><a href="https://code.claude.com/docs/en/headless">Headless / programmatic</a> · <a href="https://code.claude.com/docs/en/github-actions">GitHub Actions</a></li>
+    </ul>
+
+    <div class="callout alt">
+      <div class="ct">Known doc inconsistency</div>
+      <p>GitHub&#x27;s own pages disagree on Copilot CLI&#x27;s default model — the command reference says <code>claude-sonnet-4.6</code> while the best-practices page says Claude Opus 4.5. This guide reports the reference. Either way, the noteworthy fact stands: <strong>GitHub&#x27;s CLI defaults to an Anthropic model</strong>.</p>
+    </div>
+
+    <p class="cap-note">Research workflow: this repo&#x27;s justfile ships `just ghdocs`, `just ghdoc`, `just ccdocs`, and `just ccdoc` — the exact curl pipelines used to build this guide. Raw page snapshots live in specs/copilot-cli-vs-claude-code/research/.</p>
+  </section>
+
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="wrap">
+    <div class="fq">Learn one vocabulary. Get the second tool free.</div>
+    <div class="fm">
+      Built from GitHub Docs (Copilot CLI) and Claude Code Docs · fetched 2026-07-27<br>
+      Verdicts: <span style="color:var(--ok)">✓ documented</span> · <span style="color:var(--accent-2)">◐ partial</span> · — not documented — every cell cited in section 12.
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Copy buttons: the data-prompt holds the exact text (here: command pairs).
+  // Rendered into .ptext verbatim (mono, pre-wrap) so what you see is what you copy.
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    var raw = btn.getAttribute('data-prompt') || '';
+    var main = btn.parentNode.querySelector('.prow-main');
+    if (main && !main.querySelector('.ptext')) {
+      var q = document.createElement('div');
+      q.className = 'ptext';
+      q.textContent = raw;
+      main.appendChild(q);
+    }
+  });
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.getAttribute('data-prompt') || '';
+      var done = function(){
+        var prev = 'Copy pair';
+        btn.textContent = 'Copied ✓';
+        btn.classList.add('copied');
+        setTimeout(function(){ btn.textContent = prev; btn.classList.remove('copied'); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function(){ fallback(text); done(); });
+      } else {
+        fallback(text); done();
+      }
+    });
+  });
+  // Fallback: inject the text into a textarea, auto-select it, and copy.
+  function fallback(text){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  // Flip cards: reveal each gotcha's answer on demand. Toggling .flipped on the row
+  // drives the card flip, the amber->green cell color, and the center "?"->arrow.
+  document.querySelectorAll('.flip-front').forEach(function(front){
+    front.addEventListener('click', function(){
+      var item = front.closest('.flow-item');
+      if (item){ item.classList.add('flipped'); front.setAttribute('aria-expanded','true'); }
+    });
+  });
+  document.querySelectorAll('.flip-reset').forEach(function(reset){
+    reset.addEventListener('click', function(){
+      var item = reset.closest('.flow-item');
+      if (item){
+        item.classList.remove('flipped');
+        var f = item.querySelector('.flip-front');
+        if (f) f.setAttribute('aria-expanded','false');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

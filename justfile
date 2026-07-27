@@ -48,6 +48,27 @@ check: build
 links:
     lychee --config lychee.toml docs README.md
 
+# Search GitHub Docs (unofficial API — fails loudly if it changes): `just ghdocs "copilot cli hooks"`
+ghdocs QUERY:
+    curl -fsG "https://docs.github.com/api/search/v1" \
+      --data-urlencode "query={{ QUERY }}" \
+      --data-urlencode "version=free-pro-team@latest" \
+      --data-urlencode "language=en" \
+      --data-urlencode "size=10" \
+      --data-urlencode "client_name=oh-my-html-docs" | jq -r '.hits[] | "\(.url) — \(.title)"'
+
+# Fetch one GitHub Docs article as raw markdown: `just ghdoc /en/copilot/how-tos/copilot-cli/cli-best-practices`
+ghdoc PATHNAME:
+    curl -fsG "https://docs.github.com/api/article/body" --data-urlencode "pathname={{ PATHNAME }}"
+
+# Search the Claude Code docs index (llms.txt): `just ccdocs hooks`
+ccdocs QUERY:
+    curl -fs "https://code.claude.com/docs/llms.txt" | grep -i -- "{{ QUERY }}"
+
+# Fetch one Claude Code docs page as raw markdown: `just ccdoc hooks`
+ccdoc PAGE:
+    curl -fs "https://code.claude.com/docs/en/{{ PAGE }}.md"
+
 # Regenerate CHANGELOG.md from conventional commits.
 changelog:
     uvx git-cliff --output CHANGELOG.md

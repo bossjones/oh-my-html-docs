@@ -15,6 +15,12 @@ include = [
     "specs/**/*.md",
 ]
 
+# Verbatim doc snapshots harvested from external sites (provenance for the
+# copilot-cli-vs-claude-code guide) — not authored markdown, never lint/fmt them.
+exclude = [
+    "specs/copilot-cli-vs-claude-code/research/**",
+]
+
 # Rules turned OFF. All other default-on rules — including the token-strippers
 # (MD009, MD012, MD027, MD038/39) and structural rules (MD022, MD031, MD032, MD058) — stay enabled.
 disable = [
