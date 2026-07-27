@@ -49,6 +49,10 @@
         "deny": [],
         "additionalDirectories": []
     },
+    "statusLine": {
+        "type": "command",
+        "command": "npx -y ccstatusline@latest"
+    },
     "enabledPlugins": {
         "superpowers@claude-plugins-official": true,
         "code-review@claude-plugins-official": true,
