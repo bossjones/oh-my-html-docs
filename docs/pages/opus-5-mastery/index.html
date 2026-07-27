@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A field guide to getting the best out of Claude Opus 5: unhobble the model, pull the right levers, and paste 18 ready-made prompts to see every lesson in action.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0C10">
+<title>Opus 5 Mastery — Unhobble the Model</title>
+<link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+<link rel="apple-touch-icon" href="images/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C10; --bg-soft:#0E1116; --surface:#12161C; --surface-2:#161B22;
+    --border:#232A33; --border-bright:#33404D;
+    --text:#F4F7FB; --muted:#CDD6E0; --faint:#8B96A5;
+    --accent:#D97757;                 /* the ONE accent — coral / clay */
+    --accent-dim:#8A4630;
+    --accent-glow:rgba(217,119,87,.16);
+    --accent-2:#E0B357;               /* secondary — amber ("then" / questions / warnings) */
+    --accent-2-dim:rgba(224,179,87,.14);
+    --ok:#4FE3A3;                     /* green — revealed answers / "now" */
+    --maxw:1225px;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Space Grotesk','Inter',ui-rounded,system-ui,sans-serif;
+    --body:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+  body{
+    color:var(--text); font-family:var(--body);
+    font-size:19px; line-height:1.7; -webkit-font-smoothing:antialiased;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(900px 500px at 78% -8%, var(--accent-glow), transparent 60%),
+      radial-gradient(700px 420px at 8% 30%, rgba(217,119,87,.05), transparent 65%);
+    background-repeat:no-repeat;
+  }
+  ::selection{background:var(--accent);color:var(--bg)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+  /* ---- top nav ---- */
+  .topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(11px);
+    background:color-mix(in srgb, var(--bg) 78%, transparent);border-bottom:1px solid var(--border)}
+  .topbar .inner{max-width:1180px;margin:0 auto;padding:11px 26px;display:flex;align-items:center;gap:20px}
+  .brand{font-family:var(--mono);font-size:12.5px;letter-spacing:.16em;color:var(--text);white-space:nowrap;font-weight:700}
+  .brand b{color:var(--accent)}
+  .navlinks{display:flex;gap:17px;flex-wrap:wrap;margin-left:auto}
+  .navlinks a{font-family:var(--mono);font-size:11.5px;letter-spacing:.07em;color:var(--muted);text-transform:uppercase}
+  .navlinks a:hover{color:var(--accent);text-decoration:none}
+  @media(max-width:860px){.navlinks{display:none}}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+  section{scroll-margin-top:72px}
+
+  /* ---- hero ---- */
+  .hero{border-bottom:1px solid var(--border);padding:48px 0 64px;text-align:center}
+  .hero-copy{display:flex;flex-direction:column;align-items:center}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.26em;color:var(--accent);text-transform:uppercase;font-weight:500}
+  .hero h1{font-family:var(--disp);font-weight:700;line-height:1.06;letter-spacing:-.012em;text-transform:uppercase;
+    font-size:clamp(32px,6vw,68px);margin:14px auto 26px;max-width:22ch}
+  .hero h1 .gc{color:var(--accent)}
+  .hero .lede{font-size:clamp(17px,2.3vw,22px);color:var(--muted);max-width:56ch;margin:0 auto;font-weight:500}
+  .hero .lede strong{color:var(--accent);font-weight:700}
+  .hero-bullets{list-style:none;margin:18px auto 0;padding:0;display:inline-block;text-align:left}
+  .hero-bullets li{position:relative;padding-left:30px;margin:12px 0;font-size:clamp(16px,2vw,20px);
+    color:var(--muted);font-weight:500;line-height:1.35}
+  .hero-bullets li::before{content:"";position:absolute;left:5px;top:.58em;width:9px;height:9px;border-radius:2px;
+    background:var(--accent);transform:rotate(45deg)}
+  .hero-bullets li strong{color:var(--accent);font-weight:700}
+  .hero-img{display:block;margin:44px auto 0;width:min(100%,920px);height:auto;border-radius:16px;
+    border:1px solid var(--border);box-shadow:0 28px 90px rgba(0,0,0,.55)}
+
+  /* ---- stat trio ---- */
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:34px auto 0;max-width:920px;width:100%}
+  @media(max-width:760px){.grid-3{grid-template-columns:1fr}}
+  .stat{background:linear-gradient(180deg,var(--surface-2),var(--surface));border:1px solid var(--border);
+    border-radius:14px;padding:24px 22px;position:relative;overflow:hidden;text-align:left}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+  .stat .big{font-family:var(--disp);font-weight:700;font-size:38px;line-height:1;color:var(--accent);letter-spacing:-.02em}
+  .stat .lbl{color:var(--muted);font-size:14.5px;margin-top:9px}
+
+  /* ---- table of contents ---- */
+  .toc{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:24px 26px 14px;margin:34px 0 8px}
+  .toc-h{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  .toc ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+  @media(max-width:760px){.toc ol{grid-template-columns:1fr}}
+  .toc a{display:block;padding:10px 10px;border-radius:9px;border:1px solid transparent}
+  .toc a:hover{background:var(--accent-glow);border-color:var(--border);text-decoration:none}
+  .toc .trow{display:flex;align-items:baseline;gap:11px}
+  .toc .tnum{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent)}
+  .toc .tt{font-family:var(--disp);font-weight:600;font-size:15.5px;color:var(--text);letter-spacing:-.005em}
+  .toc .td{display:block;font-size:12.5px;color:var(--muted);margin:3px 0 0 23px;line-height:1.42}
+
+  /* ---- sections ---- */
+  section{padding:104px 0 24px;border-top:1px solid var(--border)}
+  section:first-of-type{border-top:none}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+  .sec-num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700;letter-spacing:.05em}
+  h2{font-family:var(--disp);font-weight:700;letter-spacing:-.01em;font-size:clamp(30px,4vw,46px);line-height:1.08}
+  h3{font-family:var(--disp);font-weight:600;font-size:24px;margin:32px 0 10px;letter-spacing:-.005em}
+  .sub{color:var(--muted);font-size:20.5px;max-width:74ch;margin:16px 0 8px;line-height:1.6}
+  p{margin:15px 0;color:var(--text);opacity:.92}
+  strong{color:var(--text);font-weight:600}
+  .lead-rule{height:2px;width:64px;background:linear-gradient(90deg,var(--accent),transparent);margin:18px 0 6px;border-radius:2px}
+
+  /* ---- figure ---- */
+  figure{margin:38px 0}
+  figure img{width:100%;display:block;border:1px solid var(--border-bright);border-radius:14px;
+    box-shadow:0 18px 50px -24px rgba(0,0,0,.8), 0 0 0 1px var(--accent-glow)}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--faint);text-align:center;margin-top:11px;letter-spacing:.04em}
+
+  /* ---- subpoints ---- */
+  .subpoints{list-style:none;margin:18px 0 8px;padding:0;max-width:76ch}
+  .subpoints li{position:relative;padding-left:26px;margin:13px 0;color:var(--muted);font-size:18px;line-height:1.58}
+  .subpoints li::before{content:"";position:absolute;left:3px;top:9px;width:7px;height:7px;border-radius:2px;
+    background:var(--accent);transform:rotate(45deg)}
+  .subpoints li b,.subpoints li strong{color:var(--text);font-weight:600}
+  .subpoints li code{font-size:.86em}
+
+  /* ---- callout & pull-quote ---- */
+  .callout{background:var(--bg-soft);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;padding:18px 22px;margin:34px 0 22px}
+  .callout.alt{border-left-color:var(--accent-2)}
+  .callout .ct{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
+  .callout.alt .ct{color:var(--accent-2)}
+  .callout p{margin:5px 0;font-size:17px}
+  .pquote{font-family:var(--disp);font-weight:500;font-size:clamp(20px,2.8vw,27px);line-height:1.32;
+    color:var(--text);border-left:3px solid var(--accent);padding:6px 0 6px 22px;margin:30px 0;letter-spacing:-.01em}
+  .pquote .src{display:block;font-family:var(--mono);font-size:12px;color:var(--faint);font-weight:400;margin-top:12px;letter-spacing:.05em}
+
+  /* ---- table ---- */
+  .tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--border);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:620px}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--border)}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--bg-soft)}
+  tr:last-child td{border-bottom:none}
+  td b{color:var(--text)}
+  td .mono{font-family:var(--mono);color:var(--accent);font-size:13px}
+  tbody tr:hover{background:var(--accent-glow)}
+
+  /* ---- comparison matrix (old habit vs Opus 5) ---- */
+  .matrix td:first-child,.matrix th:first-child{color:var(--text);font-weight:600}
+  .matrix .o5{background:rgba(217,119,87,.07);border-left:1px solid var(--accent-dim);border-right:1px solid var(--accent-dim)}
+  .matrix thead .o5{color:var(--accent);background:rgba(217,119,87,.12)}
+  .matrix tbody tr:hover .o5{background:rgba(217,119,87,.15)}
+  .matrix td small{display:block;color:var(--muted);font-size:11.5px;line-height:1.4;margin-top:1px}
+
+  /* ---- checklist ---- */
+  .check{list-style:none;margin:18px 0;display:grid;gap:9px}
+  .check li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:13px 16px;font-size:15px;color:var(--text)}
+  .check li::before{content:"";flex:none;width:17px;height:17px;border:1.5px solid var(--accent);border-radius:5px;margin-top:3px;background:var(--accent-glow)}
+  .check li b{color:var(--text)}
+  .chk-h{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent-2);margin:26px 0 4px}
+
+  /* ---- code block ---- */
+  .code{background:#070A0D;border:1px solid var(--border);border-radius:12px;margin:22px 0;overflow:hidden}
+  .code .cbar{display:flex;align-items:center;gap:8px;padding:9px 15px;border-bottom:1px solid var(--border);background:var(--bg-soft)}
+  .code .cbar .dot{width:9px;height:9px;border-radius:50%;background:var(--border-bright)}
+  .code .cbar .cl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-left:6px}
+  .code pre{margin:0;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:var(--text);tab-size:2}
+  .code pre .c{color:var(--accent)}
+  .code pre .m{color:var(--faint)}
+  .code pre .s{color:var(--accent-2)}
+  code{font-family:var(--mono);font-size:.88em;color:var(--accent);background:var(--accent-glow);
+    border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);padding:1px 6px;border-radius:5px}
+
+  /* ---- problem -> solution flow rows + flip cards ---- */
+  .flow{display:grid;gap:18px;margin:32px 0 10px}
+  .flow-item{display:grid;grid-template-columns:60px 1fr;background:var(--surface);
+    border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .15s ease}
+  .flow-item:hover{border-color:var(--border-bright)}
+  .flow-rail{display:flex;align-items:center;justify-content:center;background:var(--bg-soft);
+    border-right:1px solid var(--border);font-family:var(--disp);font-size:28px;font-weight:700;color:var(--border-bright)}
+  .flow-grid{display:grid;grid-template-columns:1fr 52px 1.18fr;align-items:stretch}
+  .flow-cell{padding:24px 26px}
+  .flow-k{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px}
+  .flow-prob .flow-k{color:var(--accent-2)}
+  .flow-sol .flow-k{color:var(--ok)}
+  .flow-h{font-family:var(--disp);font-size:20px;font-weight:600;color:var(--text);line-height:1.22;margin-bottom:7px}
+  .flow-sol .flow-h{color:var(--ok)}
+  .flow-p{font-size:16.5px;color:var(--muted);line-height:1.52}
+  .flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--accent-2);font-size:26px;
+    background:var(--bg-soft);border-left:1px solid var(--border);border-right:1px solid var(--border)}
+  .flow-arrow::before{content:"?";font-weight:700}
+  .flow-item.flipped .flow-arrow{color:var(--ok)}
+  .flow-item.flipped .flow-arrow::before{content:"\279E";font-weight:400}
+  .flow-sol{background:linear-gradient(180deg,var(--accent-2-dim),transparent 72%)}
+  .flow-item.flipped .flow-sol{background:linear-gradient(180deg,rgba(79,227,163,.16),transparent 72%)}
+  .flow-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .flow-chip{font-family:var(--mono);font-size:12.5px;color:var(--ok);background:var(--surface);
+    border:1px solid color-mix(in srgb,var(--ok) 38%,transparent);padding:4px 12px;border-radius:20px}
+  @media(max-width:760px){
+    .flow-item{grid-template-columns:1fr}
+    .flow-rail{flex-direction:row;justify-content:flex-start;padding:10px 22px;border-right:none;border-bottom:1px solid var(--border);font-size:20px}
+    .flow-grid{grid-template-columns:1fr}
+    /* rotate only the glyph, not the whole cell — rotating the full-width cell
+       turns it into a tall strip that overlaps the neighboring text */
+    .flow-arrow{padding:6px;border:none;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .flow-arrow::before{display:inline-block}
+    .flow-item.flipped .flow-arrow::before{transform:rotate(90deg)}
+  }
+
+  /* flip card: front = amber question, back = green answer */
+  .flow-sol.flip-cell{padding:0}
+  .flip{perspective:1200px}
+  .flip-inner{display:grid;transition:transform .55s cubic-bezier(.2,.75,.25,1);transform-style:preserve-3d}
+  .flow-item.flipped .flip-inner{transform:rotateY(180deg)}
+  @media (prefers-reduced-motion:reduce){.flip-inner{transition:none}}
+  .flip-front,.flip-back{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:24px 26px}
+  .flip-front{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px;
+    min-height:158px;width:100%;border:0;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .flip-q{font-family:var(--disp);font-weight:700;font-size:21px;color:var(--accent-2);letter-spacing:-.01em;line-height:1.22}
+  .flip-front:hover .flip-q{color:var(--text)}
+  .flip-cta{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);
+    background:var(--accent-2-dim);border:1px solid color-mix(in srgb,var(--accent-2) 42%,transparent);
+    padding:8px 15px;border-radius:999px;transition:all .15s ease}
+  .flip-front:hover .flip-cta{background:var(--accent-2);color:var(--bg);border-color:var(--accent-2)}
+  .flip-back{transform:rotateY(180deg);position:relative}
+  .flip-reset{position:absolute;top:12px;right:14px;font-family:var(--mono);font-size:13px;line-height:1;color:var(--faint);
+    background:transparent;border:1px solid var(--border);border-radius:7px;padding:5px 9px;cursor:pointer;transition:all .15s ease}
+  .flip-reset:hover{color:var(--accent);border-color:var(--accent)}
+  @media print{
+    .flip-inner{transform:none !important}
+    .flip-front{display:none !important}
+    .flip-back{transform:none !important;position:static !important;-webkit-backface-visibility:visible !important;backface-visibility:visible !important}
+    .flip-reset{display:none !important}
+  }
+
+  /* ---- prompt library (rows + copy buttons) ---- */
+  .tiergroup{margin:40px 0 8px}
+  .tiergroup:first-of-type{margin-top:24px}
+  .tg-head{border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:6px}
+  .tg-head h3{margin:0;font-size:22px;color:var(--text)}
+  .tg-head h3 .pstar{color:var(--accent-2)}
+  .tg-desc{font-size:15px;color:var(--muted);margin:7px 0 0;max-width:78ch}
+  .prompt-list{display:grid;gap:10px;margin:18px 0 6px}
+  .prow{display:flex;align-items:flex-start;gap:16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:15px 18px;transition:border-color .15s ease,background .15s ease}
+  .prow:hover{border-color:var(--border-bright);background:var(--surface-2)}
+  .prow-main{flex:1;min-width:0}
+  .prow-id{display:flex;align-items:baseline;gap:11px}
+  .prow-id .pnum{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);flex:none}
+  .prow-id .ptitle{font-family:var(--disp);font-weight:600;font-size:18px;color:var(--text);letter-spacing:-.005em}
+  .prow-id .ptitle .pstar{color:var(--accent-2)}
+  .pdesc{font-size:15.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .pdesc code{font-size:.84em}
+  .ptext{margin-top:12px;padding:13px 16px;background:var(--bg-soft);border:1px solid var(--border);
+    border-left:2px solid var(--accent);border-radius:0 9px 9px 0;font-size:15px;line-height:1.62;
+    color:var(--text);opacity:.94}
+  .ptext .pq{font-family:var(--mono);color:var(--accent);opacity:.6;margin-right:4px}
+  .ptext strong{color:var(--text);font-weight:600}
+  .ptext em{color:var(--muted);font-style:italic}
+  .ptext code{font-size:.85em}
+  .copy-btn{flex:none;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-glow);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);
+    padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .15s ease}
+  .copy-btn:hover{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  .copy-btn.copied{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  @media(max-width:620px){
+    .prow{flex-direction:column;align-items:stretch;gap:12px}
+    .copy-btn{align-self:flex-start}
+  }
+
+  /* ---- misc ---- */
+  ul.clean{margin:14px 0 14px 2px;padding-left:20px}
+  ul.clean li{margin:8px 0;color:var(--text);opacity:.92}
+  ul.clean li::marker{color:var(--accent)}
+  .cap-note{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.03em;margin:10px 0 0}
+
+  footer{margin-top:70px;border-top:1px solid var(--border);padding:46px 0 70px;text-align:center}
+  footer .fq{font-family:var(--disp);font-size:22px;font-weight:600;color:var(--text)}
+  footer .fm{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:14px;letter-spacing:.05em;line-height:2}
+
+  /* ---- print fidelity ---- */
+  @media print{
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    @page{ size:Letter; margin:0; }
+    html,body{ background:var(--bg) !important; }
+    .hero-img{ height:auto !important; width:min(100%,760px) !important; }
+    section{ break-before:page; page-break-before:always; padding:54px 0 26px; }
+    figure,.stat,.callout,.pquote,.toc,.tbl-wrap,.check li,.code,.grid-3 .stat,.prow,.flow-item{
+      break-inside:avoid; page-break-inside:avoid;
+    }
+    .sec-head,h2,h3,.chk-h,.sub,.lead-rule{ break-after:avoid; page-break-after:avoid; }
+    figure{ margin:24px 0; }
+    a{ color:var(--accent) !important; text-decoration:none; }
+    .copy-btn{ display:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP NAV ===== -->
+<nav class="topbar" aria-label="Site">
+  <div class="inner">
+    <span class="brand">OPUS 5 <b>MASTERY</b></span>
+    <div class="navlinks">
+      <a href="#s0">Problems</a>
+      <a href="#s1">Model</a>
+      <a href="#s2">Then · Now</a>
+      <a href="#s3">Levers</a>
+      <a href="#s4">Prompts</a>
+      <a href="#s5">One Rule</a>
+      <a href="#s6">Migration</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="wrap hero-copy">
+    <span class="eyebrow">A Field Guide, With Prompts</span>
+    <h1>Unhobble<br>the <span class="gc">Model</span></h1>
+    <p class="lede">Anthropic deleted <strong>over 80%</strong> of Claude Code&#x27;s system prompt for the Claude&nbsp;5 generation — with <strong>no measurable performance loss</strong>. Your prompts are probably still wearing the old harness.</p>
+    <ul class="hero-bullets">
+      <li><strong>JUDGMENT:</strong> Delete rules the model no longer needs — constraints now cost tokens</li>
+      <li><strong>LEVERS:</strong> Effort, thinking, and context are the controls that matter</li>
+      <li><strong>PROMPTS:</strong> 18 ready-made prompts — copy one into a live session and watch</li>
+    </ul>
+    <img class="hero-img" src="images/hero.png" alt="Chains and straps shattering away from a glowing coral geodesic core, captioned UNHOBBLE THE MODEL">
+    <div class="grid-3">
+      <div class="stat"><div class="big">&gt;80%</div><div class="lbl">of Claude Code&#x27;s system prompt deleted for Claude 5 models — no measurable loss</div></div>
+      <div class="stat"><div class="big">1M</div><div class="lbl">token context window — the default <em>and</em> the max, consistent throughout</div></div>
+      <div class="stat"><div class="big">18</div><div class="lbl">copy-paste prompts in this guide — every lesson demonstrable in one paste</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== TABLE OF CONTENTS ===== -->
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-h">Contents</div>
+    <ol>
+      <li><a href="#s0"><span class="trow"><span class="tnum">00</span><span class="tt">Problem &amp; Solution</span></span><span class="td">Three ways old prompting habits hurt Opus 5.</span></a></li>
+      <li><a href="#s1"><span class="trow"><span class="tnum">01</span><span class="tt">The Mental Model</span></span><span class="td">The context stack: system prompt → CLAUDE.md → skills → references.</span></a></li>
+      <li><a href="#s2"><span class="trow"><span class="tnum">02</span><span class="tt">Then → Now</span></span><span class="td">Five paradigm shifts in context engineering. Flip each card.</span></a></li>
+      <li><a href="#s3"><span class="trow"><span class="tnum">03</span><span class="tt">The Levers</span></span><span class="td">Effort · thinking · 1M context · subagents.</span></a></li>
+      <li><a href="#s4"><span class="trow"><span class="tnum">04</span><span class="tt">The Prompt Library</span></span><span class="td">All 18 prompts, in 4 tiers. Copy any one.</span></a></li>
+      <li><a href="#s5"><span class="trow"><span class="tnum">05</span><span class="tt">The One Rule</span></span><span class="td">Delete constraints. Rely on context and judgment.</span></a></li>
+      <li><a href="#s6"><span class="trow"><span class="tnum">06</span><span class="tt">Old Habits vs Opus 5</span></span><span class="td">What to remove from your prompts, and why.</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ===== SECTION 00: PROBLEM & SOLUTION ===== -->
+  <section id="s0">
+    <div class="sec-head"><span class="sec-num">00</span><h2>Problem &amp; Solution</h2></div>
+    <div class="lead-rule"></div>
+    <p class="pquote">The habits that made Claude 4 reliable make Opus 5 slower, wordier, and more expensive.</p>
+
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-rail">1</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Problem</div>
+            <div class="flow-h">Your prompt is fighting the model</div>
+            <div class="flow-p">System prompts and CLAUDE.md files stuffed with Claude-4-era guardrails send conflicting messages. Opus 5 burns tokens resolving the contradictions between your rules, your repo docs, and your actual request — before it does any work.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">Can prompting fix this?</span>
+                  <span class="flip-cta">Reveal the answer &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">The fix</div>
+                  <div class="flow-h">Delete constraints, trust judgment</div>
+                  <div class="flow-p">Remove rules that pre-empt worst cases the model no longer produces. State the goal and the genuine constraints; let surrounding context (the code, the repo, the request) carry the rest. That&#x27;s the exact move behind the &gt;80% system-prompt deletion.</div>
+                  <div class="flow-chips"><span class="flow-chip">prompt 14</span><span class="flow-chip">prompt 18</span></div>
+                  <button type="button" class="flip-reset" aria-label="Ask again">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">2</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Problem</div>
+            <div class="flow-h">Answers and documents run long</div>
+            <div class="flow-p">Opus 5&#x27;s default responses, agentic narration, and written files all run longer than prior models&#x27;. Lowering effort won&#x27;t fix it — effort controls how much the model <em>thinks</em>, not how much it <em>says</em>.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">Can prompting fix this?</span>
+                  <span class="flip-cta">Reveal the answer &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">The fix</div>
+                  <div class="flow-h">Calibrate length explicitly</div>
+                  <div class="flow-p">Length is a prompt-level control now. A short conciseness instruction, a <code>&lt;tone_preference&gt;</code> reminder near the end of a long prompt, a narration cadence, a deliverable-length rule — each is one sentence, and each works.</div>
+                  <div class="flow-chips"><span class="flow-chip">prompts 01&#8211;04</span></div>
+                  <button type="button" class="flip-reset" aria-label="Ask again">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">3</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Problem</div>
+            <div class="flow-h">Your scaffolding now compounds</div>
+            <div class="flow-p">&#x27;Double-check your answer.&#x27; &#x27;Add a final verification step.&#x27; &#x27;Spawn a subagent to review.&#x27; Opus 5 already verifies and self-corrects — legacy scaffolding stacks on top of built-in behavior and pays twice for the same assurance.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">Can prompting fix this?</span>
+                  <span class="flip-cta">Reveal the answer &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">The fix</div>
+                  <div class="flow-h">Remove it — and cap delegation</div>
+                  <div class="flow-p">Strip explicit verification instructions: removing them cuts wasted tokens with <strong>no loss in quality</strong>. Where your harness allows subagents, say when delegation is worth it and keep spawn counts low.</div>
+                  <div class="flow-chips"><span class="flow-chip">prompt 06</span><span class="flow-chip">prompt 09</span></div>
+                  <button type="button" class="flip-reset" aria-label="Ask again">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 01: THE MENTAL MODEL ===== -->
+  <section id="s1">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The Mental Model</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Everything the model sees assembles into one stack. Master the stack and every prompting decision becomes: <em>which layer does this belong in, and does it need to load right now?</em></p>
+    <figure>
+      <img src="images/context-stack.png" alt="Four ascending translucent panels labeled system prompt, CLAUDE.md, skills, and references feeding a glowing prompt card, captioned CONTEXT, NOT CONSTRAINTS">
+      <figcaption>Fig. 1 · The context stack. Guidance lives at the shallowest layer that still loads it only when it&#x27;s needed.</figcaption>
+    </figure>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Layer</th><th>What belongs there</th><th>What doesn&#x27;t</th></tr></thead>
+        <tbody>
+          <tr><td><b>System prompt</b></td><td>Product context and operational mode — who the agent is, what it&#x27;s for.</td><td>Behavioral micro-rules the model handles by default.</td></tr>
+          <tr><td><b>CLAUDE.md</b></td><td>A brief repo purpose + the genuine gotchas (the things that would burn a newcomer).</td><td>Restating the obvious; long guidance better served as a skill.</td></tr>
+          <tr><td><b>Skills</b></td><td>Team opinions, workflows, and deep guidance — retrieved only when relevant.</td><td>Everything-upfront dumps; over-constraint outside critical areas.</td></tr>
+          <tr><td><b>References</b></td><td><code>@</code>-mentions of specs, mockups, real code. Code beats descriptions — an HTML mockup outperforms design prose.</td><td>Paraphrases of things you could link or paste directly.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <div class="ct">Memorize this</div>
+      <p>System prompt → CLAUDE.md → Skills → References. Put guidance at the shallowest layer that still loads it <strong>only when needed</strong> — that&#x27;s progressive disclosure, and it&#x27;s the organizing principle of the whole stack. In Claude Code, <code>/doctor</code> will right-size your CLAUDE.md and skills for you.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 02: THEN -> NOW ===== -->
+  <section id="s2">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Then &#8594; Now</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Five paradigm shifts separate Claude-4-era context engineering from the Claude-5 generation. The old habit is on the left. Flip each card for the new rule.</p>
+    <figure>
+      <img src="images/then-now.png" alt="Two large cards mid-flip around a coral axis of light: an amber card labeled THEN and a green card labeled NOW">
+      <figcaption>Fig. 2 · Every shift is the same motion: replace a written rule with a designed context.</figcaption>
+    </figure>
+
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-rail">1</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Then</div>
+            <div class="flow-h">Give rules</div>
+            <div class="flow-p">Explicit guardrails against worst cases: <em>&#x27;default to writing no comments. Never write multi-paragraph docstrings.&#x27;</em></div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What&#x27;s the new rule?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">Now</div>
+                  <div class="flow-h">Let the model use judgment</div>
+                  <div class="flow-p"><em>&#x27;Write code that reads like the surrounding code: match its comment density, naming, and idiom.&#x27;</em> One principle replaces a pile of prohibitions — and adapts to every repo it lands in.</div>
+                  <button type="button" class="flip-reset" aria-label="Show the old habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">2</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Then</div>
+            <div class="flow-h">Give examples</div>
+            <div class="flow-p">Usage examples in every tool description, showing the model how it should call things.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What&#x27;s the new rule?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">Now</div>
+                  <div class="flow-h">Design interfaces</div>
+                  <div class="flow-p">The interface itself teaches usage. Defining a status field as <code>pending | in_progress | completed</code> suggests the whole workflow — no example needed. Enumerations and constraints are the new documentation.</div>
+                  <button type="button" class="flip-reset" aria-label="Show the old habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">3</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Then</div>
+            <div class="flow-h">Put it all upfront</div>
+            <div class="flow-p">Load every piece of guidance into the system prompt at session start, just in case it&#x27;s needed.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What&#x27;s the new rule?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">Now</div>
+                  <div class="flow-h">Progressive disclosure</div>
+                  <div class="flow-p">Guidance moves into skills the model retrieves when relevant; tool definitions defer-load via search. Organize CLAUDE.md and skills as a tree whose branches load at the right moment — not a warehouse loaded all at once.</div>
+                  <button type="button" class="flip-reset" aria-label="Show the old habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">4</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Then</div>
+            <div class="flow-h">Repeat yourself</div>
+            <div class="flow-p">The same instruction duplicated in the system prompt <em>and</em> the tool description, because older models missed it otherwise.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What&#x27;s the new rule?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">Now</div>
+                  <div class="flow-h">Say it once, in the tool</div>
+                  <div class="flow-p">Tool usage instructions live solely in the tool description. Duplication isn&#x27;t reinforcement anymore — it&#x27;s two places for the guidance to drift apart and conflict.</div>
+                  <button type="button" class="flip-reset" aria-label="Show the old habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">5</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Then</div>
+            <div class="flow-h">Memory by hand</div>
+            <div class="flow-p">Users hotkeying facts into CLAUDE.md so the next session wouldn&#x27;t forget them.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">What&#x27;s the new rule?</span>
+                  <span class="flip-cta">Flip the card &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">Now</div>
+                  <div class="flow-h">Auto-memory</div>
+                  <div class="flow-p">The model preserves relevant memories tied to the work and the user on its own. CLAUDE.md goes back to being what it should be: a small, sharp file of repo gotchas — not a junk drawer of session residue.</div>
+                  <button type="button" class="flip-reset" aria-label="Show the old habit">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 03: THE LEVERS ===== -->
+  <section id="s3">
+    <div class="sec-head"><span class="sec-num">03</span><h2>The Levers</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Opus 5 has three real controls — effort, thinking, and context — plus one behavior worth governing: delegation. Everything else is prompting.</p>
+    <figure>
+      <img src="images/levers.png" alt="A dark control console with three glowing coral sliders labeled effort, thinking, and context">
+      <figcaption>Fig. 3 · Effort is your cost dial, thinking stays on, context is a non-issue at 1M tokens.</figcaption>
+    </figure>
+
+    <h3>Effort — the primary cost dial</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Level</th><th>When to use it</th><th>What you get</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">low / medium</td><td>Your default cost-and-latency control wherever quality holds — use them liberally.</td><td>Strong quality at a fraction of the tokens and latency.</td></tr>
+          <tr><td class="mono">high</td><td>The out-of-box default. Start here, then adjust against your own evals.</td><td>Full-strength reasoning for everyday hard work.</td></tr>
+          <tr><td class="mono">xhigh</td><td>The most demanding coding and agentic tasks.</td><td>Maximum depth — priced accordingly.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap-note">Migrating from a prior model? Don&#x27;t carry effort defaults over — re-run an effort sweep on your own evals (prompt 12).</p>
+
+    <h3>Thinking — leave it on</h3>
+    <ul class="subpoints">
+      <li><b>On by default</b>, and it can only be disabled at effort <code>high</code> or below. The right way to cut cost is lower effort with thinking <em>on</em> — for most tasks that beats thinking-off at similar cost.</li>
+      <li><b>If you must run thinking-off</b>, two artifacts can appear: tool calls written as visible text (the call never runs, and the leaked text pollutes later turns), and internal XML tags leaking into output.</li>
+      <li><b>Never instruct the model &#x27;don&#x27;t think&#x27;</b> — that kind of rule <em>increases</em> tag leakage. And don&#x27;t name thinking tags specifically; the general instruction below works better.</li>
+    </ul>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">The thinking-off mitigation · one combined instruction</span></div>
+      <pre><span class="m"># Add to the system prompt of any integration that must disable thinking:</span>
+When you use a tool, you may say a brief sentence first. If no tool can express
+what the user asked for, say so instead of guessing. Do not include internal or
+system XML tags in your response.</pre>
+    </div>
+
+    <h3>Context &amp; delegation</h3>
+    <ul class="subpoints">
+      <li><b>1M tokens is the default and the max.</b> Instruction following, tool calling, and reasoning stay consistent through the whole window — stop engineering around a small-context model.</li>
+      <li><b>Opus 5 delegates readily.</b> Great for genuinely independent, sizeable tracks; a cost multiplier on small tasks. Give explicit guidance on when delegation is worth it, or set hard caps (prompt 09).</li>
+      <li><b>Reviews:</b> it finds real bugs at a high rate with few false positives — but it takes severity filters literally. Ask for <em>everything</em>, then triage (prompt 10).</li>
+    </ul>
+  </section>
+
+  <!-- ===== SECTION 04: THE PROMPT LIBRARY ===== -->
+  <section id="s4">
+    <div class="sec-head"><span class="sec-num">04</span><h2>The Prompt Library</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Eighteen ready-made prompts in four tiers, each built to make one Opus 5 behavior visible in a live session. Hit <strong>Copy prompt</strong> and paste. Prompts marked <span style="color:var(--accent-2)">&#9733;</span> are run-it-twice experiments — the lesson is in the diff between the two runs.</p>
+    <figure>
+      <img src="images/tiers.png" alt="A tiered staircase of glowing prompt cards with copy icons rising toward a bright terminal window, captioned COPY. PASTE. SEE IT.">
+      <figcaption>Fig. 4 · Four tiers: shape the response, calibrate trust, run agentic work, then re-engineer your context.</figcaption>
+    </figure>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Tier 1 · Response Shaping</h3><p class="tg-desc">Length and narration are prompt-level controls on Opus 5 — effort won&#x27;t shorten what the model <em>says</em>. These four instructions are the official calibrations; each pairs the instruction with a small task so you see the effect immediately.</p></div>
+      <div class="prompt-list">
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">01</span><span class="ptitle">Dial In Conciseness</span></div>
+            <div class="pdesc">The canonical conciseness instruction, applied for the whole session.</div>
+          </div>
+          <button class="copy-btn" data-prompt="For the rest of this session: keep responses focused, brief, and concise. Keep disclaimers and caveats short, and spend most of the response on the main answer. When asked to explain something, give a high-level summary unless an in-depth explanation is specifically requested. Now — explain how HTTP caching works." aria-label="Copy the prompt for Dial In Conciseness">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">02</span><span class="ptitle">The End-of-Prompt Reminder</span></div>
+            <div class="pdesc">In a long prompt, a short tagged reminder near the <em>end</em> reinforces tone better than one more rule at the top.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Walk me through this project&#x27;s architecture: the major modules, how data flows between them, and where the seams are. &lt;tone_preference&gt;Keep outputs reasonably concise.&lt;/tone_preference&gt;" aria-label="Copy the prompt for The End-of-Prompt Reminder">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">03</span><span class="ptitle">Narration Cadence</span></div>
+            <div class="pdesc">Opus 5 narrates agentic work readily. Describe the cadence you want instead of saying &#x27;stop narrating&#x27;.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Before your first tool call, say in one sentence what you&#x27;re about to do. While working, give a brief update only when you find something important or change direction. When you finish, lead with the outcome: your first sentence should answer &#x27;what happened&#x27; or &#x27;what did you find&#x27;, with supporting detail after it for readers who want it. Now — find every TODO and FIXME comment in this repo and tell me which three actually matter." aria-label="Copy the prompt for Narration Cadence">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">04</span><span class="ptitle">Deliverable Length</span></div>
+            <div class="pdesc">Files Opus 5 writes to disk run long too — calibrate documents separately from chat.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Match the length of written documents to what the task needs: cover the substance, but do not pad with filler sections, redundant summaries, or boilerplate. Now — write a CONTRIBUTING.md for this repo." aria-label="Copy the prompt for Deliverable Length">Copy prompt</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Tier 2 · Scope &amp; Trust</h3><p class="tg-desc">Opus 5 verifies its own work, fixes its own mistakes, and will expand a task&#x27;s scope if you let it. These prompts calibrate how much rope to give it — and prove you can cut the old safety nets.</p></div>
+      <div class="prompt-list">
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">05</span><span class="ptitle">Constrain the Scope</span></div>
+            <div class="pdesc">The official scope instruction, for narrow tasks you don&#x27;t want widened, narrowed, or transformed.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Deliver what was asked, at the scope intended. Make routine judgment calls yourself, and check in only when different readings of the request would lead to materially different work. If the request seems mistaken or a better approach exists, say so in a sentence and continue with the task as asked rather than quietly narrowing, widening, or transforming it. Finish the whole task, and stop short of actions that are clearly beyond what was asked. Now — fix the one failing test in this repo. Nothing else." aria-label="Copy the prompt for Constrain the Scope">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">06</span><span class="ptitle">Cut the Safety Net <span class="pstar">&#9733;</span></span></div>
+            <div class="pdesc">Run-it-twice: your old verification boilerplate vs nothing. Same task, two fresh sessions — compare tokens, tool calls, and outcome quality.</div>
+          </div>
+          <button class="copy-btn" data-prompt="RUN 1 (fresh session): Add a --version flag to this project&#x27;s CLI. After implementing, include a final verification step: re-read every file you changed, double-check your work, and verify the implementation is correct before responding. RUN 2 (another fresh session): Add a --version flag to this project&#x27;s CLI. THEN: compare the two runs — total tokens, number of tool calls, and whether run 2&#x27;s result was any worse. It usually isn&#x27;t: Opus 5 verifies non-trivial work unprompted, and explicit verification instructions cause over-verification." aria-label="Copy the prompt for Cut the Safety Net">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">07</span><span class="ptitle">Corrections That Matter</span></div>
+            <div class="pdesc">Opus 5 narrates its self-corrections more than prior models. Limit the narration to corrections that change your decisions.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Only correct an earlier statement when the error would change the user&#x27;s code, conclusions, or decisions. State corrections plainly and briefly, then continue the task. For slips that change nothing for the user, make the fix and move on without noting it. Now — audit the dependency versions in this project and tell me which are meaningfully outdated." aria-label="Copy the prompt for Corrections That Matter">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">08</span><span class="ptitle">Disagree, Then Do It</span></div>
+            <div class="pdesc">Give the model a deliberately questionable request and watch it flag the concern in one sentence — then proceed as asked.</div>
+          </div>
+          <button class="copy-btn" data-prompt="If a request seems mistaken or a better approach exists, say so in one sentence, then continue with the task as asked. Now — convert this repo&#x27;s README from Markdown to reStructuredText." aria-label="Copy the prompt for Disagree, Then Do It">Copy prompt</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Tier 3 · Agentic &amp; Review</h3><p class="tg-desc">Where Opus 5 is strongest — long-horizon coding, code review, vision-driven work — and where the two behavioral traps live: eager delegation and literal severity filters.</p></div>
+      <div class="prompt-list">
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">09</span><span class="ptitle">Cap the Subagents</span></div>
+            <div class="pdesc">The official delegation guidance. Without it, Opus 5 spawns more readily than prior models — a cost multiplier on small tasks.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Delegate to a subagent only for large tasks that are genuinely independent and parallelizable, such as a wide multi-file investigation. Do not delegate work you can finish yourself in a handful of tool calls, and do not use subagents to verify or double-check your own work. If one subagent can complete the task, use one rather than several, and keep spawn counts low. Now — work out how error handling flows through this repo and summarize it." aria-label="Copy the prompt for Cap the Subagents">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">10</span><span class="ptitle">Report Everything, Filter Later <span class="pstar">&#9733;</span></span></div>
+            <div class="pdesc">Run-it-twice: Opus 5 follows &#x27;only report high-severity issues&#x27; literally and under-reports. Ask for everything; triage in a second pass.</div>
+          </div>
+          <button class="copy-btn" data-prompt="RUN 1 (fresh session): Review the changes on this branch. Only report high-severity issues; be conservative. RUN 2 (another fresh session): Review the changes on this branch. Report every issue you find, large or small — do not filter for severity; we will triage in a second pass. THEN: compare the two lists. Run 1 obeyed its filter literally and left real findings unreported; run 2&#x27;s extra findings are mostly real issues, not noise — that&#x27;s the model&#x27;s review precision working for you." aria-label="Copy the prompt for Report Everything, Filter Later">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">11</span><span class="ptitle">Whole Spec, Then Hands Off</span></div>
+            <div class="pdesc">Opus 5 performs best given the complete task specification up front and left to run — it finishes tasks rather than leaving stubs.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Here is the complete specification — implement all of it end to end before coming back to me: add structured logging to this project. Requirements: (1) a single logger module with debug/info/warn/error levels; (2) timestamps and the calling module name on every line; (3) log level configurable via environment variable; (4) every existing print/console call migrated; (5) logs written to stderr, not stdout. Do not leave stubs, placeholders, or TODO comments. Make routine decisions yourself and report back only when the whole thing works." aria-label="Copy the prompt for Whole Spec, Then Hands Off">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">12</span><span class="ptitle">The Effort Sweep <span class="pstar">&#9733;</span></span></div>
+            <div class="pdesc">One fixed task, run once per effort level (set effort in your harness or API between runs). Find where quality holds and stop paying for more.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Effort-sweep task — run this identical prompt once at low, once at medium, and once at high effort, then diff the three outputs: Refactor the most complex function in this repo for readability without changing its behavior, and list the specific changes you made. If low or medium matches high on this task, that&#x27;s your new default — low and medium effort deliver strong quality at a fraction of the tokens and latency." aria-label="Copy the prompt for The Effort Sweep">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">13</span><span class="ptitle">See It, Verify It</span></div>
+            <div class="pdesc">Vision peaks when the model can iteratively analyze, crop, and visually verify with tools — cheaper than raising effort.</div>
+          </div>
+          <button class="copy-btn" data-prompt="[Attach a screenshot of any UI.] Recreate this interface as a single self-contained HTML file. Work in a loop: render your file, screenshot it, compare against the original, zoom into the regions that differ, and fix them. Repeat until the two are visually indistinguishable, then show me the final side-by-side." aria-label="Copy the prompt for See It, Verify It">Copy prompt</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Tier 4 · Context Engineering</h3><p class="tg-desc">The unhobbling tier: turn the paradigm shifts of section 02 on your own setup. Two of these are the highest-leverage prompts in the guide.</p></div>
+      <div class="prompt-list">
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">14</span><span class="ptitle">Audit Your CLAUDE.md <span class="pstar">&#9733;</span></span></div>
+            <div class="pdesc">The single highest-leverage paste in this guide. Find the rules that fight the model, the conflicts, and the filler.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Audit my CLAUDE.md against how you actually behave by default. List: (1) every rule that constrains something you already do well without it — verification, double-checking, conciseness, comment style; (2) every pair of rules that conflict with each other or with your defaults; (3) every line that restates the obvious or describes things you can read from the code. Propose the deletions with a one-sentence justification each, show me the slimmed file, and wait for my approval before changing anything." aria-label="Copy the prompt for Audit Your CLAUDE.md">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">15</span><span class="ptitle">Guidance Into a Skill</span></div>
+            <div class="pdesc">Progressive disclosure, applied: move a long always-loaded block into a retrieved-when-relevant skill.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Find the longest block of procedural guidance in my CLAUDE.md — the kind that only matters for one type of task. Convert it into a skill: a short description that says exactly when it applies, plus a separate instruction file that loads only then. Show me the new skill and the CLAUDE.md diff, and explain what the always-loaded context saves per session." aria-label="Copy the prompt for Guidance Into a Skill">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">16</span><span class="ptitle">Right-Size Everything</span></div>
+            <div class="pdesc">The built-in checkup (in Claude Code, this is what <code>/doctor</code> does) — then act on what it finds.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Run a context health check on this project: evaluate my CLAUDE.md and every skill for size and load behavior. Flag anything oversized, redundant, always-loaded when it should be progressive, or conflicting — then apply the top three fixes and show me the before/after token footprint. (In Claude Code you can also just type /doctor.)" aria-label="Copy the prompt for Right-Size Everything">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">17</span><span class="ptitle">Interface Over Examples</span></div>
+            <div class="pdesc">Shift 2, applied to your own tools: let enumerations and constraints do the teaching.</div>
+          </div>
+          <button class="copy-btn" data-prompt="Here is one of my tool definitions: [paste a tool/MCP definition]. Rewrite it so the interface itself teaches correct usage: enumerate the legal values for each parameter, add constraints instead of prose warnings, move any instructions currently living in my system prompt into this tool&#x27;s description, and delete the usage examples. Then explain, parameter by parameter, what behavior each interface choice implies." aria-label="Copy the prompt for Interface Over Examples">Copy prompt</button>
+        </div>
+        <div class="prow">
+          <div class="prow-main">
+            <div class="prow-id"><span class="pnum">18</span><span class="ptitle">The Unhobbling A/B <span class="pstar">&#9733;</span></span></div>
+            <div class="pdesc">The guide&#x27;s thesis, tested on your own work: your full rule-laden framing vs a stripped goal-and-context framing.</div>
+          </div>
+          <button class="copy-btn" data-prompt="RUN 1 (fresh session): take a real task from your backlog and prompt it the way you normally do — full system rules, CLAUDE.md untouched, all your usual instructions. RUN 2 (another fresh session): the same task, stripped — state the goal, the genuine constraints, and pointers to the relevant files; delete every behavioral rule. THEN: compare correctness, tokens, and how often each run had to reconcile conflicting instructions. This is the &gt;80% deletion, reproduced at your scale." aria-label="Copy the prompt for The Unhobbling A/B">Copy prompt</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 05: THE ONE RULE ===== -->
+  <section id="s5">
+    <div class="sec-head"><span class="sec-num">05</span><h2>The One Rule</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Every pattern in this guide is one move, applied somewhere new:</p>
+    <figure>
+      <img src="images/one-rule.png" alt="A single glowing rule card standing among faded crumpled cards dissolving into particles, captioned DELETE CONSTRAINTS, TRUST JUDGMENT">
+    </figure>
+    <p class="pquote">Delete constraints. Rely on context and model judgment.<span class="src">The &gt;80% system-prompt deletion is this rule, applied without flinching.</span></p>
+    <ul class="subpoints">
+      <li><b>The definition.</b> A constraint earns its place only if the model, given your context, would otherwise get it wrong. Everything else is scar tissue from older models — and now it costs tokens, adds conflicts, and caps the model&#x27;s judgment at yours.</li>
+      <li><b>The stakes.</b> Overconstraining is no longer safe redundancy. Conflicting messages across the system prompt, CLAUDE.md, and the request force Opus 5 to spend its effort resolving <em>you</em> instead of the problem.</li>
+    </ul>
+    <div class="callout">
+      <div class="ct">The bigger pattern</div>
+      <p>Modern models thrive on <strong>less constraint and more intelligent interface design</strong>. Simplify the prompt, structure the context, and let judgment fill the space you cleared. When in doubt: delete it, and let prompt 18 tell you if you were wrong.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 06: OLD HABITS vs OPUS 5 ===== -->
+  <section id="s6">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Old Habits vs Opus 5</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Opus 5 runs well on prior-generation prompts out of the box — this table is tuning, not rescue. But every row on the left is now either wasted tokens or actively working against you.</p>
+
+    <div class="tbl-wrap">
+      <table class="matrix">
+        <thead>
+          <tr><th>Concern</th><th>Old habit</th><th class="o5">On Opus 5</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Verbosity</td><td>Lower effort / hope for the best<small>effort never controlled response length</small></td><td class="o5">Prompt for length explicitly<small>prompts 01–04 — effort controls thinking, not saying</small></td></tr>
+          <tr><td>Verification</td><td>&#x27;Double-check your answer&#x27;<small>needed on older models</small></td><td class="o5">Delete it<small>built-in self-verification; instructions compound → over-verification</small></td></tr>
+          <tr><td>Self-correction</td><td>&#x27;Re-verify before responding&#x27;</td><td class="o5">Delete it — govern the narration instead<small>prompt 07</small></td></tr>
+          <tr><td>Code review</td><td>&#x27;Only report high-severity issues&#x27;<small>a noise filter for chatty reviewers</small></td><td class="o5">&#x27;Report everything&#x27;, triage after<small>severity filters are obeyed literally — prompt 10</small></td></tr>
+          <tr><td>Subagents</td><td>Encourage delegation<small>older models under-delegated</small></td><td class="o5">Cap and scope it<small>delegates readily; multiply cost on small tasks — prompt 09</small></td></tr>
+          <tr><td>Effort</td><td>Carry defaults from the last model</td><td class="o5">Re-sweep on your evals<small>low/medium are strong; xhigh for the hardest work — prompt 12</small></td></tr>
+          <tr><td>Thinking</td><td>Disable to save cost</td><td class="o5">Keep on, lower effort instead<small>thinking-on at low beats thinking-off at similar cost</small></td></tr>
+          <tr><td>Vision</td><td>Prompt-side workarounds<small>tuned for weaker vision</small></td><td class="o5">Re-validate, then delete; verify with tools<small>iterate-crop-verify beats thinking alone — prompt 13</small></td></tr>
+          <tr><td>Context</td><td>Aggressive trimming and summarizing</td><td class="o5">Relax — 1M default and max<small>behavior consistent throughout the window</small></td></tr>
+          <tr><td>Guidance</td><td>Everything upfront, repeated twice</td><td class="o5">Progressive disclosure, said once<small>skills + tool descriptions — prompts 15–17</small></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="chk-h">The migration tax — what to physically remove</p>
+    <ul class="check">
+      <li><b>Verification scaffolding:</b> &#x27;include a final verification step&#x27;, &#x27;use a subagent to verify&#x27;, &#x27;double-check your answer&#x27; — removing these cuts tokens with no loss in quality.</li>
+      <li><b>Don&#x27;t-think rules:</b> any instruction not to think or reason — it increases internal-tag leakage. Use the general mitigation instead (section 03).</li>
+      <li><b>Conservative review filters:</b> severity caps in review prompts — they are followed literally and hide real findings.</li>
+      <li><b>Redundant micro-rules:</b> comment bans, docstring limits, style prohibitions the surrounding code already implies — replace piles of them with one judgment principle.</li>
+    </ul>
+
+    <div class="callout alt">
+      <div class="ct">Honest caveat</div>
+      <p>None of this means &#x27;no rules ever&#x27;. Critical areas — safety, compliance, hard product constraints — still deserve explicit instructions, stated once, at the right layer of the stack. The tax being repealed is on <em>defensive</em> rules: the ones that existed because you couldn&#x27;t trust the model&#x27;s judgment. Now you mostly can, and prompt 18 will show you where you still can&#x27;t.</p>
+    </div>
+
+    <p class="pquote">Old prompts still run. They just pay a tax the model no longer charges.<span class="src">delete the scaffolding · calibrate the length · sweep the effort · trust, then verify with an A/B</span></p>
+  </section>
+
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="wrap">
+    <div class="fq">State the goal. Structure the context. Delete the rest.</div>
+    <div class="fm">
+      Sourced from Anthropic&#x27;s <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5">Prompting Claude Opus 5</a>
+      and <a href="https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models">The New Rules of Context Engineering</a><br>
+      18 prompts above — copy any one into a live session and see it in action.
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Render each prompt's text INSIDE its card, from the same data-prompt the button copies.
+  // Light markdown: escape HTML first, then `code`, **bold**, *italic*.
+  function renderPrompt(raw){
+    var s = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+    return s;
+  }
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    var raw = btn.getAttribute('data-prompt') || '';
+    var main = btn.parentNode.querySelector('.prow-main');
+    if (main && !main.querySelector('.ptext')) {
+      var q = document.createElement('div');
+      q.className = 'ptext';
+      q.innerHTML = '<span class="pq">&#10095;</span>' + renderPrompt(raw);
+      main.appendChild(q);
+    }
+  });
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.getAttribute('data-prompt') || '';
+      var done = function(){
+        var prev = 'Copy prompt';
+        btn.textContent = 'Copied ✓';
+        btn.classList.add('copied');
+        setTimeout(function(){ btn.textContent = prev; btn.classList.remove('copied'); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function(){ fallback(text); done(); });
+      } else {
+        fallback(text); done();
+      }
+    });
+  });
+  // Fallback: inject the text into a textarea, auto-select it, and copy.
+  function fallback(text){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  // Flip cards: reveal each row's answer on demand. Toggling .flipped on the row
+  // drives the card flip, the amber->green cell color, and the center "?"->arrow.
+  document.querySelectorAll('.flip-front').forEach(function(front){
+    front.addEventListener('click', function(){
+      var item = front.closest('.flow-item');
+      if (item){ item.classList.add('flipped'); front.setAttribute('aria-expanded','true'); }
+    });
+  });
+  document.querySelectorAll('.flip-reset').forEach(function(reset){
+    reset.addEventListener('click', function(){
+      var item = reset.closest('.flow-item');
+      if (item){
+        item.classList.remove('flipped');
+        var f = item.querySelector('.flip-front');
+        if (f) f.setAttribute('aria-expanded','false');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

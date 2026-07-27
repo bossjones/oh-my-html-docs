@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="planf3 spec: build a standalone HTML guide teaching engineers to get the best out of Claude Opus 5, then import it into oh-my-html-docs.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0C10">
+<title>Plan: Opus 5 Mastery — Standalone HTML Guide</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0C10'/%3E%3Cpath d='M16 7a9 9 0 1 0 9 9' fill='none' stroke='%23D97757' stroke-width='3.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23D97757'/%3E%3C/svg%3E">
+<style>
+  /* ===== Synced visual identity — dark + coral/clay. Generated images match this. ===== */
+  :root{
+    --bg:#0A0C10; --bg-soft:#0E1116; --surface:#12161C; --surface-2:#161B22;
+    --border:#232A33; --border-bright:#33404D;
+    --text:#F4F7FB; --muted:#C9D2DD; --faint:#8B96A5;
+    --accent:#D97757;                 /* the ONE accent — coral / clay */
+    --accent-dim:#8A4630;
+    --accent-glow:rgba(217,119,87,.16);
+    --accent-2:#E0B357;               /* secondary — amber (warnings / "then") */
+    --ok:#4FE3A3;                     /* green — done / "now" */
+    --maxw:1140px;
+    --bar-h:52px;                     /* sticky topbar height — sections offset by this */
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    /* ui-rounded before system-ui so display still differs from body if Space Grotesk is absent */
+    --disp:'Space Grotesk','Inter',ui-rounded,system-ui,sans-serif;
+    --body:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+  body{color:var(--text);font-family:var(--body);font-size:17px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;background:var(--bg);
+    background-image:radial-gradient(900px 480px at 80% -10%, var(--accent-glow), transparent 60%);
+    background-repeat:no-repeat}
+  ::selection{background:var(--accent);color:var(--bg)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+  main{max-width:var(--maxw);margin:0 auto;padding:34px 26px 90px}
+
+  header h1{font-family:var(--disp);font-weight:700;letter-spacing:-.022em;line-height:1.1;
+    font-size:clamp(30px,5vw,52px);margin:10px 0 6px}
+  header h1::before{content:"PLANF3 · SPEC";display:block;font-family:var(--mono);font-size:12px;
+    letter-spacing:.26em;color:var(--accent);margin-bottom:14px}
+  details.meta{margin:22px 0 8px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+  details.meta summary{cursor:pointer;padding:12px 18px;font-family:var(--mono);font-size:11.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  details.meta dl{display:grid;grid-template-columns:140px 1fr;gap:8px 18px;padding:6px 20px 18px}
+  details.meta dt{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-top:2px}
+  details.meta dd{font-size:14px;color:var(--text);word-break:break-word}
+  details.meta dd code{font-size:.85em}
+
+  h2{font-family:var(--disp);font-weight:700;letter-spacing:-.022em;font-size:clamp(24px,3.4vw,36px);line-height:1.12}
+  h2::before{content:"";display:block;height:2px;width:56px;margin:0 0 14px;
+    background:linear-gradient(90deg,var(--accent),transparent);border-radius:2px}
+  h3{font-family:var(--disp);font-weight:600;font-size:21px;margin:26px 0 8px}
+  h4{font-family:var(--disp);font-weight:600;font-size:16.5px;margin:22px 0 6px;color:var(--text)}
+  section{padding:64px 0 10px;border-top:1px solid var(--border);margin-top:44px;
+    scroll-margin-top:calc(var(--bar-h) + 18px)}
+  section:first-of-type{border-top:none;margin-top:0}
+  p{margin:13px 0;color:var(--text);opacity:.93;max-width:80ch}
+  strong{color:var(--text)}
+  ul{margin:12px 0 12px 4px;padding-left:20px}
+  li{margin:7px 0;color:var(--text);opacity:.92}
+  li::marker{color:var(--accent)}
+
+  figure{margin:32px auto;max-width:920px}
+  figure img{width:100%;display:block;border:1px solid var(--border-bright);border-radius:14px;
+    box-shadow:0 18px 50px -24px rgba(0,0,0,.8), 0 0 0 1px var(--accent-glow)}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--faint);text-align:center;margin-top:10px;letter-spacing:.04em}
+
+  code{font-family:var(--mono);font-size:.86em;color:var(--accent);background:var(--accent-glow);
+    border:1px solid rgba(217,119,87,.25);padding:1px 6px;border-radius:5px;
+    overflow-wrap:anywhere;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  pre{background:#070A0D;border:1px solid var(--border);border-radius:12px;padding:16px 18px;
+    overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0;max-width:100%}
+  pre code{background:none;border:none;padding:0;color:var(--text);overflow-wrap:normal}
+
+  .tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;padding:2px 9px;border-radius:999px;margin-right:8px;vertical-align:1px}
+  .tag.existing{color:var(--faint);border:1px solid var(--border-bright);background:var(--bg-soft)}
+  .tag.new{color:var(--ok);border:1px solid rgba(79,227,163,.4);background:rgba(79,227,163,.1)}
+  /* Hanging indent: the chip sits out of flow so wrapped lines clear it instead of
+     running back underneath. */
+  .files li{list-style:none;margin:9px 0;padding:11px 15px 11px 96px;position:relative;
+    background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:14.5px}
+  .files li>.tag{position:absolute;left:15px;top:12px;margin-right:0}
+  .files ul{padding-left:0}
+  .files li code{font-size:.92em}
+
+  .phase{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:12px;padding:24px 28px;margin:22px 0}
+  .phase h3{margin-top:0}
+  .checklist{list-style:none;padding-left:0;margin:10px 0}
+  /* NOT display:flex — every inline child (text, <code>, <em>) would become its own
+     anonymous flex item and the sentence would render as side-by-side columns.
+     The marker is absolutely positioned instead, so the text flows as normal prose. */
+  .checklist li{margin:8px 0;padding:9px 13px 9px 46px;position:relative;background:var(--bg-soft);
+    border:1px solid var(--border);border-radius:9px;font-size:14.5px}
+  .checklist li>.status{position:absolute;left:13px;top:10px}
+  .status{font-family:var(--mono);font-size:12.5px;color:var(--accent-2);background:none;border:none;padding:0}
+  /* State-coded markers: idle is quiet, wip amber, done green, failed red. */
+  .status[data-state="idle"]{color:var(--faint)}
+  .status[data-state="wip"]{color:var(--accent-2)}
+  .status[data-state="done"]{color:var(--ok)}
+  .status[data-state="fail"]{color:#F2686B}
+  .checklist li:has(>.status[data-state="done"]){border-color:rgba(79,227,163,.32)}
+  .checklist li:has(>.status[data-state="fail"]){border-color:rgba(242,104,107,.4)}
+  .loop{background:var(--bg-soft);border:1px solid var(--accent-dim);border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin:20px 0 6px;font-size:14.5px}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:16px 0}
+  .tbl{overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin:18px 0}
+  .tbl table{margin:0;min-width:560px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--bg-soft)}
+  tr:last-child td{border-bottom:none}
+
+  .callout{background:var(--bg-soft);border:1px solid var(--border);border-left:3px solid var(--accent-2);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin:20px 0;font-size:15px}
+  .callout .ct{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent-2);margin-bottom:6px}
+
+  #questionables details, #amendments details{border:1px solid var(--border);border-radius:11px;
+    background:var(--surface);margin:12px 0}
+  #questionables summary, #amendments summary{cursor:pointer;padding:13px 18px;font-family:var(--disp);
+    font-weight:600;font-size:15.5px}
+  #questionables summary::marker{color:var(--accent)}
+  .qa-answer{padding:2px 20px 16px;font-size:14.5px;color:var(--muted)}
+  #amendments details p{padding:2px 20px 16px;font-size:14.5px;color:var(--muted)}
+
+  /* ===== Sticky topbar + scroll progress + scroll-spy TOC ===== */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(10,12,16,.82);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border)}
+  .topbar-in{max-width:var(--maxw);margin:0 auto;padding:0 26px;height:var(--bar-h);
+    display:flex;align-items:center;gap:20px}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--accent);
+    flex:none;text-decoration:none}
+  .brand:hover{text-decoration:none;color:var(--text)}
+  .toc{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;flex:1;margin:0;padding:0;list-style:none}
+  .toc::-webkit-scrollbar{display:none}
+  .toc a{display:block;white-space:nowrap;font-size:12.5px;color:var(--faint);
+    padding:5px 9px;border-radius:7px;text-decoration:none}
+  .toc a:hover{color:var(--text);background:var(--surface-2);text-decoration:none}
+  .toc a[aria-current="true"]{color:var(--accent);background:var(--accent-glow)}
+  .progress{position:absolute;left:0;bottom:-1px;height:2px;width:0;
+    background:linear-gradient(90deg,var(--accent-dim),var(--accent));transition:width .08s linear}
+
+  .to-top{position:fixed;right:22px;bottom:22px;z-index:60;width:42px;height:42px;
+    display:grid;place-items:center;border-radius:50%;cursor:pointer;
+    background:var(--surface-2);border:1px solid var(--border-bright);color:var(--accent);
+    font-size:17px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s,background .2s}
+  .to-top.on{opacity:1;pointer-events:auto}
+  .to-top:hover{background:var(--surface);transform:translateY(-2px)}
+
+  /* ===== Collapsible phase cards ===== */
+  .phase>h3{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+  .phase>h3::after{content:"";flex:none;width:8px;height:8px;margin-left:auto;
+    border-right:2px solid var(--faint);border-bottom:2px solid var(--faint);
+    transform:rotate(45deg);transition:transform .18s}
+  .phase.collapsed>h3::after{transform:rotate(-45deg)}
+  .phase>h3:hover::after{border-color:var(--accent)}
+  .phase-count{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--faint);
+    border:1px solid var(--border-bright);background:var(--bg-soft);
+    padding:2px 8px;border-radius:999px;flex:none}
+  .phase-count[data-complete="true"]{color:var(--ok);border-color:rgba(79,227,163,.4)}
+  .phase.collapsed>*:not(h3){display:none}
+
+  /* ===== Responsive ===== */
+  @media (max-width:640px){
+    body{font-size:16px}
+    main{padding:26px 16px 72px}
+    .topbar-in{padding:0 16px;gap:14px}
+    details.meta dl{grid-template-columns:1fr;gap:2px 0}
+    details.meta dt{padding-top:10px}
+    section{padding:44px 0 10px;margin-top:32px}
+    figure{margin:24px auto}
+    .phase{padding:18px 16px}
+    .checklist li{padding:9px 12px 9px 40px}
+    .checklist li>.status{left:11px}
+    .files li{padding:34px 14px 11px 15px}
+    .files li>.tag{top:10px;left:14px}
+    pre{font-size:12px;padding:13px 14px}
+  }
+
+  @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+    html,body{background:var(--bg) !important}
+    .topbar,.to-top{display:none !important}
+    section{break-before:page;padding:40px 0 10px}
+    figure,.phase,.callout,.loop,.tbl,.checklist li,pre{break-inside:avoid}
+    h2,h3,h4{break-after:avoid}
+    /* Collapsed phases would otherwise print empty. Closed <details> can't be forced open
+       from CSS (Chrome hides that content via content-visibility, not display) — the
+       beforeprint handler below opens them instead. */
+    .phase.collapsed>*{display:revert !important}
+    .phase>h3::after,.phase-count{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== STICKY NAV + SCROLL PROGRESS ===== -->
+<nav class="topbar" aria-label="Section navigation">
+  <div class="topbar-in">
+    <a class="brand" href="#top">PLANF3 · SPEC</a>
+    <ul class="toc">
+      <li><a href="#purpose">Purpose</a></li>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#solution">Solution</a></li>
+      <li><a href="#files">Files</a></li>
+      <li><a href="#phases">Phases</a></li>
+      <li><a href="#validation">Validation</a></li>
+      <li><a href="#questionables">Questionables</a></li>
+      <li><a href="#notes">Notes</a></li>
+      <li><a href="#amendments">Amendments</a></li>
+    </ul>
+  </div>
+  <div class="progress" id="progress"></div>
+</nav>
+
+<main id="top">
+
+  <!-- ===== HEADER + UPDATABLE METADATA ===== -->
+  <header>
+    <h1>Plan: Opus 5 Mastery — Standalone HTML Guide</h1>
+    <details class="meta" open>
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-07-27T13:08:15Z</dd>
+        <dt>modified</dt>     <dd>2026-07-27T13:08:15Z, 2026-07-27T14:15:38Z</dd>
+        <dt>commits</dt>      <dd>(none yet)</dd>
+        <dt>agent name</dt>   <dd>Claude Fable 5 (Claude Code)</dd>
+        <dt>session id</dt>   <dd>session_013UuPjKxzLvZEozjK1uXvd4</dd>
+        <dt>back refs</dt>    <dd><code>specs/oh-my-html-docs.md</code>, <code>/Users/bossjones/dev/disler-aka-indydevdan/learning-cmux-with-agents/guide/index.html</code>, <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5">Prompting Claude Opus 5</a>, <a href="https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models">The New Rules of Context Engineering</a></dd>
+        <dt>forward refs</dt> <dd><code>docs/pages/opus-5-mastery/</code>, <code>docs/library/guides/opus-5-mastery.md</code></dd>
+      </dl>
+    </details>
+  </header>
+
+  <!-- Hero image — synced to the :root visual identity. -->
+  <figure>
+    <img loading="lazy" decoding="async" width="1536" height="1024" src="prompting-opus-5-guide/hero.png" alt="Chains and straps shattering away from a glowing coral geodesic model core, captioned UNHOBBLE THE MODEL">
+    <figcaption>The thesis of the guide this plan builds: remove the Claude-4-era harness — Opus 5 runs better unhobbled.</figcaption>
+  </figure>
+
+  <!-- ===== PURPOSE / PROBLEM / SOLUTION ===== -->
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>Build a single self-contained standalone HTML guide — working title <strong>“Opus 5 Mastery — Unhobble the Model”</strong> — that teaches engineers how to get the best out of Claude Opus 5, then import it into the <code>oh-my-html-docs</code> site as a browsable, searchable document. The guide remixes the structural “heart” of the cmux orchestration guide (<code>learning-cmux-with-agents/guide/index.html</code>) — problem→solution flip cards, a tiered copy-paste prompt library with copy buttons, one memorizable mental model, honest comparison tables, and a strict single-accent dark identity — around the content of two Anthropic references: the <em>Prompting Claude Opus 5</em> platform guide and the <em>New Rules of Context Engineering for Claude 5 Generation Models</em> blog post. Every lesson ships as a prompt the reader can copy into a live <code>claude</code> session and see for themselves.</p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>Engineers carry Claude-4-era prompting habits into Opus 5, where they actively hurt: system prompts and CLAUDE.md files stuffed with guardrails force the model to burn tokens resolving contradictions (Anthropic deleted over <strong>80% of Claude Code’s system prompt</strong> for Claude 5 models with no measurable performance loss); explicit “verify your work” and “double-check” scaffolding compounds with Opus 5’s built-in self-verification and wastes tokens; verbosity, narration, deliverable length, scope creep, and eager subagent spawning all have known prompt-level fixes that most users have never seen. The guidance exists, but it is spread across a platform doc and a blog post, is not interactive, and gives readers nothing to paste and <em>feel</em>. Meanwhile the best teaching format we have — the cmux guide’s tiered, copy-button prompt library — is locked to a different topic.</p>
+    <figure>
+      <img loading="lazy" decoding="async" width="1536" height="1024" src="prompting-opus-5-guide/problem.png" alt="A small glowing model node compressed under a towering stack of taped rule documents with tangled contradictory arrows, captioned TOO MANY RULES">
+      <figcaption>The failure mode: Claude-4-era rule stacks over-constrain Opus 5 and burn tokens on contradiction-resolution.</figcaption>
+    </figure>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>Author a new standalone bundle (<code>index.html</code> + generated <code>images/</code>) with the cmux guide’s DNA and its own coral/clay-on-dark identity: a hero stating the unhobbling thesis; three Problem→Solution flip rows; a mental model of the context stack (System prompt → CLAUDE.md → Skills → References) built on progressive disclosure; the blog’s five paradigm shifts as interactive <strong>Then → Now</strong> flip cards; an API/harness “levers” section (effort, thinking-on-by-default, 1M context, subagent caps); and the centerpiece — a <strong>4-tier library of ~18 copy-paste prompts</strong>, several structured as run-it-twice A/B experiments, each with a copy button. Close with a “One Rule” manifesto section and an honest Opus-4.8-habits vs Opus-5 comparison matrix with a “migration tax” callout. Then import the bundle via <code>just add</code>, generating the library card, and validate rendering end-to-end with playwright-cli per the repo’s CLAUDE.md recipe.</p>
+    <figure>
+      <img loading="lazy" decoding="async" width="1536" height="1024" src="prompting-opus-5-guide/solution.png" alt="Four ascending translucent panels labeled system prompt, CLAUDE.md, skills, and references feeding a glowing prompt card, captioned CONTEXT, NOT CONSTRAINTS">
+      <figcaption>The shape of the fix: context engineering plus pasteable prompts — every lesson demonstrable in a live session.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== RELEVANT FILES ===== -->
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+
+    <h3>Existing Files</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>/Users/bossjones/dev/disler-aka-indydevdan/learning-cmux-with-agents/guide/index.html</code> — the source being remixed: component CSS (topbar, toc, flow/flip, prow/copy-btn, matrix, print rules) and the copy/flip JS are ported and re-skinned from here.</li>
+      <li><span class="tag existing">existing</span> <code>scripts/new_doc.py</code> — the importer <code>just add</code> wraps; copies the staging bundle verbatim into <code>docs/pages/&lt;slug&gt;/</code> and generates the card.</li>
+      <li><span class="tag existing">existing</span> <code>justfile</code> — <code>just add / lint / build / preview</code> recipes used in the build and validation phases.</li>
+      <li><span class="tag existing">existing</span> <code>mkdocs.yml</code> — <code>absolute_links: relative_to_docs</code> makes the card’s root-absolute <code>html:</code> link subpath-safe for GitHub Pages.</li>
+      <li><span class="tag existing">existing</span> <code>docs/pages/cmux-guide/</code> + <code>docs/library/guides/cmux-guide.md</code> — precedent import; the new card mirrors this front-matter shape.</li>
+      <li><span class="tag existing">existing</span> <code>CLAUDE.md</code> — the playwright-cli validation recipe (images <code>naturalWidth &gt; 0</code>, console clean, card button resolves) executed verbatim in Phase 6.</li>
+      <li><span class="tag existing">existing</span> <code>~/.claude/plugins/cache/boss-skills/agent-harness/0.28.0/skills/planf3/scripts/generate_gpt_image.py</code> (and <code>edit_gpt_image.py</code>) — OpenAI image generation; needs <code>OPENAI_API_KEY</code> from <code>.envrc</code> (verified present via <code>direnv exec .</code>).</li>
+    </ul>
+
+    <h3>New Files</h3>
+    <ul>
+      <li><span class="tag new">new</span> <code>&lt;scratchpad&gt;/opus-5-mastery/index.html</code> — the guide itself, authored in the session scratchpad staging dir; self-contained CSS/JS, sibling identity to the cmux guide (coral <code>#D97757</code> accent on <code>#0A0C10</code> dark).</li>
+      <li><span class="tag new">new</span> <code>&lt;scratchpad&gt;/opus-5-mastery/images/</code> — 6–8 generated figures (hero, per-section) + <code>favicon.svg</code>; wide 1536×1024, identity-matched, &lt;10 words each.</li>
+      <li><span class="tag new">new</span> <code>docs/pages/opus-5-mastery/</code> — verbatim bundle created by <code>just add</code>; becomes the canonical stored copy after import.</li>
+      <li><span class="tag new">new</span> <code>docs/library/guides/opus-5-mastery.md</code> — generated card (front matter: title, description, tags <code>claude,opus-5,prompting,context-engineering</code>, category <code>guides</code>, html link, source URLs, added date).</li>
+      <li><span class="tag new">new</span> <code>specs/prompting-opus-5-guide.html</code> — this plan.</li>
+      <li><span class="tag new">new</span> <code>specs/prompting-opus-5-guide/*.png</code> — this plan’s embedded images.</li>
+    </ul>
+  </section>
+
+  <!-- ===== IMPLEMENTATION PHASES ===== -->
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. All start as <code>[]</code>; the Build Plan workflow updates them as it works.</p>
+
+    <div class="phase">
+      <h3><code class="status" data-state="done">[x]</code> Phase 1: Scaffold &amp; Visual Identity</h3>
+      <p>Create the staging bundle and the guide’s design system: same structural DNA as the cmux guide, new coral/clay skin. The result is an empty-but-styled shell every later phase drops content into.</p>
+
+      <h4>1.1 Staging &amp; skeleton</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Create <code>&lt;scratchpad&gt;/opus-5-mastery/</code> with <code>index.html</code> and <code>images/</code>; add an <code>&lt;html lang="en"&gt;</code> skeleton with title <em>“Opus 5 Mastery — Unhobble the Model”</em>, viewport meta, Google Fonts links (Space Grotesk / Inter / JetBrains Mono — same stack as the cmux guide).</li>
+        <li><code class="status" data-state="done">[x]</code> Create <code>images/favicon.svg</code> — a minimal coral glyph (e.g. an unlatched shackle or “O5” monogram) and wire the icon links.</li>
+      </ul>
+
+      <h4>1.2 Port &amp; re-skin the component CSS</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Copy the cmux guide’s <code>:root</code> + component CSS and re-skin: <code>--accent:#D97757</code> (coral/clay), <code>--accent-2:#E0B357</code> (amber for “Then”/warnings), keep <code>#4FE3A3</code> green for revealed “Now”/answers; keep dark surface family (<code>#0A0C10…#161B22</code>).</li>
+        <li><code class="status" data-state="done">[x]</code> Port components used by later phases: <code>.topbar</code>, <code>.hero</code>, <code>.toc</code>, <code>section/.sec-head</code>, <code>.flow*</code>/<code>.flip*</code> (flip cards), <code>.callout</code>, <code>.pquote</code>, <code>.tbl-wrap/.matrix</code>, <code>.code</code>, <code>.tiergroup/.prow/.copy-btn/.ptext</code>, <code>.check</code>, footer, and the full <code>@media print</code> block.</li>
+        <li><code class="status" data-state="done">[x]</code> Drop components the new guide doesn’t need (agent-panes, metastrip) — no dead CSS.</li>
+      </ul>
+
+      <h4>1.3 Testing Strategy</h4>
+      <p>Static render check of the empty shell in a real browser via playwright-cli against a local static server; confirms fonts, palette, and print CSS parse before content lands.</p>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> <code>python3 -m http.server -d &lt;scratchpad&gt;/opus-5-mastery 8010 &amp;</code> then <code>playwright-cli open http://localhost:8010/</code> + <code>screenshot</code> — shell renders, no console errors, coral accent visible.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status" data-state="done">[x]</code> Phase 2: Core Sections (Hero, §00–§03)</h3>
+      <p>Author the guide’s teaching spine from the two Anthropic sources (verbatim snippets are preserved in this plan’s Notes — no re-fetch needed).</p>
+      <figure>
+        <img loading="lazy" decoding="async" width="1536" height="1024" src="prompting-opus-5-guide/phase-then-now.png" alt="Two large cards mid-flip around a coral axis of light: an amber card labeled THEN and a green card labeled NOW">
+        <figcaption>Phase 2 centerpiece: the blog’s five paradigm shifts rendered as Then → Now flip cards.</figcaption>
+      </figure>
+
+      <h4>2.1 Hero + TOC</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Hero: headline <em>“Unhobble the Model”</em>, three bullets (JUDGMENT / LEVERS / PROMPTS), the 80%-deletion stat as the lede, hero image slot.</li>
+        <li><code class="status" data-state="done">[x]</code> Sticky topbar + 7-entry TOC (<code>#s0…#s6</code>) mirroring the cmux TOC component.</li>
+      </ul>
+
+      <h4>2.2 §00 Problem &amp; Solution — three flip rows</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Row 1: “Your Claude-4 prompt is fighting the model” → reveal: delete constraints; conflicting rules burn tokens resolving contradictions (front question: <em>“Can prompting fix this?”</em>).</li>
+        <li><code class="status" data-state="done">[x]</code> Row 2: “Responses and written files run long” → reveal: explicit length/narration calibration (effort controls thinking, not verbosity — prompt for length explicitly).</li>
+        <li><code class="status" data-state="done">[x]</code> Row 3: “Verification &amp; delegation scaffolding compounds” → reveal: remove legacy verify steps; cap subagent spawning; chips point at library prompt numbers.</li>
+      </ul>
+
+      <h4>2.3 §01 The Mental Model — the context stack</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Figure + table: System prompt (product context) → CLAUDE.md (repo gotchas only, lightweight) → Skills (progressive disclosure, team opinions) → References (@-mention code/mockups — code beats descriptions).</li>
+        <li><code class="status" data-state="done">[x]</code> “Memorize this” callout: <em>put guidance at the shallowest layer that still loads it only when needed</em>; mention <code>/doctor</code> for right-sizing.</li>
+      </ul>
+
+      <h4>2.4 §02 Then → Now — five paradigm-shift flip cards</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Five flip rows, amber “THEN” front → green “NOW” back: rules→judgment · examples→interface design · upfront→progressive disclosure · repeat-yourself→tool descriptions only · CLAUDE.md-memory→auto-memory. Each back face carries the blog’s concrete example (e.g. the <code>pending | in_progress | completed</code> enum).</li>
+      </ul>
+
+      <h4>2.5 §03 The Levers — API &amp; harness section</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Effort table (low/medium = primary cost lever where quality holds; default high; xhigh for hardest agentic/coding work; re-run effort sweeps when migrating).</li>
+        <li><code class="status" data-state="done">[x]</code> Thinking: on by default; disabling capped at effort ≤ high; <em>thinking-on at low effort beats thinking-off at similar cost</em>; the two thinking-disabled artifacts (tool-calls-as-text, internal XML tags) + the combined mitigation instruction as an annotated code block.</li>
+        <li><code class="status" data-state="done">[x]</code> 1M-token context (default and max, consistent behavior throughout) + subagent-cap guidance card.</li>
+      </ul>
+
+      <h4>2.6 Testing Strategy</h4>
+      <p>Content-accuracy pass against the source extracts in Notes, plus live render/interaction check of the flip rows.</p>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Cross-check every §00–§03 claim against the Notes extracts — no invented behaviors, quotes verbatim where quoted.</li>
+        <li><code class="status" data-state="done">[x]</code> <code>playwright-cli open … ; eval "document.querySelector('.flip-front').click()"</code> — flip animates, front hides, green back face shows; reset button restores.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status" data-state="done">[x]</code> Phase 3: §04 The Prompt Library (the centerpiece)</h3>
+      <p>~18 pasteable prompts in 4 tiers, each a <code>.prow</code> with a <code>data-prompt</code> copy button and auto-rendered <code>.ptext</code>. Verbatim Anthropic instruction blocks are used where they exist; the rest are authored to be runnable in a live <code>claude</code> session. A/B “run it twice” experiments are starred like the cmux guide’s ★ prompts.</p>
+      <figure>
+        <img loading="lazy" decoding="async" width="1536" height="1024" src="prompting-opus-5-guide/phase-prompt-library.png" alt="A tiered staircase of glowing prompt cards with copy icons rising toward a bright terminal window, captioned COPY. PASTE. SEE IT.">
+        <figcaption>Phase 3: the tiered copy-paste prompt library — every lesson demonstrable with one paste.</figcaption>
+      </figure>
+
+      <h4>3.1 Tier 1 · Response Shaping (4 prompts)</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> 01 Conciseness instruction (verbatim platform snippet) · 02 <code>&lt;tone_preference&gt;</code> end-of-prompt reminder · 03 Narration cadence — tune down (verbatim) and a tune-up variant · 04 Written-deliverable length calibration (verbatim).</li>
+      </ul>
+      <h4>3.2 Tier 2 · Scope &amp; Trust (4 prompts)</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> 05 Scope-constraint instruction (verbatim) · 06 ★ A/B: run a task with your old “verify everything” boilerplate, then bare — compare tokens/steps · 07 Self-correction narration control (verbatim) · 08 “Say so in a sentence and continue” disagreement handling.</li>
+      </ul>
+      <h4>3.3 Tier 3 · Agentic &amp; Review (5 prompts)</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> 09 Subagent-spawning cap (verbatim) · 10 ★ Code-review A/B: “only high-severity” vs “report everything, filter in a second pass” · 11 Full-spec-up-front long-horizon feature prompt (complete task spec, then leave it to run) · 12 Effort sweep A/B on one task · 13 Vision: “analyze, crop, and visually verify with tools” pattern.</li>
+      </ul>
+      <h4>3.4 Tier 4 · Context Engineering (5 prompts)</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> 14 ★ “Audit my CLAUDE.md — delete every rule Opus 5 no longer needs; justify each deletion” · 15 Convert a CLAUDE.md guidance block into a progressive-disclosure skill · 16 <code>/doctor</code> right-sizing walkthrough · 17 Interface-design-over-examples tool-description rewrite · 18 ★ Before/after unhobbling A/B on a real repo prompt.</li>
+      </ul>
+      <h4>3.5 Testing Strategy</h4>
+      <p>Every prompt must be literally pasteable: no placeholder tokens the reader must hand-edit unless explicitly marked (e.g. <code>&lt;your-repo&gt;</code>), and every copy button must copy exactly the rendered text.</p>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> <code>playwright-cli eval</code>: for each <code>.copy-btn</code>, click and read <code>navigator.clipboard.readText()</code> — copied text equals <code>data-prompt</code>; button flips to “Copied ✓”.</li>
+        <li><code class="status" data-state="idle">[]</code> Manual smoke: paste prompts 01, 06, 10, 14 into a live <code>claude</code> session and confirm they run sensibly as written. <em>(Left for the user — the copy mechanics are playwright-verified, but a real-session run is the honest test.)</em></li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status" data-state="done">[x]</code> Phase 4: §05 One Rule, §06 Matrix, Interactions &amp; Footer</h3>
+      <p>Close the argument and wire the JS.</p>
+
+      <h4>4.1 §05 The One Rule</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Manifesto section (analog of cmux “Agentic Access”): pull quote <em>“Delete constraints. Rely on context and model judgment.”</em>, the 80% stat, and a two-bullet definition/stakes pair.</li>
+      </ul>
+      <h4>4.2 §06 Prompting Opus 4.8 vs Opus 5 — comparison matrix</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Matrix rows: verbosity control · verification instructions · self-correction · subagent use · review-prompt severity framing · effort defaults · thinking config · vision workarounds · context window · memory. Columns: “Opus 4.8-era habit” vs highlighted “Opus 5” column.</li>
+        <li><code class="status" data-state="done">[x]</code> “Migration tax” honesty callout: what to <em>remove</em> from old prompts, and where old habits are actively harmful vs merely wasteful; note Opus 5 runs fine on 4.8 prompts out of the box — this is tuning, not rescue.</li>
+      </ul>
+      <h4>4.3 Interactions + footer</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> Port the cmux script block: <code>renderPrompt()</code> light-markdown rendering into <code>.ptext</code>, copy-with-fallback, flip/reset handlers; print CSS shows answers not buttons.</li>
+        <li><code class="status" data-state="done">[x]</code> Footer: closing line + links to both Anthropic sources.</li>
+      </ul>
+      <h4>4.4 Testing Strategy</h4>
+      <p>Full-page interaction and print-fidelity pass.</p>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> <code>playwright-cli console</code> — zero errors (favicon 404 exempt) after exercising every flip and copy button.</li>
+        <li><code class="status" data-state="done">[x]</code> Print preview (headless PDF) — flip cards render answer-side, sections paginate per the print rules.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status" data-state="done">[x]</code> Phase 5: Guide Images</h3>
+      <p>Generate the guide’s figures with the planf3 OpenAI scripts, matching the coral-on-dark identity. Roughly one per section: hero, context-stack (§01), then/now (§02), levers (§03), tiers staircase (§04), one-rule (§05). Parallelize generation.</p>
+
+      <h4>5.1 Generate &amp; embed</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> For each figure: <code>direnv exec . uv run &lt;planf3&gt;/scripts/generate_gpt_image.py "&lt;prompt&gt;" images/&lt;name&gt;.png --size 1536x1024 --quality high</code> — professional, minimal, one/two ideas, &lt;10 words of text, coral <code>#D97757</code> on <code>#0A0C10</code>.</li>
+        <li><code class="status" data-state="done">[x]</code> Embed each as <code>&lt;img src="images/&lt;name&gt;.png" alt="…"&gt;</code> inside its section’s existing <code>&lt;figure&gt;</code>; write real alt text and figcaptions.</li>
+        <li><code class="status" data-state="done">[x]</code> Off-identity results: fix with <code>edit_gpt_image.py</code> rather than full regeneration where possible.</li>
+      </ul>
+      <h4>5.2 Testing Strategy</h4>
+      <p>Image-load verification against the staging server.</p>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> <code>playwright-cli --raw eval "JSON.stringify([...document.images].map(i =&gt; ({file: i.currentSrc.split('/').pop(), ok: i.complete &amp;&amp; i.naturalWidth &gt; 0})))"</code> — every image <code>ok: true</code>.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status" data-state="done">[x]</code> Phase 6: Import into the Site &amp; Validate End-to-End</h3>
+      <p>Make the guide a first-class document of this site: verbatim bundle + card + search, validated with the repo’s own playwright recipe.</p>
+      <figure>
+        <img loading="lazy" decoding="async" width="1536" height="1024" src="prompting-opus-5-guide/phase-validate.png" alt="A browser window rendering a documentation grid with green checkmarks and a magnifying glass, captioned IMPORT AND VERIFY">
+        <figcaption>Phase 6: the bundle imported into docs/pages/ and proven to render — images, console, card link, search.</figcaption>
+      </figure>
+
+      <h4>6.1 Import</h4>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> <code>just add &lt;scratchpad&gt;/opus-5-mastery --title "Opus 5 Mastery — Unhobble the Model" --category guides --tags claude,opus-5,prompting,context-engineering</code> → creates <code>docs/pages/opus-5-mastery/</code> + card.</li>
+        <li><code class="status" data-state="done">[x]</code> Card polish: description sentence, <code>source:</code> pointing at both Anthropic URLs; confirm <code>html:</code> link is root-absolute (mkdocs rewrites it).</li>
+      </ul>
+      <h4>6.2 Testing Strategy — the CLAUDE.md recipe + repo gates</h4>
+      <p>The repo’s standard validation loop, plus lint/build gates.</p>
+      <ul class="checklist">
+        <li><code class="status" data-state="done">[x]</code> <code>just lint</code> — ruff + rumdl clean (card front-matter pattern respected).</li>
+        <li><code class="status" data-state="done">[x]</code> <code>just build</code> — strict build passes, no warnings.</li>
+        <li><code class="status" data-state="done">[x]</code> <code>just search</code> — Pagefind indexes the new card.</li>
+        <li><code class="status" data-state="done">[x]</code> <code>python3 -m http.server -d site 8000 &amp;</code> then <code>playwright-cli open http://localhost:8000/pages/opus-5-mastery/index.html</code> + <code>screenshot</code> — page title correct, layout intact.</li>
+        <li><code class="status" data-state="done">[x]</code> Image check eval — all <code>ok: true</code>; <code>playwright-cli console</code> — clean bar favicon.</li>
+        <li><code class="status" data-state="done">[x]</code> <code>playwright-cli goto http://localhost:8000/library/guides/opus-5-mastery/</code> — “Open the document →” resolves to the verbatim doc; then <code>playwright-cli close</code>.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GLOBAL VALIDATION ===== -->
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these commands to validate the entire plan is complete:</p>
+    <ul class="checklist">
+      <li><code class="status" data-state="done">[x]</code> <code>just lint</code> — python + markdown lint clean across the repo.</li>
+      <li><code class="status" data-state="done">[x]</code> <code>just build</code> — strict MkDocs build succeeds with the new bundle + card.</li>
+      <li><code class="status" data-state="done">[x]</code> <code>just preview</code> — site + Pagefind serve; searching “opus 5” surfaces the new card.</li>
+      <li><code class="status" data-state="done">[x]</code> <code>playwright-cli open http://localhost:8000/pages/opus-5-mastery/index.html</code> — renders; all images <code>naturalWidth &gt; 0</code>; console clean (favicon exempt); every copy button copies; every flip card flips.</li>
+      <li><code class="status" data-state="done">[x]</code> <code>uv run pytest</code> — importer tests still green.</li>
+      <li><code class="status" data-state="done">[x]</code> <code>grep -cE '\{\{[A-Z_]+' specs/prompting-opus-5-guide.html</code> returns <code>0</code> — no unfilled template tokens in this plan.</li>
+    </ul>
+    <div class="loop">
+      🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong>
+    </div>
+  </section>
+
+  <!-- ===== QUESTIONABLES ===== -->
+  <section id="questionables">
+    <h2>Questionables</h2>
+    <p>Open questions, phrased yes/no where possible. Each carries the assumption the build will proceed on unless you say otherwise.</p>
+    <details>
+      <summary>Q1 — Is the slug/title “opus-5-mastery” / “Opus 5 Mastery — Unhobble the Model” right? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> Alternatives considered: “prompting-opus-5”, “opus-5-field-guide”. The slug is baked into <code>docs/pages/&lt;slug&gt;/</code> and the card path, so cheap to change before Phase 6, annoying after.</p>
+    </details>
+    <details>
+      <summary>Q2 — Is ~18 prompts across 4 tiers the right size? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> The cmux guide carries 31; this guide’s sources support ~18 without padding. Quality over count — every prompt must teach one observable behavior. Say “no, more” and Tier 3/4 grow with harness-specific prompts (hooks, memory, workflows).</p>
+    </details>
+    <details>
+      <summary>Q3 — After import, is <code>docs/pages/opus-5-mastery/</code> the canonical copy (scratchpad staging discarded)? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> The repo’s architecture stores the verbatim bundle in-tree, so future edits happen there directly. The alternative — keeping a separate <code>sources/</code> dir — doubles maintenance for no gain.</p>
+    </details>
+    <details>
+      <summary>Q4 — OK to include live external links to the two Anthropic sources in the footer/hero? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> The page stays self-contained asset-wise (fonts are the one existing exception, matching the cmux guide); outbound links don’t affect rendering. <code>just links</code>/lychee will check them.</p>
+    </details>
+    <details>
+      <summary>Q5 — Skip a light-theme variant for v1? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes (skip).</strong> The cmux guide is dark-only and the identity is designed dark-first. A light variant would double the CSS surface and the image set.</p>
+    </details>
+    <details>
+      <summary>Q6 — Should §06 compare “Opus 4.8-era prompting habits vs Opus 5” (not Opus-vs-Sonnet-vs-Haiku model choice)? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> The sources are about behavioral deltas and migration, which is also the honest analog of the cmux guide’s “vs tmux/Warp” section. A model-picker table is a different document.</p>
+    </details>
+    <details>
+      <summary>Q7 — Generate a photographic fixed-background hero texture (like the cmux <code>bg.webp</code>), or keep a flat gradient? (yes = flat gradient)</summary>
+      <p class="qa-answer"><strong>Assumption: yes — flat gradient for v1.</strong> One fewer large binary, faster load, and the coral radial glow already gives depth. Easy to add later with one <code>edit_gpt_image.py</code>-generated texture.</p>
+    </details>
+  </section>
+
+  <!-- ===== NOTES ===== -->
+  <section id="notes">
+    <h2>Notes</h2>
+
+    <h3>Source extracts (builder: use these — no re-fetch required)</h3>
+    <p><strong>A. Prompting Claude Opus 5 (platform guide)</strong> — behavioral patterns and their verbatim fixes:</p>
+    <ul>
+      <li><strong>Capabilities:</strong> strongest on hard agentic coding (full tasks, no stubs; give the complete spec up front and let it run); high-precision/high-recall code review (“only report high-severity” is followed literally — ask for everything, filter later); low/medium effort gives strong quality per token; vision best when it can iteratively analyze/crop/verify with tools; 1M context default+max with consistent behavior; coordinates subagent teams well (writer–verifier).</li>
+      <li><strong>Verbatim instruction blocks to reuse in the prompt library</strong> (Tier they land in noted):</li>
+    </ul>
+    <pre><code>[T1·01 conciseness] Keep responses focused, brief, and concise. Keep disclaimers and caveats
+short, and spend most of the response on the main answer. When asked to explain something,
+give a high-level summary unless an in-depth explanation is specifically requested.
+
+[T1·02 end-of-prompt reminder] &lt;tone_preference&gt;Keep outputs reasonably concise.&lt;/tone_preference&gt;
+
+[T1·03 narration cadence] Before your first tool call, say in one sentence what you're about
+to do. While working, give a brief update only when you find something important or change
+direction. When you finish, lead with the outcome: your first sentence should answer "what
+happened" or "what did you find," with supporting detail after it for readers who want it.
+
+[T1·04 deliverable length] Match the length of written documents to what the task needs:
+cover the substance, but do not pad with filler sections, redundant summaries, or boilerplate.
+
+[T2·05 scope constraint] Deliver what was asked, at the scope intended. Make routine judgment
+calls yourself, and check in only when different readings of the request would lead to
+materially different work. If the request seems mistaken or a better approach exists, say so
+in a sentence and continue with the task as asked rather than quietly narrowing, widening, or
+transforming it. Finish the whole task, and stop short of actions that are clearly beyond
+what was asked.
+
+[T2·07 correction narration] Only correct an earlier statement when the error would change
+the user's code, conclusions, or decisions. State corrections plainly and briefly, then
+continue the task. For slips that change nothing for the user, make the fix and move on
+without noting it.
+
+[T3·09 subagent cap] Delegate to a subagent only for large tasks that are genuinely
+independent and parallelizable, such as a wide multi-file investigation. Do not delegate work
+you can finish yourself in a handful of tool calls, and do not use subagents to verify or
+double-check your own work. If one subagent can complete the task, use one rather than
+several, and keep spawn counts low.
+
+[§03 thinking-disabled mitigation] When you use a tool, you may say a brief sentence first.
+If no tool can express what the user asked for, say so instead of guessing. Do not include
+internal or system XML tags in your response.</code></pre>
+    <ul>
+      <li><strong>Key removals (fuel for §00 row 3 + §06 matrix):</strong> delete “include a final verification step”, “use a subagent to verify”, “double-check your answer” — Opus 5 self-verifies and self-corrects; these compound and waste tokens with no quality gain. Don’t name thinking tags when mitigating tag leakage (general form works better). Effort controls thinking volume, <em>not</em> visible response length — prompt for length explicitly.</li>
+    </ul>
+    <p><strong>B. The New Rules of Context Engineering (blog)</strong>:</p>
+    <ul>
+      <li><strong>Headline fact:</strong> Anthropic removed &gt;80% of Claude Code’s system prompt for Claude 5 models with no measurable performance loss. Core idea: “unhobbling” — over-constraint (conflicting messages across system prompt / CLAUDE.md / request) forces token-burn on contradiction resolution; delete constraints, rely on surrounding context and judgment.</li>
+      <li><strong>Five shifts (§02 flip cards):</strong> (1) rules → judgment (comment-density example: “write code that reads like the surrounding code”); (2) examples → interface design (Todo status enum <code>pending | in_progress | completed</code> suggests behavior); (3) all-upfront → progressive disclosure (skills retrieved when needed; ToolSearch deferred loading); (4) repeat-yourself → instructions live only in tool descriptions; (5) manual CLAUDE.md memory → auto-memory.</li>
+      <li><strong>Context assembly guidance (§01):</strong> system prompt = product context/mode; CLAUDE.md = lightweight, gotchas only, no restating the obvious; skills = team opinions with progressive disclosure, split long skills; references = @-mentions, code &gt; descriptions (HTML mockups beat design prose). Tool: <code>/doctor</code> right-sizes skills/CLAUDE.md.</li>
+    </ul>
+
+    <h3>Design decisions &amp; rejected alternatives</h3>
+    <ul>
+      <li><strong>Rejected: reusing the cmux gold identity.</strong> User chose a sibling identity — coral/clay <code>#D97757</code> (Anthropic-adjacent terracotta) on the same dark surface family, same type stack. Sections rhyme; the accent differentiates.</li>
+      <li><strong>Rejected: prompts-only guide.</strong> User opted in to the §03 API/harness section — the effort/thinking levers are half the story of “using Opus 5 well.”</li>
+      <li><strong>Interaction semantics remix:</strong> the cmux “Can Cmux Solve This?” flip (amber question → green answer) becomes two things here: §00 problem rows (“Can prompting fix this?”) and §02 “THEN → NOW” paradigm flips. Same CSS machinery, two meanings.</li>
+      <li><strong>Dependencies:</strong> none added. Guide is dependency-free self-contained HTML (Google Fonts links only, matching cmux precedent); images via the planf3 PEP 723 scripts (<code>uv run</code>, <code>OPENAI_API_KEY</code> from <code>.envrc</code> via <code>direnv exec .</code> — key verified present; never echo it).</li>
+      <li><strong>Self-referential bonus:</strong> the guide teaches the patterns this very repo’s CLAUDE.md uses (playwright validation loop, lightweight gotcha-focused docs) — Tier 4 prompt 14 can be demoed on this repo itself.</li>
+    </ul>
+
+    <h3>Guide section map (target ~700–900 lines, single file)</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>#</th><th>Section</th><th>Component</th><th>Image</th></tr></thead>
+      <tbody>
+        <tr><td>—</td><td>Hero: Unhobble the Model</td><td>hero + bullets + stat</td><td>hero.png</td></tr>
+        <tr><td>00</td><td>Problem &amp; Solution</td><td>3 flip rows</td><td>—</td></tr>
+        <tr><td>01</td><td>The Mental Model (context stack)</td><td>figure + table + callout</td><td>context-stack.png</td></tr>
+        <tr><td>02</td><td>Then → Now (5 shifts)</td><td>flip cards</td><td>then-now.png</td></tr>
+        <tr><td>03</td><td>The Levers (effort/thinking/1M/subagents)</td><td>table + code blocks</td><td>levers.png</td></tr>
+        <tr><td>04</td><td>The Prompt Library (~18, 4 tiers)</td><td>tiergroups + copy buttons</td><td>tiers.png</td></tr>
+        <tr><td>05</td><td>The One Rule</td><td>pull quote + manifesto</td><td>one-rule.png</td></tr>
+        <tr><td>06</td><td>Opus 4.8 habits vs Opus 5</td><td>matrix + migration-tax callout</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+
+    <figure>
+      <img loading="lazy" decoding="async" width="1536" height="1024" src="prompting-opus-5-guide/notes-siblings.png" alt="Two sibling webpage mockups sharing one skeleton layout, the left accented gold and the right accented coral, captioned SAME BONES, NEW ACCENT">
+      <figcaption>The remix in one frame: same skeleton as the cmux guide, new accent, new subject.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== AMENDMENTS ===== -->
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <details>
+      <summary>2026-07-27T14:15:38Z — Guide built, playwright-reviewed, and imported</summary>
+      <p>Executed the full plan in one build round: authored the standalone guide (hero, 3 problem→solution flip rows, context-stack model, 5 Then→Now flip cards, levers section, 18-prompt copy-button library, One Rule, migration matrix) in scratchpad staging; reused 4 spec images and generated <code>levers.png</code> + <code>one-rule.png</code>; playwright-cli review verified all 6 images load, all 18 copy buttons copy exactly their <code>data-prompt</code> (clipboard-read asserted), all 8 flip cards flip/reset, console clean, and print CSS renders answer-side in PDF. One UI/UX fix from the review: on mobile the flow-arrow cell rotated 90° as a whole element and overlapped the problem text — now only the glyph rotates when flipped. Imported via <code>scripts/new_doc.py</code> (the <code>just add</code> recipe drops quoting on multi-word titles — worth a justfile fix) as <code>docs/pages/opus-5-mastery/</code> + <code>docs/library/guides/opus-5-mastery.md</code>; <code>just lint</code>, strict <code>just build</code>, Pagefind index, and pytest all green; <code>grep -ci cmux</code> on the guide returns 0 (subject isolation). Remaining open item: the live-session manual smoke of prompts 01/06/10/14.</p>
+    </details>
+  </section>
+
+</main>
+
+<button class="to-top" id="toTop" type="button" aria-label="Back to top">↑</button>
+
+<script>
+(() => {
+  'use strict';
+
+  /* --- Status markers: stamp a state from the marker text so CSS can colour them.
+         The Build Plan workflow rewrites these in the HTML; re-running this picks it up. --- */
+  const STATES = {'[]':'idle', '[wip]':'wip', '[x]':'done', '[f]':'fail'};
+  const stamp = () => document.querySelectorAll('.status').forEach(el => {
+    el.dataset.state = STATES[el.textContent.trim()] || 'idle';
+  });
+  stamp();
+
+  /* --- Collapsible phase cards with a live done/total count --- */
+  document.querySelectorAll('.phase').forEach(phase => {
+    const head = phase.querySelector('h3');
+    if (!head) return;
+    const boxes = phase.querySelectorAll('.checklist .status');
+    const done = [...boxes].filter(b => b.dataset.state === 'done').length;
+    const count = document.createElement('span');
+    count.className = 'phase-count';
+    count.textContent = `${done}/${boxes.length}`;
+    if (boxes.length && done === boxes.length) count.dataset.complete = 'true';
+    head.append(count);
+
+    head.tabIndex = 0;
+    head.setAttribute('role', 'button');
+    head.setAttribute('aria-expanded', 'true');
+    const toggle = () => {
+      const collapsed = phase.classList.toggle('collapsed');
+      head.setAttribute('aria-expanded', String(!collapsed));
+    };
+    head.addEventListener('click', toggle);
+    head.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  /* --- Scroll progress rail --- */
+  const bar = document.getElementById('progress');
+  const toTop = document.getElementById('toTop');
+  let ticking = false;
+  const onScroll = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (max > 0 ? (scrollY / max) * 100 : 0) + '%';
+    toTop.classList.toggle('on', scrollY > 1200);
+    ticking = false;
+  };
+  addEventListener('scroll', () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+  }, {passive: true});
+  onScroll();
+
+  toTop.addEventListener('click', () => scrollTo({top: 0, behavior: 'smooth'}));
+
+  /* --- Scroll-spy: mark the section currently nearest the top of the viewport --- */
+  const links = new Map();
+  document.querySelectorAll('.toc a').forEach(a => links.set(a.hash.slice(1), a));
+  const sections = [...document.querySelectorAll('section[id]')].filter(s => links.has(s.id));
+  const visible = new Set();
+  const setCurrent = id => links.forEach((a, key) =>
+    a.setAttribute('aria-current', String(key === id)));
+
+  const spy = new IntersectionObserver(entries => {
+    entries.forEach(e => e.isIntersecting ? visible.add(e.target) : visible.delete(e.target));
+    const current = sections.find(s => visible.has(s))
+      // nothing in the band — a section taller than it spans the whole band, so fall
+      // back to the last section whose top has already scrolled past the bar
+      || [...sections].reverse().find(s => s.getBoundingClientRect().top <= 120);
+    if (current) setCurrent(current.id);
+  }, {rootMargin: '-60px 0px -75% 0px'});
+  sections.forEach(s => spy.observe(s));
+
+  /* --- Print: open every <details> so collapsed answers aren't silently dropped from
+         the printout, then put them back exactly as the reader had them. --- */
+  let reopened = [];
+  addEventListener('beforeprint', () => {
+    reopened = [...document.querySelectorAll('details:not([open])')];
+    reopened.forEach(d => d.open = true);
+  });
+  addEventListener('afterprint', () => {
+    reopened.forEach(d => d.open = false);
+    reopened = [];
+  });
+})();
+</script>
+</body>
+</html>
