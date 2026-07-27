@@ -12,6 +12,8 @@ added: 2026-07-26
 
 Plan for local observability of AI coding agents: storage pipeline, dashboards, and agent-loop instrumentation.
 
+[![Preview of the boss-ai-monitoring spec — light engineering document with teal accents](../../assets/previews/boss-ai-monitoring.png){ loading=lazy }](/pages/boss-ai-monitoring/boss-ai-monitoring.html)
+
 [Open the document →](/pages/boss-ai-monitoring/boss-ai-monitoring.html){ .md-button .md-button--primary }
 
 **Source:** bossjones/boss-skills

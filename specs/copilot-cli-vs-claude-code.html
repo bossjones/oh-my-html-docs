@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="planf3 spec: build a standalone HTML field guide comparing GitHub Copilot CLI and Claude Code — conversion tables, permissions, CI, exclusive features — then import it into oh-my-html-docs.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0C10">
+<title>Plan: Copilot CLI vs Claude Code — Conversion Field Guide</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0C10'/%3E%3Cpath d='M16 7a9 9 0 1 0 9 9' fill='none' stroke='%23A371F7' stroke-width='3.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23A371F7'/%3E%3C/svg%3E">
+<style>
+  /* ===== Synced visual identity — dark + Copilot purple. Any generated images match this. ===== */
+  :root{
+    --bg:#0A0C10; --bg-soft:#0E1116; --surface:#12161C; --surface-2:#161B22;
+    --border:#232A33; --border-bright:#33404D;
+    --text:#F4F7FB; --muted:#C9D2DD; --faint:#8B96A5;
+    --accent:#A371F7;                 /* the ONE accent — Copilot purple */
+    --accent-dim:#5E3B9E;
+    --accent-glow:rgba(163,113,247,.16);
+    --accent-2:#E0B357;               /* secondary — amber (warnings / "verify") */
+    --ok:#4FE3A3;                     /* green — done / "confirmed" */
+    --maxw:1140px;
+    --bar-h:52px;                     /* sticky topbar height — sections offset by this */
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    /* ui-rounded before system-ui so display still differs from body if Space Grotesk is absent */
+    --disp:'Space Grotesk','Inter',ui-rounded,system-ui,sans-serif;
+    --body:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+  body{color:var(--text);font-family:var(--body);font-size:17px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;background:var(--bg);
+    background-image:radial-gradient(900px 480px at 80% -10%, var(--accent-glow), transparent 60%);
+    background-repeat:no-repeat}
+  ::selection{background:var(--accent);color:var(--bg)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+  main{max-width:var(--maxw);margin:0 auto;padding:34px 26px 90px}
+
+  header h1{font-family:var(--disp);font-weight:700;letter-spacing:-.022em;line-height:1.1;
+    font-size:clamp(30px,5vw,52px);margin:10px 0 6px}
+  header h1::before{content:"PLANF3 · SPEC";display:block;font-family:var(--mono);font-size:12px;
+    letter-spacing:.26em;color:var(--accent);margin-bottom:14px}
+  details.meta{margin:22px 0 8px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+  details.meta summary{cursor:pointer;padding:12px 18px;font-family:var(--mono);font-size:11.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  details.meta dl{display:grid;grid-template-columns:140px 1fr;gap:8px 18px;padding:6px 20px 18px}
+  details.meta dt{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-top:2px}
+  details.meta dd{font-size:14px;color:var(--text);word-break:break-word}
+  details.meta dd code{font-size:.85em}
+
+  h2{font-family:var(--disp);font-weight:700;letter-spacing:-.022em;font-size:clamp(24px,3.4vw,36px);line-height:1.12}
+  h2::before{content:"";display:block;height:2px;width:56px;margin:0 0 14px;
+    background:linear-gradient(90deg,var(--accent),transparent);border-radius:2px}
+  h3{font-family:var(--disp);font-weight:600;font-size:21px;margin:26px 0 8px}
+  h4{font-family:var(--disp);font-weight:600;font-size:16.5px;margin:22px 0 6px;color:var(--text)}
+  section{padding:64px 0 10px;border-top:1px solid var(--border);margin-top:44px;
+    scroll-margin-top:calc(var(--bar-h) + 18px)}
+  section:first-of-type{border-top:none;margin-top:0}
+  p{margin:13px 0;color:var(--text);opacity:.93;max-width:80ch}
+  strong{color:var(--text)}
+  ul{margin:12px 0 12px 4px;padding-left:20px}
+  li{margin:7px 0;color:var(--text);opacity:.92}
+  li::marker{color:var(--accent)}
+
+  figure{margin:32px auto;max-width:920px}
+  figure img{width:100%;display:block;border:1px solid var(--border-bright);border-radius:14px;
+    box-shadow:0 18px 50px -24px rgba(0,0,0,.8), 0 0 0 1px var(--accent-glow)}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--faint);text-align:center;margin-top:10px;letter-spacing:.04em}
+
+  code{font-family:var(--mono);font-size:.86em;color:var(--accent);background:var(--accent-glow);
+    border:1px solid rgba(163,113,247,.25);padding:1px 6px;border-radius:5px;
+    overflow-wrap:anywhere;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  pre{background:#070A0D;border:1px solid var(--border);border-radius:12px;padding:16px 18px;
+    overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0;max-width:100%}
+  pre code{background:none;border:none;padding:0;color:var(--text);overflow-wrap:normal}
+
+  .tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;padding:2px 9px;border-radius:999px;margin-right:8px;vertical-align:1px}
+  .tag.existing{color:var(--faint);border:1px solid var(--border-bright);background:var(--bg-soft)}
+  .tag.new{color:var(--ok);border:1px solid rgba(79,227,163,.4);background:rgba(79,227,163,.1)}
+  /* Hanging indent: the chip sits out of flow so wrapped lines clear it instead of
+     running back underneath. */
+  .files li{list-style:none;margin:9px 0;padding:11px 15px 11px 96px;position:relative;
+    background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:14.5px}
+  .files li>.tag{position:absolute;left:15px;top:12px;margin-right:0}
+  .files ul{padding-left:0}
+  .files li code{font-size:.92em}
+
+  .phase{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:12px;padding:24px 28px;margin:22px 0}
+  .phase h3{margin-top:0}
+  .checklist{list-style:none;padding-left:0;margin:10px 0}
+  /* NOT display:flex — every inline child (text, <code>, <em>) would become its own
+     anonymous flex item and the sentence would render as side-by-side columns.
+     The marker is absolutely positioned instead, so the text flows as normal prose. */
+  .checklist li{margin:8px 0;padding:9px 13px 9px 46px;position:relative;background:var(--bg-soft);
+    border:1px solid var(--border);border-radius:9px;font-size:14.5px}
+  .checklist li>.status{position:absolute;left:13px;top:10px}
+  .status{font-family:var(--mono);font-size:12.5px;color:var(--accent-2);background:none;border:none;padding:0}
+  /* State-coded markers: idle is quiet, wip amber, done green, failed red. */
+  .status[data-state="idle"]{color:var(--faint)}
+  .status[data-state="wip"]{color:var(--accent-2)}
+  .status[data-state="done"]{color:var(--ok)}
+  .status[data-state="fail"]{color:#F2686B}
+  .checklist li:has(>.status[data-state="done"]){border-color:rgba(79,227,163,.32)}
+  .checklist li:has(>.status[data-state="fail"]){border-color:rgba(242,104,107,.4)}
+  .loop{background:var(--bg-soft);border:1px solid var(--accent-dim);border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin:20px 0 6px;font-size:14.5px}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:16px 0}
+  .tbl{overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin:18px 0}
+  .tbl table{margin:0;min-width:560px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--bg-soft)}
+  tr:last-child td{border-bottom:none}
+
+  .callout{background:var(--bg-soft);border:1px solid var(--border);border-left:3px solid var(--accent-2);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin:20px 0;font-size:15px}
+  .callout .ct{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent-2);margin-bottom:6px}
+
+  #questionables details, #amendments details{border:1px solid var(--border);border-radius:11px;
+    background:var(--surface);margin:12px 0}
+  #questionables summary, #amendments summary{cursor:pointer;padding:13px 18px;font-family:var(--disp);
+    font-weight:600;font-size:15.5px}
+  #questionables summary::marker{color:var(--accent)}
+  .qa-answer{padding:2px 20px 16px;font-size:14.5px;color:var(--muted)}
+  #amendments details p{padding:2px 20px 16px;font-size:14.5px;color:var(--muted)}
+
+  /* ===== Sticky topbar + scroll progress + scroll-spy TOC ===== */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(10,12,16,.82);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border)}
+  .topbar-in{max-width:var(--maxw);margin:0 auto;padding:0 26px;height:var(--bar-h);
+    display:flex;align-items:center;gap:20px}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--accent);
+    flex:none;text-decoration:none}
+  .brand:hover{text-decoration:none;color:var(--text)}
+  .toc{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;flex:1;margin:0;padding:0;list-style:none}
+  .toc::-webkit-scrollbar{display:none}
+  .toc a{display:block;white-space:nowrap;font-size:12.5px;color:var(--faint);
+    padding:5px 9px;border-radius:7px;text-decoration:none}
+  .toc a:hover{color:var(--text);background:var(--surface-2);text-decoration:none}
+  .toc a[aria-current="true"]{color:var(--accent);background:var(--accent-glow)}
+  .progress{position:absolute;left:0;bottom:-1px;height:2px;width:0;
+    background:linear-gradient(90deg,var(--accent-dim),var(--accent));transition:width .08s linear}
+
+  .to-top{position:fixed;right:22px;bottom:22px;z-index:60;width:42px;height:42px;
+    display:grid;place-items:center;border-radius:50%;cursor:pointer;
+    background:var(--surface-2);border:1px solid var(--border-bright);color:var(--accent);
+    font-size:17px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s,background .2s}
+  .to-top.on{opacity:1;pointer-events:auto}
+  .to-top:hover{background:var(--surface);transform:translateY(-2px)}
+
+  /* ===== Collapsible phase cards ===== */
+  .phase>h3{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+  .phase>h3::after{content:"";flex:none;width:8px;height:8px;margin-left:auto;
+    border-right:2px solid var(--faint);border-bottom:2px solid var(--faint);
+    transform:rotate(45deg);transition:transform .18s}
+  .phase.collapsed>h3::after{transform:rotate(-45deg)}
+  .phase>h3:hover::after{border-color:var(--accent)}
+  .phase-count{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--faint);
+    border:1px solid var(--border-bright);background:var(--bg-soft);
+    padding:2px 8px;border-radius:999px;flex:none}
+  .phase-count[data-complete="true"]{color:var(--ok);border-color:rgba(79,227,163,.4)}
+  .phase.collapsed>*:not(h3){display:none}
+
+  /* ===== Responsive ===== */
+  @media (max-width:640px){
+    body{font-size:16px}
+    main{padding:26px 16px 72px}
+    .topbar-in{padding:0 16px;gap:14px}
+    details.meta dl{grid-template-columns:1fr;gap:2px 0}
+    details.meta dt{padding-top:10px}
+    section{padding:44px 0 10px;margin-top:32px}
+    figure{margin:24px auto}
+    .phase{padding:18px 16px}
+    .checklist li{padding:9px 12px 9px 40px}
+    .checklist li>.status{left:11px}
+    .files li{padding:34px 14px 11px 15px}
+    .files li>.tag{top:10px;left:14px}
+    pre{font-size:12px;padding:13px 14px}
+  }
+
+  @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+    html,body{background:var(--bg) !important}
+    .topbar,.to-top{display:none !important}
+    section{break-before:page;padding:40px 0 10px}
+    figure,.phase,.callout,.loop,.tbl,.checklist li,pre{break-inside:avoid}
+    h2,h3,h4{break-after:avoid}
+    /* Collapsed phases would otherwise print empty. Closed <details> can't be forced open
+       from CSS (Chrome hides that content via content-visibility, not display) — the
+       beforeprint handler below opens them instead. */
+    .phase.collapsed>*{display:revert !important}
+    .phase>h3::after,.phase-count{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== STICKY NAV + SCROLL PROGRESS ===== -->
+<nav class="topbar" aria-label="Section navigation">
+  <div class="topbar-in">
+    <a class="brand" href="#top">PLANF3 · SPEC</a>
+    <ul class="toc">
+      <li><a href="#purpose">Purpose</a></li>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#solution">Solution</a></li>
+      <li><a href="#files">Files</a></li>
+      <li><a href="#phases">Phases</a></li>
+      <li><a href="#validation">Validation</a></li>
+      <li><a href="#questionables">Questionables</a></li>
+      <li><a href="#notes">Notes</a></li>
+      <li><a href="#amendments">Amendments</a></li>
+    </ul>
+  </div>
+  <div class="progress" id="progress"></div>
+</nav>
+
+<main id="top">
+
+  <!-- ===== HEADER + UPDATABLE METADATA ===== -->
+  <header>
+    <h1>Plan: Copilot CLI vs Claude Code — Conversion Field Guide</h1>
+    <details class="meta" open>
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-07-27T15:25:55Z</dd>
+        <dt>modified</dt>     <dd>2026-07-27T15:25:55Z, 2026-07-27T15:55:38Z</dd>
+        <dt>commits</dt>      <dd>(none yet)</dd>
+        <dt>agent name</dt>   <dd>Claude Fable 5 (Claude Code)</dd>
+        <dt>session id</dt>   <dd>session_016HZHHTG87dKyxrJekNxBC5</dd>
+        <dt>back refs</dt>    <dd><code>specs/oh-my-html-docs.md</code>, <code>specs/prompting-opus-5-guide.html</code> (structural model), <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/cli-best-practices">GitHub Docs · Copilot CLI</a>, <a href="https://code.claude.com/docs/en/overview">Claude Code Docs</a></dd>
+        <dt>forward refs</dt> <dd><code>docs/pages/copilot-cli-vs-claude-code/</code>, <code>docs/library/guides/copilot-cli-vs-claude-code.md</code>, <code>justfile</code> (ghdocs/ghdoc/ccdocs/ccdoc recipes)</dd>
+      </dl>
+    </details>
+  </header>
+
+  <!-- Hero image — synced to the :root visual identity. Replace with <img> once generated. -->
+  <figure>
+    <!-- {{HERO_IMAGE: two terminal windows side by side — one purple-accented "copilot", one coral "claude" — connected by a bright bidirectional conversion arrow, captioned TWO AGENTS, ONE SHAPE}} -->
+    <figcaption>Fig. 0 · The doc this plan builds: a bidirectional conversion map between two terminal agents.</figcaption>
+  </figure>
+
+  <!-- ===== PURPOSE / PROBLEM / SOLUTION ===== -->
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>Build a single self-contained standalone HTML field guide — <strong>“Copilot CLI vs Claude Code”</strong> — that lets an engineer fluent in one terminal agent become instantly productive in the other. The guide is organized around <strong>conversion tables</strong>: config &amp; context files (<code>CLAUDE.md</code> ↔ <code>AGENTS.md</code>), CLI flags, slash commands, customization surfaces (hooks / skills / subagents / MCP / plugins), the permission &amp; safety models, and headless / CI / GitHub Actions usage — closing with an honest accounting of what each tool has that the other doesn’t. Every factual claim is grounded in doc pages harvested via <code>curl</code> pipelines that also ship as reusable <code>justfile</code> recipes. The finished doc is imported into <code>oh-my-html-docs</code> via <code>just add</code> and validated end-to-end with <code>playwright-cli</code>.</p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>Copilot CLI and Claude Code have converged on the same shape — interactive TUI with a plan mode, headless <code>-p</code> mode, MCP, skills, subagents, hooks, plugins — but every concept wears a different name, lives in a different file, and takes a different flag. An engineer switching between them (or evaluating one from the other) has to stitch the answer together from two separately-organized doc sites: GitHub Docs buries Copilot CLI across <em>concepts / how-tos / reference</em> trees, and Claude Code’s docs mirror none of that structure. There is no conversion table anywhere that answers the practical questions — <em>where is CLAUDE.md in Copilot? what is <code>--dangerously-skip-permissions</code> called? which hook events exist on both sides?</em> — and vendor comparisons that do exist are marketing, not engineering: they never state what the <em>other</em> tool does better.</p>
+    <figure>
+      <!-- {{PROBLEM_IMAGE: an engineer between two mismatched control panels with unlabeled crossed wires, captioned SAME MACHINE, DIFFERENT LABELS}} -->
+      <figcaption>Fig. 1 · The failure mode: identical capabilities hidden behind two vocabularies and two doc trees.</figcaption>
+    </figure>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>Author a new standalone bundle in the house dark identity (Copilot purple <code>#A371F7</code> accent on the shared <code>#0A0C10</code> surface family) with the repo’s signature components: three <code>.matrix</code> verdict tables with the <strong>Copilot column tinted</strong> (the subject under examination), plain conversion tables ordered <em>Concept | Claude Code | Copilot CLI | Notes</em>, flip-card “switching gotchas,” terminal-chrome code blocks, and a copy-button cheat sheet of equivalent command pairs. Research first: harvest ~12–18 doc pages into a committed <code>research/</code> directory using two verified curl pipelines (GitHub Docs’ search + article-body API; Claude Code’s <code>.md</code>-suffix raw markdown + <code>llms.txt</code> index), promote the pipelines to <code>just ghdocs / ghdoc / ccdocs / ccdoc</code> recipes, and resolve every uncertain mapping before a single glyph is committed — <strong>no <code>.n</code> (“doesn’t have it”) claim without a citation</strong>. Then import via <code>just add</code> and validate with the repo’s playwright-cli recipe.</p>
+    <figure>
+      <!-- {{SOLUTION_IMAGE: a clean two-column translation matrix with purple and green verdict marks flowing from a curl pipeline into a browser page, captioned HARVEST, MAP, VERIFY}} -->
+      <figcaption>Fig. 2 · The shape of the fix: curl-harvested evidence → conversion tables → playwright-verified page.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== RELEVANT FILES ===== -->
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+
+    <h3>Existing Files</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>docs/pages/opus-5-mastery/index.html</code> — the house-style skeleton to copy: <code>:root</code> dark palette, topbar/TOC/sec-head components, <code>.tbl-wrap</code>/<code>.matrix</code> tables, <code>.code</code> terminal blocks, <code>.copy-btn</code>/<code>data-prompt</code> JS, flip cards, print CSS.</li>
+      <li><span class="tag existing">existing</span> <code>specs/prompting-opus-5-guide.html</code> — structural model for this very plan (metadata block, phases, status markers, scroll-spy JS).</li>
+      <li><span class="tag existing">existing</span> <code>justfile</code> — gains the four doc-search recipes; already provides <code>just add / lint / build / search / preview</code> (zsh recipe shell).</li>
+      <li><span class="tag existing">existing</span> <code>scripts/new_doc.py</code> — the importer <code>just add</code> wraps; copies the staging bundle verbatim into <code>docs/pages/&lt;slug&gt;/</code> and generates the card (flags: <code>--title --slug --category --tags --description --source</code>).</li>
+      <li><span class="tag existing">existing</span> <code>docs/library/index.md</code> — hand-maintained library landing page; must gain the new bullet <em>and</em> the missing <code>opus-5-mastery</code> bullet (verified absent).</li>
+      <li><span class="tag existing">existing</span> <code>mkdocs.yml</code> — <code>absolute_links: relative_to_docs</code> makes the card’s root-absolute <code>html:</code> link subpath-safe for GitHub Pages.</li>
+      <li><span class="tag existing">existing</span> <code>CLAUDE.md</code> — the playwright-cli validation recipe executed verbatim in Phase 5.</li>
+    </ul>
+
+    <h3>New Files</h3>
+    <ul>
+      <li><span class="tag new">new</span> <code>specs/copilot-cli-vs-claude-code.html</code> — this plan.</li>
+      <li><span class="tag new">new</span> <code>specs/copilot-cli-vs-claude-code/research/*.md</code> — committed doc snapshots harvested via the new recipes (provenance for every claim), plus <code>mappings.md</code> resolving every <code>[V]</code> marker with a citation.</li>
+      <li><span class="tag new">new</span> <code>specs/copilot-cli-vs-claude-code/doc/index.html</code> — the comparison guide itself, staged as a one-file bundle (exactly one <code>.html</code> so <code>new_doc.py</code> entry autodetection succeeds), plus <code>favicon.svg</code>.</li>
+      <li><span class="tag new">new</span> <code>docs/pages/copilot-cli-vs-claude-code/</code> — verbatim bundle created by <code>just add</code>; the canonical stored copy after import.</li>
+      <li><span class="tag new">new</span> <code>docs/library/guides/copilot-cli-vs-claude-code.md</code> — generated card (tags <code>copilot,claude-code,cli,agents,comparison</code>, category <code>guides</code>).</li>
+    </ul>
+  </section>
+
+  <!-- ===== IMPLEMENTATION PHASES ===== -->
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. All start as <code>[]</code>; the Build Plan workflow updates them as it works.</p>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 1: Justfile Doc-Search Recipes</h3>
+      <p>Promote the two verified curl pipelines into four reusable <code>just</code> recipes so doc lookups are one command during research — and forever after. The justfile’s recipe shell is <code>zsh</code>; all query encoding goes through <code>curl -G --data-urlencode</code> so multi-word queries survive quoting, and <code>-f</code> makes the unofficial endpoints fail loudly.</p>
+
+      <h4>1.1 Add the recipes</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>just ghdocs QUERY</code> — GitHub Docs search: <code>curl -fsG "https://docs.github.com/api/search/v1" --data-urlencode "query=QUERY" --data-urlencode "version=free-pro-team@latest" --data-urlencode "language=en" --data-urlencode "size=10" --data-urlencode "client_name=oh-my-html-docs"</code> piped through <code>jq -r '.hits[] | "\(.url) — \(.title)"'</code>.</li>
+        <li><code class="status">[x]</code> <code>just ghdoc PATHNAME</code> — full article as markdown: <code>curl -fsG "https://docs.github.com/api/article/body" --data-urlencode "pathname=PATHNAME"</code>.</li>
+        <li><code class="status">[x]</code> <code>just ccdocs QUERY</code> — fetch <code>https://code.claude.com/docs/llms.txt</code> and <code>grep -i</code> the query (title + description lines).</li>
+        <li><code class="status">[x]</code> <code>just ccdoc PAGE</code> — raw markdown for one page: <code>curl -fs "https://code.claude.com/docs/en/PAGE.md"</code>.</li>
+      </ul>
+
+      <h4>1.2 Testing Strategy</h4>
+      <p>Live execution of each recipe — including a multi-word query to prove zsh quoting — plus the repo lint gate.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>just --list</code> — all four recipes appear with doc comments.</li>
+        <li><code class="status">[x]</code> <code>just ghdocs "copilot cli hooks"</code> — returns hits (multi-word query proves quoting).</li>
+        <li><code class="status">[x]</code> <code>just ghdoc /en/copilot/concepts/agents/copilot-cli/about-copilot-cli</code> — returns markdown.</li>
+        <li><code class="status">[x]</code> <code>just ccdocs hooks</code> and <code>just ccdoc hooks</code> — return index lines / raw markdown.</li>
+        <li><code class="status">[x]</code> <code>just lint</code> — still clean.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 2: Research Harvest &amp; Mapping Resolution</h3>
+      <p>Ground every future claim. Harvest ~12–18 pages into <code>specs/copilot-cli-vs-claude-code/research/</code> using the Phase 1 recipes, then resolve <em>every</em> <code>[V]</code> marker in the row inventory (see Notes) in a single <code>mappings.md</code> with per-row citations. Anything unresolvable is downgraded to a <code>.p</code> (partial) glyph or promoted to a Questionable — never silently asserted.</p>
+      <figure>
+        <!-- {{PHASE_IMAGE: a grid of document pages flowing through a funnel labeled curl into a single glowing mapping sheet, captioned EVIDENCE FIRST}} -->
+        <figcaption>Fig. 3 · Phase 2: doc pages in, one citation-backed mapping sheet out.</figcaption>
+      </figure>
+
+      <h4>2.1 Harvest Copilot CLI pages</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Save via <code>just ghdoc</code>: about-copilot-cli, install, getting-started, using/overview, best-practices, customize overview, add-custom-instructions, use-hooks, add-skills, create-custom-agents-for-cli, MCP, cli-command-reference, cli-plugin-reference, use-copilot-cli-in-actions, automate quickstart / run-cli-programmatically, authenticate, administer-for-enterprise, lsp-servers.</li>
+      </ul>
+      <h4>2.2 Harvest Claude Code pages</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Save via <code>just ccdoc</code>: cli-reference, settings, hooks, sub-agents, skills, mcp, plugins, slash-commands, headless (or sdk), github-actions, memory, sandboxing, interactive-mode.</li>
+      </ul>
+      <h4>2.3 Resolve the mappings</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Write <code>research/mappings.md</code>: one row per <code>[V]</code> marker from the Notes inventory, each resolved with a file + section citation, or explicitly downgraded to <code>.p</code> / escalated to a Questionable.</li>
+      </ul>
+      <h4>2.4 Testing Strategy</h4>
+      <p>Mechanical completeness checks — the research directory is the doc’s evidence base, so gaps here become wrong glyphs later.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>ls specs/copilot-cli-vs-claude-code/research/ | wc -l</code> ≥ 12.</li>
+        <li><code class="status">[x]</code> <code>grep -c '\[V\]' specs/copilot-cli-vs-claude-code/research/mappings.md</code> returns <code>0</code> unresolved (every marker rewritten as resolved/downgraded/escalated).</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 3: Author the Comparison Doc</h3>
+      <p>The centerpiece. Copy the <code>opus-5-mastery</code> skeleton to <code>specs/copilot-cli-vs-claude-code/doc/index.html</code>, re-skin to Copilot purple, and build the hero plus sections 00–12 per the section map in Notes. Rule of evidence: <strong>no <code>.n</code> glyph without a research citation; uncertain claims get <code>.p</code> plus a footnote.</strong> Images are HTML comment placeholders only — the guide ships text-first.</p>
+      <figure>
+        <!-- {{PHASE_IMAGE: a dark webpage mockup with a tinted purple matrix column, flip cards, and a copy-button code block, captioned THE FIELD GUIDE}} -->
+        <figcaption>Fig. 4 · Phase 3: the guide’s anatomy — matrices, conversion tables, gotcha flips, copyable pairs.</figcaption>
+      </figure>
+
+      <h4>3.1 Skeleton &amp; identity</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Copy skeleton; swap accent trio to <code>#A371F7</code> / <code>--accent-dim:#5E3B9E</code> / <code>rgba(163,113,247,.16)</code>; keep amber <code>--accent-2</code> and green <code>--ok</code>; new <code>favicon.svg</code>; title “Copilot CLI vs Claude Code”.</li>
+        <li><code class="status">[x]</code> Hero: badges (“As of July 2026”, product versions), TL;DR verdict callout, three hero bullets (SAME SHAPE / DIFFERENT NAMES / HONEST TRADE-OFFS).</li>
+      </ul>
+      <h4>3.2 Verdict + mental model (§00–§01)</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> §00 “Verdict at a glance” — one <code>.matrix</code>, ~16 capability rows, Copilot column tinted, <code>.y/.p/.n</code> glyphs, every glyph traceable to <code>mappings.md</code>.</li>
+        <li><code class="status">[x]</code> §01 “Two agents, one shape” — mental-model prose + ~10-row terminology map + lineage/pricing callout.</li>
+      </ul>
+      <h4>3.3 Conversion tables (§02–§05)</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> §02 config &amp; context files (~15 rows) + annotated <code>tree ~/.claude</code> vs <code>tree ~/.copilot</code> code blocks.</li>
+        <li><code class="status">[x]</code> §03 CLI invocation &amp; flags (~16 rows) + 3 paired copy-button blocks (one-shot with allowlist · resume · init).</li>
+        <li><code class="status">[x]</code> §04 slash commands &amp; keys (~14 rows) + Shift+Tab muscle-memory callout.</li>
+        <li><code class="status">[x]</code> §05 customization surfaces — <code>.matrix</code> (12 surfaces) + hook-event mapping table + minimal hook-config snippet for each side.</li>
+      </ul>
+      <h4>3.4 Permissions, CI, gotchas, exclusives (§06–§10)</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> §06 permissions &amp; safety <code>.matrix</code> (~10 rows) + yolo-flag equivalence warning callout.</li>
+        <li><code class="status">[x]</code> §07 headless / CI / GitHub Actions — paired full workflow code blocks + headless-flag table.</li>
+        <li><code class="status">[x]</code> §08 switching gotchas — 6–8 flip cards (Claude habit → Copilot translation + surprise).</li>
+        <li><code class="status">[x]</code> §09 “What Copilot has that Claude Code doesn’t” + §10 mirror section — each item citation-backed.</li>
+      </ul>
+      <h4>3.5 Cheat sheet, sources, interactions (§11–§12 + JS)</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> §11 cheat sheet — ~10 paired equivalent one-liners, each with its own <code>.copy-btn</code>.</li>
+        <li><code class="status">[x]</code> §12 sources &amp; provenance — every harvested pathname/URL, “as of” date, churn caveat.</li>
+        <li><code class="status">[x]</code> Port the script block: copy-with-fallback, light-markdown <code>.ptext</code> rendering, flip/reset handlers; print CSS shows backs, hides buttons.</li>
+      </ul>
+      <h4>3.6 Testing Strategy</h4>
+      <p>Static structure greps plus a live playwright pass on the staged file — interactions exercised, console clean.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>wc -l</code> ≈ 950–1100; <code>grep -c copy-btn</code> ≥ 10; <code>grep -c 'class="matrix"'</code> = 3; <code>grep -q '@media print'</code>.</li>
+        <li><code class="status">[x]</code> <code>playwright-cli open</code> the staged file — screenshot reviewed, every TOC anchor resolves, one copy button copies its exact <code>data-prompt</code>, one flip card flips/resets, console has zero errors.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 4: Import into the Site &amp; Library Index</h3>
+      <p>Make the guide a first-class document: verbatim bundle + generated card, and fix the hand-maintained library index — including the pre-existing gap.</p>
+
+      <h4>4.1 Import</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Run <code>uv run scripts/new_doc.py specs/copilot-cli-vs-claude-code/doc --title "Copilot CLI vs Claude Code" --slug copilot-cli-vs-claude-code --category guides --tags copilot,claude-code,cli,agents,comparison --description "Side-by-side field guide: shared mental model, conversion tables (CLAUDE.md ↔ AGENTS.md, flags, hooks, skills, MCP), permissions, CI/Actions, and each agent's exclusive features." --source "GitHub Docs + Claude Code Docs, July 2026"</code> (direct script call — the <code>just add</code> recipe drops quoting on multi-word titles, per the opus-5 amendment).</li>
+        <li><code class="status">[x]</code> Edit <code>docs/library/index.md</code>: add the new guide bullet <em>and</em> the missing <code>opus-5-mastery</code> bullet under <code>## guides</code>.</li>
+      </ul>
+      <h4>4.2 Testing Strategy</h4>
+      <p>Repo gates: importer output, strict build, lint.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>ls docs/pages/copilot-cli-vs-claude-code/index.html</code> and card front-matter fields correct (title/tags/category/html/source/added).</li>
+        <li><code class="status">[x]</code> <code>just build</code> — strict build passes with the new bundle + card.</li>
+        <li><code class="status">[x]</code> <code>just lint</code> — ruff + rumdl clean.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 5: Site Validation End-to-End</h3>
+      <p>The repo’s standard playwright-cli recipe against the real built site, plus Pagefind and the importer test suite.</p>
+
+      <h4>5.1 Testing Strategy — the CLAUDE.md recipe + repo gates</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>just search</code> — build + Pagefind index the new card.</li>
+        <li><code class="status">[x]</code> <code>python3 -m http.server -d site 8000 &amp;</code> then <code>playwright-cli open http://localhost:8000/pages/copilot-cli-vs-claude-code/index.html</code> + <code>screenshot</code> — title correct, layout intact (hero, a matrix, the cheat sheet).</li>
+        <li><code class="status">[x]</code> Image eval returns all <code>ok: true</code> (trivially — image slots are comments, zero <code>&lt;img&gt;</code>); <code>playwright-cli console</code> clean bar favicon.</li>
+        <li><code class="status">[x]</code> <code>playwright-cli goto http://localhost:8000/library/guides/copilot-cli-vs-claude-code/</code> — “Open the document →” resolves to the verbatim doc; then <code>playwright-cli close</code> and kill the server.</li>
+        <li><code class="status">[x]</code> <code>grep</code> the built <code>site/library/index.html</code> for both new bullets (new guide + opus-5-mastery).</li>
+        <li><code class="status">[x]</code> <code>uv run pytest</code> — importer tests green.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GLOBAL VALIDATION ===== -->
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these commands to validate the entire plan is complete:</p>
+    <ul class="checklist">
+      <li><code class="status">[x]</code> <code>just ghdocs "copilot cli"</code> and <code>just ccdoc hooks</code> — recipes return live results.</li>
+      <li><code class="status">[x]</code> <code>just lint</code> — python + markdown lint clean across the repo.</li>
+      <li><code class="status">[x]</code> <code>just build</code> — strict MkDocs build succeeds with the new bundle + card.</li>
+      <li><code class="status">[x]</code> <code>uv run pytest</code> — importer tests still green.</li>
+      <li><code class="status">[x]</code> <code>playwright-cli open http://localhost:8000/pages/copilot-cli-vs-claude-code/index.html</code> — renders; console clean (favicon exempt); copy buttons copy; flip cards flip; card button resolves.</li>
+      <li><code class="status">[x]</code> <code>grep -rn 'TODO\|\[V\]' docs/pages/copilot-cli-vs-claude-code specs/copilot-cli-vs-claude-code/doc</code> returns nothing, and <code>grep -E '\{\{' specs/copilot-cli-vs-claude-code.html | grep -vc '&lt;!--'</code> returns <code>0</code> — the only double-brace tokens left are the intentional commented image slots.</li>
+    </ul>
+    <div class="loop">
+      🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong>
+    </div>
+  </section>
+
+  <!-- ===== QUESTIONABLES ===== -->
+  <section id="questionables">
+    <h2>Questionables</h2>
+    <p>Open questions, phrased yes/no where possible. Each carries the assumption the build proceeds on unless you say otherwise.</p>
+    <details>
+      <summary>Q1 — Accept that the GitHub Docs API (<code>/api/search/v1</code>, <code>/api/article/body</code>) is unofficial and may break? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> Both endpoints are internal to docs.github.com with no stability contract. Mitigation: recipes use <code>curl -f</code> so failures are loud, and all research snapshots are committed under <code>research/</code>, so authoring and future edits never depend on the live endpoints.</p>
+    </details>
+    <details>
+      <summary>Q2 — Is “As of July 2026” + a dated provenance section enough to handle Copilot CLI churn? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> Copilot CLI is in public preview and moves fast. The hero badge, §12 provenance, and a note telling future editors to re-run <code>just ghdoc</code> on the cited pathnames make staleness detectable and repairable rather than invisible.</p>
+    </details>
+    <details>
+      <summary>Q3 — Enforce “no <code>.n</code> without a citation; uncertain → <code>.p</code>” even where it makes the matrices look less decisive? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> Every “tool X lacks feature Y” cell is a falsifiable claim with reputational cost. A <code>.p</code> with a footnote is honest; a wrong <code>.n</code> is the one error class this doc can’t afford.</p>
+    </details>
+    <details>
+      <summary>Q4 — Ship v1 with zero embedded images (placeholders as HTML comments)? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes — per the user’s explicit decision.</strong> The doc is table-first; images add load weight and generation cost without carrying the conversion content. Slots exist in the markup, so a later image pass is a pure addition.</p>
+    </details>
+    <details>
+      <summary>Q5 — Call <code>scripts/new_doc.py</code> directly (not <code>just add</code>) for the import? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> The opus-5 build recorded that the <code>just add</code> recipe drops quoting on multi-word titles. Direct <code>uv run scripts/new_doc.py …</code> with quoted flags is the reliable path; fixing the recipe’s quoting is out of scope (worth a follow-up).</p>
+    </details>
+    <details>
+      <summary>Q6 — Treat <code>just links</code> (lychee) as advisory rather than a gate for this doc? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> §12 adds many <code>docs.github.com</code> / <code>code.claude.com</code> links; lychee may rate-limit or transiently fail on them. Run it, read the output, but don’t block completion on it.</p>
+    </details>
+    <details>
+      <summary>Q7 — Keep pricing/plan comparison to one callout (no dedicated pricing section)? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> Pricing churns faster than features and both vendors gate models by plan tier; a §01 callout naming the models-per-subscription difference conveys the strategic point without a table that would be stale in a quarter.</p>
+    </details>
+  </section>
+
+  <!-- ===== NOTES ===== -->
+  <section id="notes">
+    <h2>Notes</h2>
+
+    <h3>Verified research pipelines (builder: these are tested — use as-is)</h3>
+    <pre><code># GitHub Docs search (client_name is REQUIRED — omitting it returns an error)
+curl -fsG "https://docs.github.com/api/search/v1" \
+  --data-urlencode "query=copilot cli hooks" \
+  --data-urlencode "version=free-pro-team@latest" \
+  --data-urlencode "language=en" \
+  --data-urlencode "size=10" \
+  --data-urlencode "client_name=oh-my-html-docs" | jq -r '.hits[] | "\(.url) — \(.title)"'
+
+# GitHub Docs full article as raw markdown (text/markdown response)
+curl -fsG "https://docs.github.com/api/article/body" \
+  --data-urlencode "pathname=/en/copilot/how-tos/copilot-cli/cli-best-practices"
+
+# Claude Code docs: any page as raw markdown by appending .md
+curl -fs "https://code.claude.com/docs/en/hooks.md"
+
+# Claude Code docs: full page index (title + description per page)
+curl -fs "https://code.claude.com/docs/llms.txt"</code></pre>
+
+    <h3>Comparison-doc section map (target ~1000 lines, single file)</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>#</th><th>Section</th><th>Component</th></tr></thead>
+      <tbody>
+        <tr><td>—</td><td>Hero: badges, TL;DR verdict, three bullets</td><td>hero + callout</td></tr>
+        <tr><td>00</td><td>Verdict at a glance (~16 capability rows)</td><td>.matrix, Copilot column tinted</td></tr>
+        <tr><td>01</td><td>Two agents, one shape (terminology map)</td><td>prose + .tbl-wrap + pricing callout</td></tr>
+        <tr><td>02</td><td>Conversion: config &amp; context files (~15 rows)</td><td>.tbl-wrap + tree code blocks</td></tr>
+        <tr><td>03</td><td>Conversion: CLI invocation &amp; flags (~16 rows)</td><td>.tbl-wrap + 3 copy-btn pairs</td></tr>
+        <tr><td>04</td><td>Conversion: slash commands &amp; keys (~14 rows)</td><td>.tbl-wrap + callout</td></tr>
+        <tr><td>05</td><td>Conversion: customization surfaces + hook-event map</td><td>.matrix + .tbl-wrap + snippets</td></tr>
+        <tr><td>06</td><td>Permissions &amp; safety model (~10 rows)</td><td>.matrix + yolo warning callout</td></tr>
+        <tr><td>07</td><td>Headless, CI &amp; GitHub Actions</td><td>paired workflow code + .tbl-wrap</td></tr>
+        <tr><td>08</td><td>Switching gotchas (6–8 cards)</td><td>flip cards</td></tr>
+        <tr><td>09</td><td>Copilot exclusives</td><td>prose + .tbl-wrap</td></tr>
+        <tr><td>10</td><td>Claude Code exclusives</td><td>prose + .tbl-wrap</td></tr>
+        <tr><td>11</td><td>Cheat sheet: ~10 equivalent command pairs</td><td>.code + per-pair .copy-btn</td></tr>
+        <tr><td>12</td><td>Sources &amp; provenance</td><td>linked list + churn caveat</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Row inventory — confident vs to-verify</h3>
+    <p>Confident (asserted from harvested reference pages this session): <code>claude</code>↔<code>copilot</code>, <code>claude -p</code>↔<code>copilot -p/--prompt</code>, <code>--allowedTools</code>↔<code>--allow-tool</code>, <code>--disallowedTools</code>↔<code>--deny-tool</code>, <code>--dangerously-skip-permissions</code>↔<code>--allow-all-tools</code>, <code>/init</code>↔<code>copilot init</code>, <code>CLAUDE.md</code>↔<code>AGENTS.md</code>/<code>.github/copilot-instructions.md</code>, <code>~/.claude</code>↔<code>~/.copilot</code> (<code>CLAUDE_CONFIG_DIR</code>↔<code>COPILOT_HOME</code>), <code>claude mcp</code>↔<code>copilot mcp</code>, plugins↔<code>copilot plugin</code>+marketplaces, skills↔<code>copilot skill</code>, auth env vars (<code>ANTHROPIC_API_KEY</code> vs <code>COPILOT_GITHUB_TOKEN</code>/<code>GH_TOKEN</code>/<code>GITHUB_TOKEN</code>, fine-grained PATs only, classic <code>ghp_</code> rejected), Shift+Tab plan-mode toggle on both, <code>copilot completion</code> / <code>copilot update</code> / <code>copilot help TOPIC</code>.</p>
+    <p><strong><code>[V]</code> to verify in Phase 2</strong> (each becomes a <code>mappings.md</code> row): Copilot user-settings filename; per-repo settings surface; MCP config path; skills folder location; custom-agent file location/format; hooks config location/schema + exact event identifiers; custom slash commands (expected absent); memory equivalent (expected absent); resume/continue flags; <code>--model</code> flag; <code>--add-dir</code>; structured output (<code>--output-format</code> equivalent, expected absent); <code>--append-system-prompt</code> equivalent; <code>copilot mcp</code> subcommands; login command syntax; doctor equivalent; slash commands <code>/model /clear /mcp /agents /login /compact /feedback</code> on the Copilot side; <code>!</code> bash passthrough; <code>@</code> file mentions; permission-rule persistence; sandboxing (expected absent); enterprise policy mechanism; LSP config location.</p>
+
+    <h3>Design decisions &amp; rejected alternatives</h3>
+    <ul>
+      <li><strong>Copilot column tinted in every matrix.</strong> The reader baseline is a Claude Code user examining Copilot; the tinted column marks the subject under examination, mirroring how the cmux/opus-5 guides tint “our thing.”</li>
+      <li><strong>Rejected: dual accents (coral vs purple).</strong> The house rule is ONE accent per doc; two accents would fight the verdict glyph colors. Purple carries the doc; Claude-side identity is carried by column order and labels.</li>
+      <li><strong>Rejected: <code>specs/guides/</code> staging.</strong> That directory doesn’t exist — the real convention is the plan-name sibling dir, so staging lives at <code>specs/copilot-cli-vs-claude-code/doc/</code> with exactly one <code>.html</code>.</li>
+      <li><strong>Research is committed, not scratch.</strong> Claims in a comparison doc need auditable provenance; <code>research/</code> under the plan’s sibling dir mirrors the images-dir convention and survives the session.</li>
+      <li><strong>Dependencies:</strong> none added. <code>jq</code> is used by <code>just ghdocs</code> (present on this machine); the guide itself stays dependency-free self-contained HTML (Google Fonts links only, matching both existing guides).</li>
+    </ul>
+
+    <figure>
+      <!-- {{NOTES_IMAGE: three sibling webpage thumbnails accented coral, gold, and purple sharing one skeleton, captioned ONE HOUSE, THREE ACCENTS}} -->
+      <figcaption>Fig. 5 · The family portrait: opus-5 coral, cmux gold, and this guide’s Copilot purple on the same bones.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== AMENDMENTS ===== -->
+  <!-- Running history of changes made AFTER the plan was first executed. Append-only. -->
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <details>
+      <summary>2026-07-27T15:55:38Z — Plan executed end-to-end; guide built, imported, and validated</summary>
+      <p>All five phases completed in one build round. Justfile gained <code>ghdocs</code>/<code>ghdoc</code>/<code>ccdocs</code>/<code>ccdoc</code> (multi-word queries verified). 33 doc pages harvested to <code>research/</code>; <code>mappings.md</code> resolved all 35 open items — several planned “Copilot lacks X” claims were overturned by evidence (custom slash commands, memory, <code>/undo</code> checkpoints, sandboxing, JSONL output all exist), and the doc was written to the corrected facts. The 1,182-line guide was playwright-verified (clipboard copies match <code>data-prompt</code> exactly, flip cards flip/reset, zero console errors, all anchors resolve), imported via <code>scripts/new_doc.py</code> (direct call — the <code>just add</code> quoting bug noted in the opus-5 plan still stands), and <code>docs/library/index.md</code> gained both the new bullet and the previously missing <code>opus-5-mastery</code> bullet. <code>.rumdl.toml</code> now excludes <code>research/</code> (verbatim external snapshots). Strict build, lint, Pagefind, and pytest all green; card button resolves to the verbatim doc. Image slots remain commented placeholders by design.</p>
+    </details>
+  </section>
+
+</main>
+
+<button class="to-top" id="toTop" type="button" aria-label="Back to top">↑</button>
+
+<script>
+(() => {
+  'use strict';
+
+  /* --- Status markers: stamp a state from the marker text so CSS can colour them.
+         The Build Plan workflow rewrites these in the HTML; re-running this picks it up. --- */
+  const STATES = {'[]':'idle', '[wip]':'wip', '[x]':'done', '[f]':'fail'};
+  const stamp = () => document.querySelectorAll('.status').forEach(el => {
+    el.dataset.state = STATES[el.textContent.trim()] || 'idle';
+  });
+  stamp();
+
+  /* --- Collapsible phase cards with a live done/total count --- */
+  document.querySelectorAll('.phase').forEach(phase => {
+    const head = phase.querySelector('h3');
+    if (!head) return;
+    const boxes = phase.querySelectorAll('.checklist .status');
+    const done = [...boxes].filter(b => b.dataset.state === 'done').length;
+    const count = document.createElement('span');
+    count.className = 'phase-count';
+    count.textContent = `${done}/${boxes.length}`;
+    if (boxes.length && done === boxes.length) count.dataset.complete = 'true';
+    head.append(count);
+
+    head.tabIndex = 0;
+    head.setAttribute('role', 'button');
+    head.setAttribute('aria-expanded', 'true');
+    const toggle = () => {
+      const collapsed = phase.classList.toggle('collapsed');
+      head.setAttribute('aria-expanded', String(!collapsed));
+    };
+    head.addEventListener('click', toggle);
+    head.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  /* --- Scroll progress rail --- */
+  const bar = document.getElementById('progress');
+  const toTop = document.getElementById('toTop');
+  let ticking = false;
+  const onScroll = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (max > 0 ? (scrollY / max) * 100 : 0) + '%';
+    toTop.classList.toggle('on', scrollY > 1200);
+    ticking = false;
+  };
+  addEventListener('scroll', () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+  }, {passive: true});
+  onScroll();
+
+  toTop.addEventListener('click', () => scrollTo({top: 0, behavior: 'smooth'}));
+
+  /* --- Scroll-spy: mark the section currently nearest the top of the viewport --- */
+  const links = new Map();
+  document.querySelectorAll('.toc a').forEach(a => links.set(a.hash.slice(1), a));
+  const sections = [...document.querySelectorAll('section[id]')].filter(s => links.has(s.id));
+  const visible = new Set();
+  const setCurrent = id => links.forEach((a, key) =>
+    a.setAttribute('aria-current', String(key === id)));
+
+  const spy = new IntersectionObserver(entries => {
+    entries.forEach(e => e.isIntersecting ? visible.add(e.target) : visible.delete(e.target));
+    const current = sections.find(s => visible.has(s))
+      // nothing in the band — a section taller than it spans the whole band, so fall
+      // back to the last section whose top has already scrolled past the bar
+      || [...sections].reverse().find(s => s.getBoundingClientRect().top <= 120);
+    if (current) setCurrent(current.id);
+  }, {rootMargin: '-60px 0px -75% 0px'});
+  sections.forEach(s => spy.observe(s));
+
+  /* --- Print: open every <details> so collapsed answers aren't silently dropped from
+         the printout, then put them back exactly as the reader had them. --- */
+  let reopened = [];
+  addEventListener('beforeprint', () => {
+    reopened = [...document.querySelectorAll('details:not([open])')];
+    reopened.forEach(d => d.open = true);
+  });
+  addEventListener('afterprint', () => {
+    reopened.forEach(d => d.open = false);
+    reopened = [];
+  });
+})();
+</script>
+</body>
+</html>
