@@ -16,9 +16,10 @@ include = [
 ]
 
 # Verbatim doc snapshots harvested from external sites (provenance for the
-# copilot-cli-vs-claude-code guide) — not authored markdown, never lint/fmt them.
+# comparison guides) — not authored markdown, never lint/fmt them.
 exclude = [
     "specs/copilot-cli-vs-claude-code/research/**",
+    "specs/codex-cli-vs-claude-code/research/**",
 ]
 
 # Rules turned OFF. All other default-on rules — including the token-strippers

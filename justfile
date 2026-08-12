@@ -69,6 +69,17 @@ ccdocs QUERY:
 ccdoc PAGE:
     curl -fs "https://code.claude.com/docs/en/{{ PAGE }}.md"
 
+# -L is required: every developers.openai.com/codex/* URL answers 308.
+# Search the Codex docs index (llms.txt): `just codexdocs hooks`
+codexdocs QUERY:
+    curl -fsSL "https://developers.openai.com/codex/llms.txt" | grep -i -- "{{ QUERY }}"
+
+# Per-page files leave MDX <ConfigTable/> placeholders unrendered — for flag, command,
+# and config.toml tables fetch the `codex-manual` page instead (~1.9 MB, fully rendered).
+# Fetch one Codex docs page as raw markdown: `just codexdoc agent-configuration/agents-md`
+codexdoc PAGE:
+    curl -fsSL --retry 3 --retry-connrefused "https://learn.chatgpt.com/docs/{{ PAGE }}.md"
+
 # Regenerate CHANGELOG.md from conventional commits.
 changelog:
     uvx git-cliff --output CHANGELOG.md
