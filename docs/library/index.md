@@ -12,6 +12,9 @@ Cards are organized by **category** (subfolders of `docs/library/`) and filterab
   cmux (tiers, the agentic loop, multi-agent access). By
   [IndyDevDan](https://www.youtube.com/@indydevdan) /
   [disler](https://github.com/disler/learning-cmux-with-agents).
+- [Codex CLI vs Claude Code](guides/codex-cli-vs-claude-code.md) — conversion field guide between the
+  two terminal agents: CLAUDE.md ↔ AGENTS.md, settings.json ↔ config.toml, flags, slash commands, the
+  shared hook-event set, the sandbox/approval model, `codex exec`, and each agent's exclusives.
 - [Copilot CLI vs Claude Code](guides/copilot-cli-vs-claude-code.md) — conversion field guide between
   the two terminal agents: config files, flags, slash commands, hooks, permissions, CI, and each
   tool's exclusive features.

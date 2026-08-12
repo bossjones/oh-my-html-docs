@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A conversion field guide between OpenAI Codex CLI and Claude Code: CLAUDE.md ↔ AGENTS.md, settings.json ↔ config.toml, flags, slash commands, hooks, skills, MCP, the sandbox/approval model, codex exec and CI — and what each agent has that the other doesn't.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0C10">
+<title>Codex CLI vs Claude Code — A Conversion Field Guide</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C10; --bg-soft:#0E1116; --surface:#12161C; --surface-2:#161B22;
+    --border:#232A33; --border-bright:#33404D;
+    --text:#F4F7FB; --muted:#CDD6E0; --faint:#8B96A5;
+    --accent:#10A37F;                 /* the ONE accent — OpenAI green */
+    --accent-dim:#0B6B53;
+    --accent-glow:rgba(16,163,127,.16);
+    --accent-2:#E0B357;               /* secondary — amber (partial / caution) */
+    --accent-2-dim:rgba(224,179,87,.14);
+    --ok:#4FE3A3;                     /* green — yes / confirmed */
+    --maxw:1225px;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Space Grotesk','Inter',ui-rounded,system-ui,sans-serif;
+    --body:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+  body{
+    color:var(--text); font-family:var(--body);
+    font-size:19px; line-height:1.7; -webkit-font-smoothing:antialiased;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(900px 500px at 78% -8%, var(--accent-glow), transparent 60%),
+      radial-gradient(700px 420px at 8% 30%, rgba(16,163,127,.05), transparent 65%);
+    background-repeat:no-repeat;
+  }
+  ::selection{background:var(--accent);color:var(--bg)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+  /* ---- top nav ---- */
+  .topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(11px);
+    background:color-mix(in srgb, var(--bg) 78%, transparent);border-bottom:1px solid var(--border)}
+  .topbar .inner{max-width:1180px;margin:0 auto;padding:11px 26px;display:flex;align-items:center;gap:20px}
+  .brand{font-family:var(--mono);font-size:12.5px;letter-spacing:.16em;color:var(--text);white-space:nowrap;font-weight:700}
+  .brand b{color:var(--accent)}
+  .navlinks{display:flex;gap:15px;flex-wrap:wrap;margin-left:auto}
+  .navlinks a{font-family:var(--mono);font-size:11.5px;letter-spacing:.07em;color:var(--muted);text-transform:uppercase}
+  .navlinks a:hover{color:var(--accent);text-decoration:none}
+  @media(max-width:960px){.navlinks{display:none}}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+  section{scroll-margin-top:72px}
+
+  /* ---- hero ---- */
+  .hero{border-bottom:1px solid var(--border);padding:48px 0 64px;text-align:center}
+  .hero-copy{display:flex;flex-direction:column;align-items:center}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.26em;color:var(--accent);text-transform:uppercase;font-weight:500}
+  .hero h1{font-family:var(--disp);font-weight:700;line-height:1.06;letter-spacing:-.012em;text-transform:uppercase;
+    font-size:clamp(32px,6vw,64px);margin:14px auto 26px;max-width:24ch}
+  .hero h1 .gc{color:var(--accent)}
+  .hero .lede{font-size:clamp(17px,2.3vw,22px);color:var(--muted);max-width:60ch;margin:0 auto;font-weight:500}
+  .hero .lede strong{color:var(--accent);font-weight:700}
+  .badges{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:22px 0 0}
+  .badge{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--border-bright);background:var(--bg-soft);padding:5px 13px;border-radius:999px}
+  .badge b{color:var(--accent);font-weight:700}
+  .hero-bullets{list-style:none;margin:18px auto 0;padding:0;display:inline-block;text-align:left}
+  .hero-bullets li{position:relative;padding-left:30px;margin:12px 0;font-size:clamp(16px,2vw,20px);
+    color:var(--muted);font-weight:500;line-height:1.35}
+  .hero-bullets li::before{content:"";position:absolute;left:5px;top:.58em;width:9px;height:9px;border-radius:2px;
+    background:var(--accent);transform:rotate(45deg)}
+  .hero-bullets li strong{color:var(--accent);font-weight:700}
+
+  /* ---- stat trio ---- */
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:34px auto 0;max-width:920px;width:100%}
+  @media(max-width:760px){.grid-3{grid-template-columns:1fr}}
+  .stat{background:linear-gradient(180deg,var(--surface-2),var(--surface));border:1px solid var(--border);
+    border-radius:14px;padding:24px 22px;position:relative;overflow:hidden;text-align:left}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+  .stat .big{font-family:var(--disp);font-weight:700;font-size:38px;line-height:1;color:var(--accent);letter-spacing:-.02em}
+  .stat .lbl{color:var(--muted);font-size:14.5px;margin-top:9px}
+
+  /* ---- table of contents ---- */
+  .toc{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:24px 26px 14px;margin:34px 0 8px}
+  .toc-h{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  .toc ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+  @media(max-width:760px){.toc ol{grid-template-columns:1fr}}
+  .toc a{display:block;padding:10px 10px;border-radius:9px;border:1px solid transparent}
+  .toc a:hover{background:var(--accent-glow);border-color:var(--border);text-decoration:none}
+  .toc .trow{display:flex;align-items:baseline;gap:11px}
+  .toc .tnum{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent)}
+  .toc .tt{font-family:var(--disp);font-weight:600;font-size:15.5px;color:var(--text);letter-spacing:-.005em}
+  .toc .td{display:block;font-size:12.5px;color:var(--muted);margin:3px 0 0 23px;line-height:1.42}
+
+  /* ---- sections ---- */
+  section{padding:104px 0 24px;border-top:1px solid var(--border)}
+  section:first-of-type{border-top:none}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+  .sec-num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700;letter-spacing:.05em}
+  h2{font-family:var(--disp);font-weight:700;letter-spacing:-.01em;font-size:clamp(30px,4vw,46px);line-height:1.08}
+  h3{font-family:var(--disp);font-weight:600;font-size:24px;margin:32px 0 10px;letter-spacing:-.005em}
+  .sub{color:var(--muted);font-size:20.5px;max-width:74ch;margin:16px 0 8px;line-height:1.6}
+  p{margin:15px 0;color:var(--text);opacity:.92}
+  strong{color:var(--text);font-weight:600}
+  .lead-rule{height:2px;width:64px;background:linear-gradient(90deg,var(--accent),transparent);margin:18px 0 6px;border-radius:2px}
+
+  /* ---- subpoints ---- */
+  .subpoints{list-style:none;margin:18px 0 8px;padding:0;max-width:76ch}
+  .subpoints li{position:relative;padding-left:26px;margin:13px 0;color:var(--muted);font-size:18px;line-height:1.58}
+  .subpoints li::before{content:"";position:absolute;left:3px;top:9px;width:7px;height:7px;border-radius:2px;
+    background:var(--accent);transform:rotate(45deg)}
+  .subpoints li b,.subpoints li strong{color:var(--text);font-weight:600}
+  .subpoints li code{font-size:.86em}
+
+  /* ---- callout & pull-quote ---- */
+  .callout{background:var(--bg-soft);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;padding:18px 22px;margin:34px 0 22px}
+  .callout.alt{border-left-color:var(--accent-2)}
+  .callout .ct{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
+  .callout.alt .ct{color:var(--accent-2)}
+  .callout p{margin:5px 0;font-size:17px}
+  .pquote{font-family:var(--disp);font-weight:500;font-size:clamp(20px,2.8vw,27px);line-height:1.32;
+    color:var(--text);border-left:3px solid var(--accent);padding:6px 0 6px 22px;margin:30px 0;letter-spacing:-.01em}
+  .pquote .src{display:block;font-family:var(--mono);font-size:12px;color:var(--faint);font-weight:400;margin-top:12px;letter-spacing:.05em}
+
+  /* ---- table ---- */
+  .tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--border);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:620px}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--border)}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--bg-soft)}
+  tr:last-child td{border-bottom:none}
+  td b{color:var(--text)}
+  td .mono,.mono{font-family:var(--mono);color:var(--accent);font-size:13px}
+  tbody tr:hover{background:var(--accent-glow)}
+  td small{display:block;color:var(--muted);font-size:11.5px;line-height:1.4;margin-top:2px}
+
+  /* ---- comparison matrix: the Codex column is the subject under examination.
+         The reader baseline is a Claude Code user, so Codex gets the tint. ---- */
+  .matrix td:first-child,.matrix th:first-child{color:var(--text);font-weight:600}
+  .matrix .cx{background:rgba(16,163,127,.10);border-left:1px solid var(--accent-dim);border-right:1px solid var(--accent-dim)}
+  .matrix thead .cx{color:var(--accent);background:rgba(16,163,127,.20)}
+  .matrix tbody tr:hover .cx{background:rgba(16,163,127,.18)}
+  /* --ok (mint) and --accent (teal) are both greens. The verdict glyph is kept legible
+     against the tinted column by being lighter AND heavier than surrounding accent text. */
+  .gy{color:var(--ok);font-weight:700;font-size:1.05em}
+  .gp{color:var(--accent-2);font-weight:700;font-size:1.05em}
+  .gn{color:var(--faint);font-weight:700;font-size:1.05em}
+
+  /* ---- checklist ---- */
+  .check{list-style:none;margin:18px 0;display:grid;gap:9px}
+  .check li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:13px 16px;font-size:15px;color:var(--text)}
+  .check li::before{content:"";flex:none;width:17px;height:17px;border:1.5px solid var(--accent);border-radius:5px;margin-top:3px;background:var(--accent-glow)}
+  .check li b{color:var(--text)}
+  .chk-h{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent-2);margin:26px 0 4px}
+
+  /* ---- code block ---- */
+  .code{background:#070A0D;border:1px solid var(--border);border-radius:12px;margin:22px 0;overflow:hidden}
+  .code .cbar{display:flex;align-items:center;gap:8px;padding:9px 15px;border-bottom:1px solid var(--border);background:var(--bg-soft)}
+  .code .cbar .dot{width:9px;height:9px;border-radius:50%;background:var(--border-bright)}
+  .code .cbar .cl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-left:6px}
+  .code pre{margin:0;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:var(--text);tab-size:2}
+  .code pre .c{color:var(--accent)}
+  .code pre .m{color:var(--faint)}
+  .code pre .s{color:var(--accent-2)}
+  .code pre .g{color:var(--ok)}
+  code{font-family:var(--mono);font-size:.88em;color:var(--accent);background:var(--accent-glow);
+    border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);padding:1px 6px;border-radius:5px}
+  .code-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.code-pair{grid-template-columns:1fr}}
+  .code-pair .code{margin:10px 0}
+
+  /* ---- problem -> solution flow rows + flip cards (switching gotchas) ---- */
+  .flow{display:grid;gap:18px;margin:32px 0 10px}
+  .flow-item{display:grid;grid-template-columns:60px 1fr;background:var(--surface);
+    border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .15s ease}
+  .flow-item:hover{border-color:var(--border-bright)}
+  .flow-rail{display:flex;align-items:center;justify-content:center;background:var(--bg-soft);
+    border-right:1px solid var(--border);font-family:var(--disp);font-size:28px;font-weight:700;color:var(--border-bright)}
+  .flow-grid{display:grid;grid-template-columns:1fr 52px 1.18fr;align-items:stretch}
+  .flow-cell{padding:24px 26px}
+  .flow-k{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px}
+  .flow-prob .flow-k{color:var(--accent-2)}
+  .flow-sol .flow-k{color:var(--ok)}
+  .flow-h{font-family:var(--disp);font-size:20px;font-weight:600;color:var(--text);line-height:1.22;margin-bottom:7px}
+  .flow-sol .flow-h{color:var(--ok)}
+  .flow-p{font-size:16.5px;color:var(--muted);line-height:1.52}
+  .flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--accent-2);font-size:26px;
+    background:var(--bg-soft);border-left:1px solid var(--border);border-right:1px solid var(--border)}
+  .flow-arrow::before{content:"?";font-weight:700}
+  .flow-item.flipped .flow-arrow{color:var(--ok)}
+  .flow-item.flipped .flow-arrow::before{content:"\279E";font-weight:400}
+  .flow-sol{background:linear-gradient(180deg,var(--accent-2-dim),transparent 72%)}
+  .flow-item.flipped .flow-sol{background:linear-gradient(180deg,rgba(79,227,163,.16),transparent 72%)}
+  .flow-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .flow-chip{font-family:var(--mono);font-size:12.5px;color:var(--ok);background:var(--surface);
+    border:1px solid color-mix(in srgb,var(--ok) 38%,transparent);padding:4px 12px;border-radius:20px}
+  @media(max-width:760px){
+    .flow-item{grid-template-columns:1fr}
+    .flow-rail{flex-direction:row;justify-content:flex-start;padding:10px 22px;border-right:none;border-bottom:1px solid var(--border);font-size:20px}
+    .flow-grid{grid-template-columns:1fr}
+    /* rotate only the glyph, not the whole cell — rotating the full-width cell
+       turns it into a tall strip that overlaps the neighboring text */
+    .flow-arrow{padding:6px;border:none;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .flow-arrow::before{display:inline-block}
+    .flow-item.flipped .flow-arrow::before{transform:rotate(90deg)}
+  }
+
+  /* flip card: front = amber question, back = green answer */
+  .flow-sol.flip-cell{padding:0}
+  .flip{perspective:1200px}
+  .flip-inner{display:grid;transition:transform .55s cubic-bezier(.2,.75,.25,1);transform-style:preserve-3d}
+  .flow-item.flipped .flip-inner{transform:rotateY(180deg)}
+  @media (prefers-reduced-motion:reduce){.flip-inner{transition:none}}
+  .flip-front,.flip-back{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:24px 26px}
+  .flip-front{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px;
+    min-height:158px;width:100%;border:0;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .flip-q{font-family:var(--disp);font-weight:700;font-size:21px;color:var(--accent-2);letter-spacing:-.01em;line-height:1.22}
+  .flip-front:hover .flip-q{color:var(--text)}
+  .flip-cta{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);
+    background:var(--accent-2-dim);border:1px solid color-mix(in srgb,var(--accent-2) 42%,transparent);
+    padding:8px 15px;border-radius:999px;transition:all .15s ease}
+  .flip-front:hover .flip-cta{background:var(--accent-2);color:var(--bg);border-color:var(--accent-2)}
+  .flip-back{transform:rotateY(180deg);position:relative}
+  .flip-reset{position:absolute;top:12px;right:14px;font-family:var(--mono);font-size:13px;line-height:1;color:var(--faint);
+    background:transparent;border:1px solid var(--border);border-radius:7px;padding:5px 9px;cursor:pointer;transition:all .15s ease}
+  .flip-reset:hover{color:var(--accent);border-color:var(--accent)}
+  @media print{
+    .flip-inner{transform:none !important}
+    .flip-front{display:none !important}
+    .flip-back{transform:none !important;position:static !important;-webkit-backface-visibility:visible !important;backface-visibility:visible !important}
+    .flip-reset{display:none !important}
+  }
+
+  /* ---- cheat-sheet rows + copy buttons ---- */
+  .prompt-list{display:grid;gap:10px;margin:18px 0 6px}
+  .prow{display:flex;align-items:flex-start;gap:16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:15px 18px;transition:border-color .15s ease,background .15s ease}
+  .prow:hover{border-color:var(--border-bright);background:var(--surface-2)}
+  .prow-main{flex:1;min-width:0}
+  .prow-id{display:flex;align-items:baseline;gap:11px}
+  .prow-id .pnum{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);flex:none}
+  .prow-id .ptitle{font-family:var(--disp);font-weight:600;font-size:18px;color:var(--text);letter-spacing:-.005em}
+  .pdesc{font-size:15.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .pdesc code{font-size:.84em}
+  .ptext{margin-top:12px;padding:13px 16px;background:var(--bg-soft);border:1px solid var(--border);
+    border-left:2px solid var(--accent);border-radius:0 9px 9px 0;font-size:14px;line-height:1.62;
+    color:var(--text);opacity:.94;font-family:var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+  .copy-btn{flex:none;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-glow);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);
+    padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .15s ease}
+  .copy-btn:hover{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  .copy-btn.copied{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  @media(max-width:620px){
+    .prow{flex-direction:column;align-items:stretch;gap:12px}
+    .copy-btn{align-self:flex-start}
+  }
+
+  /* ---- misc ---- */
+  ul.clean{margin:14px 0 14px 2px;padding-left:20px}
+  ul.clean li{margin:8px 0;color:var(--text);opacity:.92}
+  ul.clean li::marker{color:var(--accent)}
+  .cap-note{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.03em;margin:10px 0 0}
+  figure{margin:38px 0}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--faint);text-align:center;margin-top:11px;letter-spacing:.04em}
+
+  footer{margin-top:70px;border-top:1px solid var(--border);padding:46px 0 70px;text-align:center}
+  footer .fq{font-family:var(--disp);font-size:22px;font-weight:600;color:var(--text)}
+  footer .fm{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:14px;letter-spacing:.05em;line-height:2}
+
+  /* ---- print fidelity ---- */
+  @media print{
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    @page{ size:Letter; margin:0; }
+    html,body{ background:var(--bg) !important; }
+    section{ break-before:page; page-break-before:always; padding:54px 0 26px; }
+    figure,.stat,.callout,.pquote,.toc,.tbl-wrap,.check li,.code,.grid-3 .stat,.prow,.flow-item{
+      break-inside:avoid; page-break-inside:avoid;
+    }
+    .sec-head,h2,h3,.chk-h,.sub,.lead-rule{ break-after:avoid; page-break-after:avoid; }
+    figure{ margin:24px 0; }
+    a{ color:var(--accent) !important; text-decoration:none; }
+    .copy-btn{ display:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP NAV ===== -->
+<nav class="topbar" aria-label="Site">
+  <div class="inner">
+    <span class="brand">CODEX CLI <b>vs</b> CLAUDE CODE</span>
+    <div class="navlinks">
+      <a href="#s0">Verdict</a>
+      <a href="#s2">Files</a>
+      <a href="#s3">Flags</a>
+      <a href="#s4">Commands</a>
+      <a href="#s5">Customize</a>
+      <a href="#s6">Permissions</a>
+      <a href="#s7">CI</a>
+      <a href="#s8">Gotchas</a>
+      <a href="#s11">Cheat Sheet</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="wrap hero-copy">
+    <div class="eyebrow">A Conversion Field Guide</div>
+    <h1>Same Shape,<br><span class="gc">Different Dialect</span></h1>
+    <p class="lede">You already know Claude Code. This is the <strong>translation table</strong> for
+      OpenAI&rsquo;s Codex CLI &mdash; every file, flag, slash command, hook event and permission
+      dial, mapped both ways, with a citation behind every claim.</p>
+    <div class="badges">
+      <span class="badge">As of <b>August 2026</b></span>
+      <span class="badge">Codex CLI &middot; <b>codex</b></span>
+      <span class="badge">Claude Code &middot; <b>claude</b></span>
+      <span class="badge"><b>58</b> doc pages harvested</span>
+    </div>
+    <ul class="hero-bullets">
+      <li><strong>SAME SHAPE:</strong> both are TUI agents with a plan mode, a headless mode, skills, subagents, MCP, hooks and plugins.</li>
+      <li><strong>DIFFERENT DIALECT:</strong> JSON vs TOML, one permission dial vs two axes, a flag vs a subcommand.</li>
+      <li><strong>HONEST TRADE-OFFS:</strong> &sect;09 and &sect;10 say what each one genuinely does better.</li>
+    </ul>
+
+    <!-- {{HERO_IMAGE: two terminals side by side, one teal "codex" one coral "claude", joined by a bidirectional arrow}} -->
+
+    <div class="grid-3">
+      <div class="stat">
+        <div class="big">11 / 11</div>
+        <div class="lbl">Codex hook events &mdash; and every single name is also a Claude Code hook event. The schema is compatible too.</div>
+      </div>
+      <div class="stat">
+        <div class="big">2 &times; 1</div>
+        <div class="lbl">Codex splits permissions into two axes (sandbox &times; approvals). Claude Code has one ordered dial.</div>
+      </div>
+      <div class="stat">
+        <div class="big">9</div>
+        <div class="lbl">Rows in OpenAI&rsquo;s <em>own</em> published Claude&nbsp;Code&nbsp;&rarr;&nbsp;Codex migration table. They wrote the map.</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ===== TABLE OF CONTENTS ===== -->
+<nav class="toc" aria-label="Table of contents">
+  <div class="toc-h">Contents</div>
+  <ol>
+    <li><a href="#s0"><span class="trow"><span class="tnum">00</span><span class="tt">Verdict at a Glance</span></span><span class="td">Sixteen capabilities, both columns, no marketing.</span></a></li>
+    <li><a href="#s1"><span class="trow"><span class="tnum">01</span><span class="tt">Two Agents, One Shape</span></span><span class="td">The terminology map, and the migration table OpenAI published itself.</span></a></li>
+    <li><a href="#s2"><span class="trow"><span class="tnum">02</span><span class="tt">Config &amp; Context Files</span></span><span class="td">CLAUDE.md &harr; AGENTS.md, settings.json &harr; config.toml, and where skills really live.</span></a></li>
+    <li><a href="#s3"><span class="trow"><span class="tnum">03</span><span class="tt">CLI Invocation &amp; Flags</span></span><span class="td">Launch, resume, headless, yolo &mdash; flag for flag.</span></a></li>
+    <li><a href="#s4"><span class="trow"><span class="tnum">04</span><span class="tt">Slash Commands &amp; Keys</span></span><span class="td">What carries over, what is renamed, what your muscle memory loses.</span></a></li>
+    <li><a href="#s5"><span class="trow"><span class="tnum">05</span><span class="tt">Customization Surfaces</span></span><span class="td">Skills, subagents, MCP, plugins &mdash; plus the full hook-event map.</span></a></li>
+    <li><a href="#s6"><span class="trow"><span class="tnum">06</span><span class="tt">Permissions &amp; Safety</span></span><span class="td">One dial vs two axes, and a Starlark policy engine you did not expect.</span></a></li>
+    <li><a href="#s7"><span class="trow"><span class="tnum">07</span><span class="tt">Headless, CI &amp; Actions</span></span><span class="td">claude -p vs codex exec, JSONL output, and both GitHub Actions.</span></a></li>
+    <li><a href="#s8"><span class="trow"><span class="tnum">08</span><span class="tt">Switching Gotchas</span></span><span class="td">Eight habits that break. Flip each card for the fix.</span></a></li>
+    <li><a href="#s9"><span class="trow"><span class="tnum">09</span><span class="tt">Codex Exclusives</span></span><span class="td">What Codex CLI has that Claude Code doesn&rsquo;t.</span></a></li>
+    <li><a href="#s10"><span class="trow"><span class="tnum">10</span><span class="tt">Claude Code Exclusives</span></span><span class="td">What Claude Code has that Codex CLI doesn&rsquo;t.</span></a></li>
+    <li><a href="#s11"><span class="trow"><span class="tnum">11</span><span class="tt">The Cheat Sheet</span></span><span class="td">Ten equivalent command pairs, each one copyable.</span></a></li>
+    <li><a href="#s12"><span class="trow"><span class="tnum">12</span><span class="tt">Sources &amp; Provenance</span></span><span class="td">Every page cited, the harvest date, and the churn caveat.</span></a></li>
+  </ol>
+</nav>
+
+<!-- ===================== 00 ===================== -->
+<section id="s0">
+  <div class="sec-head"><span class="sec-num">00</span><h2>Verdict at a Glance</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">Sixteen capabilities a terminal agent is judged on. The Codex column is tinted because
+    that is the column you are here to read &mdash; the assumption is that Claude Code is your baseline.</p>
+
+  <div class="tbl-wrap">
+    <table class="matrix">
+      <thead>
+        <tr><th>Capability</th><th>Claude Code</th><th class="cx">Codex CLI</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Interactive TUI</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Both launch bare: <code>claude</code> / <code>codex</code>.</td></tr>
+        <tr><td>Headless / one-shot</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td><code>claude -p</code> is a flag; <code>codex exec</code> is a subcommand.</td></tr>
+        <tr><td>Plan mode</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Claude: a permission mode on Shift+Tab. Codex: the <code>/plan</code> command.</td></tr>
+        <tr><td>Project instruction file</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td><code>CLAUDE.md</code> &harr; <code>AGENTS.md</code>, both nestable.</td></tr>
+        <tr><td>Machine-enforced settings</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td><code>settings.json</code> &harr; <code>config.toml</code>.</td></tr>
+        <tr><td>Skills</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Both <code>SKILL.md</code> + progressive disclosure. Different directory &mdash; see &sect;02.</td></tr>
+        <tr><td>Subagents</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Claude: markdown + frontmatter. Codex: standalone TOML.</td></tr>
+        <tr><td>Lifecycle hooks</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Same event names, same JSON schema, same exit-code-2 block.</td></tr>
+        <tr><td>MCP client</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td><code>claude mcp</code> &harr; <code>codex mcp</code>, both with OAuth login.</td></tr>
+        <tr><td>Plugins / marketplace</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Both package skills for distribution; both have a <code>plugin</code> subcommand.</td></tr>
+        <tr><td>Sandboxing</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex names three modes explicitly and defaults headless runs to read-only.</td></tr>
+        <tr><td>Per-tool allow / deny flags</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gp">&#9679;</span></td><td>Codex governs <em>commands</em> via <code>.rules</code>, not tools via flags. Not a clean pair.</td></tr>
+        <tr><td>Schema-constrained output</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td><code>--json-schema</code> &harr; <code>--output-schema</code>; Codex also streams JSONL.</td></tr>
+        <tr><td>Named permission profiles</td><td><span class="gp">&#9679;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex ships <code>:read-only</code>, <code>:workspace</code>, <code>:danger-full-access</code> + custom.</td></tr>
+        <tr><td>Checkpoint / undo</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gp">&#9679;</span></td><td>Claude has <code>/rewind</code> + <code>file-history/</code>. Codex has <code>/fork</code>, not a documented undo.</td></tr>
+        <tr><td>Imports the other agent&rsquo;s setup</td><td><span class="gp">&#9679;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex <code>/import</code> reads a Claude Code install directly. Both ship an <code>import</code> surface.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="cap-note">&#10003; documented &middot; &#9679; partial or reached by a different mechanism &middot; &mdash; not documented at harvest date</p>
+
+  <div class="callout">
+    <div class="ct">The one-line verdict</div>
+    <p>These are the same product category, converged. Codex is the stricter one &mdash; it separates
+      sandbox from approvals, gates hooks behind a trust hash, and makes you opt into write access in CI.
+      Claude Code is the broader one &mdash; three times the hook events, per-tool permissions, system-prompt
+      control and checkpointing. Neither is a subset of the other, but <strong>Codex&rsquo;s hook events are
+      a literal subset of Claude Code&rsquo;s, name for name.</strong></p>
+  </div>
+</section>
+
+<!-- ===================== 01 ===================== -->
+<section id="s1">
+  <div class="sec-head"><span class="sec-num">01</span><h2>Two Agents, One Shape</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">Before the tables: the mental model. Both products decompose into the same six layers.
+    Learn the layer, and the vocabulary swap is mechanical.</p>
+
+  <p>A terminal coding agent in 2026 is six things stacked: a <strong>context layer</strong> (an
+    instruction file the model reads), a <strong>config layer</strong> (settings the runtime enforces
+    whether the model cooperates or not), a <strong>capability layer</strong> (skills and MCP servers),
+    a <strong>delegation layer</strong> (subagents), an <strong>automation layer</strong> (lifecycle
+    hooks), and a <strong>safety layer</strong> (sandbox plus approvals). Codex and Claude Code both have
+    all six. They disagree about file formats, directory names, and where one dial ends and the next
+    begins &mdash; and almost nowhere else.</p>
+
+  <div class="pquote">OpenAI publishes the migration table itself. <code>/import</code> in the Codex CLI
+    reads a Claude Code installation and converts it, and the docs spell out every destination.
+    <span class="src">learn.chatgpt.com/docs/import &mdash; &ldquo;What ChatGPT can import&rdquo;</span></div>
+
+  <h3>OpenAI&rsquo;s own conversion table</h3>
+  <p>This is not a third-party mapping. It is the documented behaviour of the Codex CLI&rsquo;s
+    <code>/import</code> command, which &ldquo;can import from <strong>Claude Code</strong> or
+    <strong>Cursor</strong>.&rdquo; Nine rows, vendor-authored:</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Claude Code artifact</th><th>Codex destination</th></tr></thead>
+      <tbody>
+        <tr><td>Instruction files</td><td><span class="mono">AGENTS.md</span></td></tr>
+        <tr><td><span class="mono">settings.json</span></td><td><span class="mono">config.toml</span></td></tr>
+        <tr><td>Skills</td><td>Skills</td></tr>
+        <tr><td>Plugins</td><td>Plugins</td></tr>
+        <tr><td>Project memories from Claude Code</td><td>Memories</td></tr>
+        <tr><td>MCP server configuration</td><td>Codex MCP configuration</td></tr>
+        <tr><td>Hooks</td><td>Codex hooks</td></tr>
+        <tr><td><b>Slash commands</b></td><td><b>Skills</b> <small>&mdash; not &ldquo;slash commands&rdquo;. Both products have collapsed custom commands into skills.</small></td></tr>
+        <tr><td>Subagents</td><td>Codex agents</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Terminology map</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Concept</th><th>Claude Code calls it</th><th>Codex CLI calls it</th></tr></thead>
+      <tbody>
+        <tr><td>Binary</td><td><span class="mono">claude</span></td><td><span class="mono">codex</span></td></tr>
+        <tr><td>Project instructions</td><td><span class="mono">CLAUDE.md</span></td><td><span class="mono">AGENTS.md</span></td></tr>
+        <tr><td>Local override of those</td><td><span class="mono">CLAUDE.local.md</span></td><td><span class="mono">AGENTS.override.md</span></td></tr>
+        <tr><td>Enforced settings</td><td><span class="mono">settings.json</span></td><td><span class="mono">config.toml</span></td></tr>
+        <tr><td>Home directory</td><td><span class="mono">~/.claude</span></td><td><span class="mono">~/.codex</span></td></tr>
+        <tr><td>Home override var</td><td><span class="mono">CLAUDE_CONFIG_DIR</span></td><td><span class="mono">CODEX_HOME</span></td></tr>
+        <tr><td>Delegated agent</td><td>subagent</td><td>subagent / custom agent</td></tr>
+        <tr><td>Reusable workflow</td><td>skill</td><td>skill</td></tr>
+        <tr><td>Distribution unit</td><td>plugin</td><td>plugin <small>&ldquo;Skills remain the authoring format; plugins are the installable distribution unit.&rdquo;</small></td></tr>
+        <tr><td>Command policy</td><td><span class="mono">permissions.allow / deny / ask</span></td><td><span class="mono">.rules</span> files (Starlark <span class="mono">prefix_rule()</span>)</td></tr>
+        <tr><td>Headless run</td><td><span class="mono">claude -p</span></td><td><span class="mono">codex exec</span></td></tr>
+        <tr><td>Long-lived context</td><td>memory / auto memory</td><td>Memories</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout alt">
+    <div class="ct">On models and plans</div>
+    <p>Both split &ldquo;which model&rdquo; from &ldquo;how hard it thinks.&rdquo; Codex names models
+      <code>gpt-5.6</code> (default for demanding work), <code>gpt-5.6-terra</code> (faster, cheaper) and
+      <code>gpt-5.6-luna</code> (fast, narrow), with a separate <code>model_reasoning_effort</code> taking
+      <code>ultra</code>, <code>max</code>, <code>xhigh</code>, <code>high</code>, <code>medium</code>,
+      <code>low</code>. Claude Code has <code>--model</code> plus <code>--effort</code> / <code>/effort</code>.
+      Model availability is gated by subscription tier on both sides and moves faster than this page can
+      track &mdash; check <code>/model</code> in the live tool rather than trusting any written comparison,
+      including this one.</p>
+  </div>
+</section>
+
+<!-- ===================== 02 ===================== -->
+<section id="s2">
+  <div class="sec-head"><span class="sec-num">02</span><h2>Config &amp; Context Files</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">The layer that trips people up most, because two of these paths are not where you would
+    guess &mdash; and one of them is not under the tool&rsquo;s own home directory at all.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Purpose</th><th>Claude Code</th><th>Codex CLI</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Global instructions</td><td><span class="mono">~/.claude/CLAUDE.md</span></td><td><span class="mono">~/.codex/AGENTS.md</span></td><td>Codex reads <span class="mono">AGENTS.override.md</span> first if present, and only the first non-empty file at this level.</td></tr>
+        <tr><td>Project instructions</td><td><span class="mono">./CLAUDE.md</span> or <span class="mono">.claude/CLAUDE.md</span></td><td><span class="mono">./AGENTS.md</span></td><td>Both walk nested directories; both merge root-down so the closest file wins.</td></tr>
+        <tr><td>Private, uncommitted instructions</td><td><span class="mono">CLAUDE.local.md</span></td><td><span class="mono">AGENTS.override.md</span></td><td>Codex&rsquo;s override <em>replaces</em> the sibling <span class="mono">AGENTS.md</span> in that directory rather than layering on it.</td></tr>
+        <tr><td>Instruction size cap</td><td>~200 lines, advisory</td><td><span class="mono">project_doc_max_bytes</span>, <b>32&nbsp;KiB, enforced</b></td><td>Claude degrades adherence past the guideline; Codex hard-stops adding files at the cap.</td></tr>
+        <tr><td>Alternate instruction filenames</td><td>&mdash;</td><td><span class="mono">project_doc_fallback_filenames</span></td><td>e.g. <span class="mono">["TEAM_GUIDE.md", ".agents.md"]</span>. Names not on the list are ignored entirely.</td></tr>
+        <tr><td>Conditional / path-scoped rules</td><td><span class="mono">.claude/rules/*.md</span> with <span class="mono">paths:</span></td><td>nested <span class="mono">AGENTS.md</span></td><td>Claude scopes by glob; Codex scopes by directory depth.</td></tr>
+        <tr><td>User settings</td><td><span class="mono">~/.claude/settings.json</span></td><td><span class="mono">~/.codex/config.toml</span></td><td>JSON vs TOML. This is OpenAI&rsquo;s stated import destination.</td></tr>
+        <tr><td>Project settings (committed)</td><td><span class="mono">.claude/settings.json</span></td><td><span class="mono">.codex/config.toml</span></td><td><b>Codex loads the project layer only when you trust the project.</b></td></tr>
+        <tr><td>Personal project settings</td><td><span class="mono">.claude/settings.local.json</span></td><td>&mdash; <small>use a profile instead</small></td><td>Codex&rsquo;s equivalent knob is a named profile file, not a local settings file.</td></tr>
+        <tr><td>Named config profile</td><td>&mdash;</td><td><span class="mono">~/.codex/NAME.config.toml</span></td><td>Selected with <span class="mono">codex --profile NAME</span>. A whole extra precedence layer.</td></tr>
+        <tr><td>System / enterprise policy</td><td><span class="mono">managed-settings.json</span></td><td><span class="mono">/etc/codex/config.toml</span> + <span class="mono">requirements.toml</span></td><td>Codex&rsquo;s <span class="mono">requirements.toml</span> can forbid values, e.g. <span class="mono">sandbox_mode = "danger-full-access"</span>.</td></tr>
+        <tr><td><b>Skills (global)</b></td><td><span class="mono">~/.claude/skills/</span></td><td><b><span class="mono">~/.agents/skills/</span></b></td><td><b>Not under <span class="mono">~/.codex</span>.</b> Codex follows the vendor-neutral <span class="mono">.agents</span> convention.</td></tr>
+        <tr><td><b>Skills (project)</b></td><td><span class="mono">.claude/skills/</span></td><td><b><span class="mono">.agents/skills/</span></b></td><td>Same surprise, repo-scoped.</td></tr>
+        <tr><td>Subagent definitions</td><td><span class="mono">.claude/agents/*.md</span></td><td><span class="mono">.codex/agents/*.toml</span></td><td>Markdown + YAML frontmatter vs standalone TOML. See &sect;05.</td></tr>
+        <tr><td>Custom slash commands</td><td><span class="mono">.claude/commands/*.md</span></td><td>&mdash; <small>deprecated, use skills</small></td><td>Claude still supports them but points new work at skills; Codex deprecated its equivalent outright.</td></tr>
+        <tr><td>Hooks</td><td>inside <span class="mono">settings.json</span></td><td><span class="mono">hooks.json</span> or inline <span class="mono">[hooks]</span></td><td>Codex accepts either representation per layer, and warns if you use both.</td></tr>
+        <tr><td>Command policy</td><td><span class="mono">permissions</span> in <span class="mono">settings.json</span></td><td><span class="mono">rules/*.rules</span></td><td>See &sect;06 &mdash; these are not the same kind of thing.</td></tr>
+        <tr><td>Session transcripts</td><td><span class="mono">~/.claude/projects/&hellip;jsonl</span></td><td><span class="mono">~/.codex/history.jsonl</span></td><td>Codex gates this on <span class="mono">history.persistence</span>.</td></tr>
+        <tr><td>Credentials</td><td>keychain</td><td><span class="mono">~/.codex/auth.json</span> or OS keyring</td><td>&ldquo;Treat <span class="mono">~/.codex/auth.json</span> like a password: it contains access tokens.&rdquo;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>One repo, two readers</h3>
+  <div class="code-pair">
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">Claude Code</span></div>
+<pre><span class="m">~/.claude/</span>
+├── <span class="c">CLAUDE.md</span>          <span class="m"># global instructions</span>
+├── <span class="c">settings.json</span>      <span class="m"># permissions + hooks</span>
+├── <span class="c">skills/</span>            <span class="m"># SKILL.md dirs</span>
+├── <span class="c">commands/</span>          <span class="m"># /name prompts (legacy)</span>
+├── <span class="c">agents/</span>            <span class="m"># subagents (.md)</span>
+└── <span class="c">projects/</span>          <span class="m"># session transcripts</span>
+
+<span class="m">&lt;repo&gt;/</span>
+├── <span class="c">CLAUDE.md</span>
+└── <span class="c">.claude/</span>
+    ├── <span class="c">settings.json</span>       <span class="s"># committed</span>
+    ├── <span class="c">settings.local.json</span> <span class="s"># gitignored</span>
+    ├── <span class="c">rules/</span>*.md          <span class="s"># paths: scoped</span>
+    ├── <span class="c">skills/</span>
+    └── <span class="c">agents/</span></pre>
+    </div>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">Codex CLI</span></div>
+<pre><span class="m">~/.codex/</span>           <span class="m"># $CODEX_HOME</span>
+├── <span class="c">AGENTS.md</span>          <span class="m"># global instructions</span>
+├── <span class="c">config.toml</span>        <span class="m"># settings</span>
+├── <span class="c">hooks.json</span>         <span class="m"># or inline [hooks]</span>
+├── <span class="c">rules/</span>*.rules      <span class="m"># Starlark cmd policy</span>
+├── <span class="c">agents/</span>*.toml      <span class="m"># custom agents</span>
+├── <span class="c">auth.json</span>          <span class="m"># tokens — secret</span>
+└── <span class="c">history.jsonl</span>
+
+<span class="g">~/.agents/skills/</span>   <span class="g"># NOT under ~/.codex</span>
+
+<span class="m">&lt;repo&gt;/</span>
+├── <span class="c">AGENTS.md</span>
+├── <span class="g">.agents/skills/</span>    <span class="g"># NOT .codex</span>
+└── <span class="c">.codex/</span>            <span class="s"># trusted repos only</span>
+    ├── <span class="c">config.toml</span>
+    ├── <span class="c">hooks.json</span>
+    ├── <span class="c">rules/</span>
+    └── <span class="c">agents/</span></pre>
+    </div>
+  </div>
+
+  <div class="callout alt">
+    <div class="ct">The path that will catch you</div>
+    <p>Everything else in Codex lives under <code>~/.codex</code>. <strong>Skills do not.</strong> They
+      live at <code>~/.agents/skills</code> globally and <code>.agents/skills</code> in a repo &mdash;
+      Codex follows the vendor-neutral agent-skills convention rather than namespacing them under its own
+      product directory. If you <code>mkdir ~/.codex/skills</code> out of habit, nothing loads and nothing
+      warns you.</p>
+  </div>
+
+  <div class="callout">
+    <div class="ct">Precedence, highest first</div>
+    <p><strong>Codex:</strong> CLI flags and <code>-c</code> overrides &rarr; project
+      <code>.codex/config.toml</code> (root down to cwd, closest wins, trusted projects only) &rarr;
+      profile file via <code>--profile</code> &rarr; <code>~/.codex/config.toml</code> &rarr;
+      <code>/etc/codex/config.toml</code> &rarr; built-in defaults.</p>
+    <p><strong>Claude Code:</strong> managed settings &rarr; CLI flags and local settings &rarr; project
+      <code>settings.json</code> &rarr; <code>~/.claude/settings.json</code>. Array settings such as
+      <code>permissions.allow</code> <em>combine</em> across scopes; scalar settings such as
+      <code>model</code> take the most local value.</p>
+  </div>
+</section>
+
+<!-- ===================== 03 ===================== -->
+<section id="s3">
+  <div class="sec-head"><span class="sec-num">03</span><h2>CLI Invocation &amp; Flags</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">The muscle-memory layer. Most of these are a straight rename &mdash; except headless,
+    which changes shape from a flag into a subcommand, and tool permissions, which do not translate at all.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Intent</th><th>Claude Code</th><th>Codex CLI</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Start interactive</td><td><span class="mono">claude</span></td><td><span class="mono">codex</span></td><td>&mdash;</td></tr>
+        <tr><td>One-shot / headless</td><td><span class="mono">claude -p "&hellip;"</span></td><td><span class="mono">codex exec "&hellip;"</span></td><td><b>Shape change:</b> a flag becomes a subcommand.</td></tr>
+        <tr><td>Continue last session</td><td><span class="mono">claude -c</span> / <span class="mono">--continue</span></td><td><span class="mono">codex resume --last</span></td><td>Codex scopes <span class="mono">--last</span> to the cwd unless you add <span class="mono">--all</span>.</td></tr>
+        <tr><td>Resume a specific session</td><td><span class="mono">claude -r &lt;id&gt;</span></td><td><span class="mono">codex resume &lt;id&gt;</span></td><td>Headless variant: <span class="mono">codex exec resume &lt;id&gt;</span>.</td></tr>
+        <tr><td>Branch the session</td><td><span class="mono">--fork-session</span></td><td><span class="mono">codex fork</span> / <span class="mono">/fork</span></td><td>&mdash;</td></tr>
+        <tr><td>Scaffold the instruction file</td><td><span class="mono">/init</span></td><td><span class="mono">/init</span></td><td>Same name, different output file.</td></tr>
+        <tr><td>Pick the model</td><td><span class="mono">--model</span></td><td><span class="mono">--model</span>, <span class="mono">-m</span></td><td>&mdash;</td></tr>
+        <tr><td>Reasoning effort</td><td><span class="mono">--effort</span></td><td><span class="mono">--effort {minimal,low,medium,high,xhigh}</span></td><td>Config key: <span class="mono">model_reasoning_effort</span>, which also accepts <span class="mono">max</span> and <span class="mono">ultra</span>.</td></tr>
+        <tr><td>Extra writable directory</td><td><span class="mono">--add-dir</span></td><td><span class="mono">--add-dir</span></td><td>Identical name on both.</td></tr>
+        <tr><td>Set the working directory</td><td>&mdash;</td><td><span class="mono">--cd</span>, <span class="mono">-C</span></td><td>Codex can launch against another directory without <span class="mono">cd</span>-ing.</td></tr>
+        <tr><td>Inline config override</td><td><span class="mono">--config</span> / <span class="mono">--settings</span></td><td><span class="mono">-c KEY=VALUE</span> / <span class="mono">--config</span></td><td>e.g. <span class="mono">codex -c log_dir=./.codex-log</span>. TOML quoting rules apply.</td></tr>
+        <tr><td>Select a saved profile</td><td>&mdash;</td><td><span class="mono">--profile NAME</span></td><td>Loads <span class="mono">~/.codex/NAME.config.toml</span> as its own precedence layer.</td></tr>
+        <tr><td>Attach an image</td><td>paste / drag</td><td><span class="mono">--image</span>, <span class="mono">-i</span></td><td>&mdash;</td></tr>
+        <tr><td>Permission posture</td><td><span class="mono">--permission-mode</span></td><td><span class="mono">--sandbox</span> <b>and</b> <span class="mono">--ask-for-approval</span>, <span class="mono">-a</span></td><td>One dial becomes two. See &sect;06.</td></tr>
+        <tr><td>Allow specific tools</td><td><span class="mono">--allowed-tools</span></td><td>&mdash; <small>use <span class="mono">.rules</span></small></td><td>Codex governs commands, not tools. Not a clean pair.</td></tr>
+        <tr><td>Deny specific tools</td><td><span class="mono">--disallowed-tools</span></td><td>&mdash; <small>use <span class="mono">.rules</span></small></td><td>MCP tools <em>do</em> get lists, but in config: <span class="mono">enabled_tools</span> / <span class="mono">disabled_tools</span>.</td></tr>
+        <tr><td><b>Bypass everything</b></td><td><span class="mono">--dangerously-skip-permissions</span></td><td><span class="mono">--dangerously-bypass-approvals-and-sandbox</span><br><small>alias <span class="mono">--yolo</span></small></td><td>Both deliberately unwieldy. Only Codex ships a short alias.</td></tr>
+        <tr><td>Skip user config</td><td><span class="mono">--setting-sources</span></td><td><span class="mono">--ignore-user-config</span></td><td>Codex: &ldquo;a run that doesn&rsquo;t load <span class="mono">$CODEX_HOME/config.toml</span>&rdquo;.</td></tr>
+        <tr><td>Skip command policy</td><td>&mdash;</td><td><span class="mono">--ignore-rules</span></td><td>Skips user <em>and</em> project execpolicy <span class="mono">.rules</span> files.</td></tr>
+        <tr><td>Skip hook trust</td><td>&mdash;</td><td><span class="mono">--dangerously-bypass-hook-trust</span></td><td>Claude Code has no hook-trust gate to bypass.</td></tr>
+        <tr><td>Machine-readable output</td><td><span class="mono">--output-format</span>, <span class="mono">--json</span></td><td><span class="mono">--json</span> / <span class="mono">--experimental-json</span></td><td>Codex emits JSON Lines. See &sect;07.</td></tr>
+        <tr><td>Constrain the final answer</td><td><span class="mono">--json-schema</span></td><td><span class="mono">--output-schema &lt;file&gt;</span></td><td>Codex validates the final message against a JSON Schema file.</td></tr>
+        <tr><td>Shell completions</td><td>&mdash;</td><td><span class="mono">codex completion</span></td><td>&mdash;</td></tr>
+        <tr><td>Diagnostics</td><td><span class="mono">claude doctor</span></td><td><span class="mono">codex doctor</span></td><td>Same name on both.</td></tr>
+        <tr><td>Manage MCP servers</td><td><span class="mono">claude mcp</span></td><td><span class="mono">codex mcp</span></td><td>Same name on both.</td></tr>
+        <tr><td>Manage plugins</td><td><span class="mono">claude plugin</span></td><td><span class="mono">codex plugin</span></td><td>Same name on both.</td></tr>
+        <tr><td>Sign in / out</td><td><span class="mono">claude auth</span>, <span class="mono">/login</span></td><td><span class="mono">codex login</span> / <span class="mono">codex logout</span></td><td>Codex uses subcommands where Claude uses a slash command.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Three invocations, side by side</h3>
+  <div class="code-pair">
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">Claude Code</span></div>
+<pre><span class="m"># headless, edits allowed, JSON out</span>
+<span class="c">claude</span> -p <span class="s">"fix the failing test"</span> \
+  --permission-mode acceptEdits \
+  --output-format stream-json
+
+<span class="m"># resume the last session here</span>
+<span class="c">claude</span> --continue
+
+<span class="m"># scaffold the instruction file</span>
+<span class="c">claude</span>
+<span class="g">&gt; /init</span></pre>
+    </div>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">Codex CLI</span></div>
+<pre><span class="m"># headless, edits allowed, JSONL out</span>
+<span class="c">codex</span> exec <span class="s">"fix the failing test"</span> \
+  --sandbox workspace-write \
+  --json
+
+<span class="m"># resume the last session here</span>
+<span class="c">codex</span> resume --last
+
+<span class="m"># scaffold the instruction file</span>
+<span class="c">codex</span>
+<span class="g">&gt; /init</span></pre>
+    </div>
+  </div>
+
+  <div class="callout alt">
+    <div class="ct">Read this before you script anything</div>
+    <p><code>codex exec</code> <strong>defaults to a read-only sandbox.</strong> A script ported from
+      <code>claude -p</code> that expects to write files will run, report plausible-sounding work, and
+      change nothing on disk unless you pass <code>--sandbox workspace-write</code>. Codex also
+      <strong>requires a Git repository</strong> &mdash; &ldquo;Codex requires commands to run inside a Git
+      repository to prevent destructive changes&rdquo; &mdash; overridable with
+      <code>--skip-git-repo-check</code>.</p>
+  </div>
+</section>
+
+<!-- ===================== 04 ===================== -->
+<section id="s4">
+  <div class="sec-head"><span class="sec-num">04</span><h2>Slash Commands &amp; Keys</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">Codex ships about 50 built-in slash commands; Claude Code ships north of 100. The overlap
+    is large and the names are mostly identical &mdash; which makes the handful of renames more dangerous,
+    not less.</p>
+
+  <h3>Straight across</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Command</th><th>Claude Code</th><th>Codex CLI</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono">/init</span></td><td>writes <span class="mono">CLAUDE.md</span></td><td>writes <span class="mono">AGENTS.md</span></td><td>&ldquo;Generate an <span class="mono">AGENTS.md</span> scaffold for the current project.&rdquo;</td></tr>
+        <tr><td><span class="mono">/clear</span></td><td>&#10003;</td><td>&#10003;</td><td>Codex clears the terminal <em>and</em> starts a fresh chat.</td></tr>
+        <tr><td><span class="mono">/compact</span></td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">/model</span></td><td>&#10003;</td><td>&#10003;</td><td>Codex&rsquo;s picker also sets reasoning effort where supported.</td></tr>
+        <tr><td><span class="mono">/plan</span></td><td>&#10003;</td><td>&#10003;</td><td>See the key-binding note below &mdash; this is the important one.</td></tr>
+        <tr><td><span class="mono">/review</span></td><td>&#10003;</td><td>&#10003;</td><td>Both review the working tree; Codex can also diff against a base branch.</td></tr>
+        <tr><td><span class="mono">/status</span></td><td>&#10003;</td><td>&#10003;</td><td>Codex shows model, approval policy, writable roots, context capacity.</td></tr>
+        <tr><td><span class="mono">/resume</span> &middot; <span class="mono">/new</span> &middot; <span class="mono">/fork</span></td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">/mcp</span> &middot; <span class="mono">/hooks</span> &middot; <span class="mono">/skills</span></td><td>&#10003;</td><td>&#10003;</td><td>Codex&rsquo;s <span class="mono">/hooks</span> is where you <em>trust</em> hooks &mdash; see &sect;05.</td></tr>
+        <tr><td><span class="mono">/permissions</span></td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">/import</span></td><td>&#10003;</td><td>&#10003;</td><td>Codex&rsquo;s imports <em>from Claude Code</em>.</td></tr>
+        <tr><td><span class="mono">/diff</span> &middot; <span class="mono">/theme</span> &middot; <span class="mono">/vim</span> &middot; <span class="mono">/statusline</span></td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">/usage</span> &middot; <span class="mono">/feedback</span> &middot; <span class="mono">/logout</span></td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">/fast</span> &middot; <span class="mono">/app</span> &middot; <span class="mono">/ide</span> &middot; <span class="mono">/stop</span></td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">/quit</span> &middot; <span class="mono">/exit</span></td><td>&#10003;</td><td>&#10003;</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Renamed &mdash; the ones that will bite</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>You type in Claude Code</th><th>You type in Codex</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono">/agents</span></td><td><span class="mono">/agent</span> or <span class="mono">/subagents</span></td><td>Singular. Codex uses it to <em>switch between live agent threads</em>, not to manage definitions.</td></tr>
+        <tr><td><span class="mono">/memory</span></td><td><span class="mono">/memories</span></td><td>Different job: Claude&rsquo;s opens <span class="mono">CLAUDE.md</span>; Codex&rsquo;s toggles memory use and generation.</td></tr>
+        <tr><td><span class="mono">/keybindings</span></td><td><span class="mono">/keymap</span></td><td>Persists into <span class="mono">config.toml</span>.</td></tr>
+        <tr><td><span class="mono">@file</span> mention</td><td><span class="mono">/mention</span></td><td>Codex exposes it as a command as well.</td></tr>
+        <tr><td><span class="mono">/btw</span></td><td><span class="mono">/side</span> or <span class="mono">/btw</span></td><td>Codex accepts both spellings for an ephemeral side chat.</td></tr>
+        <tr><td><span class="mono">/doctor</span></td><td><span class="mono">codex doctor</span></td><td>Moved from a slash command to a subcommand.</td></tr>
+        <tr><td><span class="mono">/login</span></td><td><span class="mono">codex login</span></td><td>Same move. <span class="mono">/logout</span> stayed a slash command.</td></tr>
+        <tr><td><span class="mono">/config</span> / <span class="mono">/settings</span></td><td>edit <span class="mono">config.toml</span></td><td>Codex has <span class="mono">/debug-config</span> to inspect layer precedence, but no settings editor.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout alt">
+    <div class="ct">Your Shift+Tab reflex does not survive the move</div>
+    <p>In Claude Code, plan mode is a <em>permission mode</em> that you cycle with <strong>Shift+Tab</strong>
+      alongside <code>default</code>, <code>acceptEdits</code>, <code>auto</code> and
+      <code>bypassPermissions</code>. In Codex, plan mode is the <code>/plan</code> command and permissions
+      are a separate <code>/permissions</code> surface. There is no documented Shift+Tab plan toggle. If you
+      are used to tapping Shift+Tab twice before a risky task, build a new habit or you will run the task
+      unplanned.</p>
+  </div>
+
+  <div class="callout">
+    <div class="ct">A Codex trick with no Claude equivalent</div>
+    <p>&ldquo;When a chat is already running, you can type a slash command and press <code>Tab</code> to
+      queue it for the next turn.&rdquo; Codex parses queued commands when they run, so menus and errors
+      appear <em>after</em> the current turn finishes. Handy for lining up <code>/compact</code> behind a
+      long task.</p>
+  </div>
+</section>
+
+<!-- ===================== 05 ===================== -->
+<section id="s5">
+  <div class="sec-head"><span class="sec-num">05</span><h2>Customization Surfaces</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">Twelve extension points. The headline: <strong>Codex adopted Claude Code&rsquo;s hook
+    event names verbatim</strong>, and the JSON schema with them &mdash; so a hook you wrote for one
+    mostly ports to the other by moving the file.</p>
+
+  <div class="tbl-wrap">
+    <table class="matrix">
+      <thead><tr><th>Surface</th><th>Claude Code</th><th class="cx">Codex CLI</th><th>How it differs</th></tr></thead>
+      <tbody>
+        <tr><td>Skills</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Both <span class="mono">SKILL.md</span> + <span class="mono">name</span>/<span class="mono">description</span> frontmatter, progressive disclosure, optional <span class="mono">scripts/</span> <span class="mono">references/</span> <span class="mono">assets/</span>. Different directory.</td></tr>
+        <tr><td>Subagents</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex uses TOML and ships built-ins <span class="mono">default</span>, <span class="mono">worker</span>, <span class="mono">explorer</span>.</td></tr>
+        <tr><td>Lifecycle hooks</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Same names, same schema. Claude has ~3&times; the events.</td></tr>
+        <tr><td>Hook trust gate</td><td><span class="gn">&mdash;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex pins trust to the hook&rsquo;s hash; changed hooks are skipped until re-reviewed.</td></tr>
+        <tr><td>MCP client</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td><span class="mono">codex mcp add / list / login / logout</span>. OAuth is HTTP-transport only.</td></tr>
+        <tr><td>Per-server tool allow/deny</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex: <span class="mono">enabled_tools</span> then <span class="mono">disabled_tools</span>, applied in that order.</td></tr>
+        <tr><td>Required MCP server</td><td><span class="gp">&#9679;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex <span class="mono">required = true</span> makes <span class="mono">codex exec</span> exit rather than run degraded.</td></tr>
+        <tr><td>Act as an MCP server</td><td><span class="gp">&#9679;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex documents an explicit MCP-server mode for the Agents SDK.</td></tr>
+        <tr><td>Plugins / marketplace</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Plugins can bundle MCP servers <em>and</em> hooks on both.</td></tr>
+        <tr><td>Custom slash commands</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td><td>Codex deprecated them: &ldquo;Use skills for reusable prompts.&rdquo;</td></tr>
+        <tr><td>Command policy engine</td><td><span class="gp">&#9679;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Claude uses declarative permission strings; Codex runs Starlark. See &sect;06.</td></tr>
+        <tr><td>System-prompt control</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gp">&#9679;</span></td><td>Claude has <span class="mono">--system-prompt</span> / <span class="mono">--append-system-prompt</span>; Codex steers via <span class="mono">developer_instructions</span> and <span class="mono">model_instructions_file</span>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>The hook event map</h3>
+  <p>Every event Codex documents also exists in Claude Code, spelled identically. The relationship is a
+    strict subset &mdash; there is no Codex event that Claude Code lacks.</p>
+
+  <div class="tbl-wrap">
+    <table class="matrix">
+      <thead><tr><th>Event</th><th>Claude Code</th><th class="cx">Codex CLI</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono">SessionStart</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex matcher example: <span class="mono">startup|resume</span></td></tr>
+        <tr><td><span class="mono">SessionEnd</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex: never runs for subagents; always synchronous</td></tr>
+        <tr><td><span class="mono">UserPromptSubmit</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Exit code 2 rejects the prompt on both</td></tr>
+        <tr><td><span class="mono">PreToolUse</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td><span class="mono">permissionDecision: "deny"</span> on both</td></tr>
+        <tr><td><span class="mono">PostToolUse</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">PermissionRequest</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">PreCompact</span> &middot; <span class="mono">PostCompact</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">Stop</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">SubagentStart</span> &middot; <span class="mono">SubagentStop</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>&mdash;</td></tr>
+        <tr><td><span class="mono">Notification</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td><td rowspan="9">Claude-only. Codex&rsquo;s hook framework is newer and narrower; &ldquo;&mdash;&rdquo; here means <em>not documented at the harvest date</em>, not proven impossible.</td></tr>
+        <tr><td><span class="mono">PostToolBatch</span> &middot; <span class="mono">PostToolUseFailure</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td></tr>
+        <tr><td><span class="mono">PermissionDenied</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td></tr>
+        <tr><td><span class="mono">FileChanged</span> &middot; <span class="mono">CwdChanged</span> &middot; <span class="mono">DirectoryAdded</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td></tr>
+        <tr><td><span class="mono">ConfigChange</span> &middot; <span class="mono">InstructionsLoaded</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td></tr>
+        <tr><td><span class="mono">Elicitation</span> &middot; <span class="mono">ElicitationResult</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td></tr>
+        <tr><td><span class="mono">TaskCreated</span> &middot; <span class="mono">TaskCompleted</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td></tr>
+        <tr><td><span class="mono">WorktreeCreate</span> &middot; <span class="mono">WorktreeRemove</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td></tr>
+        <tr><td><span class="mono">Setup</span> &middot; <span class="mono">StopFailure</span> &middot; <span class="mono">MessageDisplay</span> &middot; <span class="mono">TeammateIdle</span> &middot; <span class="mono">UserPromptExpansion</span></td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>The same hook, both dialects</h3>
+  <div class="code-pair">
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">~/.claude/settings.json</span></div>
+<pre>{
+  <span class="c">"hooks"</span>: {
+    <span class="s">"PreToolUse"</span>: [
+      {
+        <span class="c">"matcher"</span>: <span class="s">"Bash"</span>,
+        <span class="c">"hooks"</span>: [
+          {
+            <span class="c">"type"</span>: <span class="s">"command"</span>,
+            <span class="c">"command"</span>: <span class="s">"~/bin/guard.sh"</span>,
+            <span class="c">"timeout"</span>: 5
+          }
+        ]
+      }
+    ]
+  }
+}</pre>
+    </div>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">~/.codex/hooks.json</span></div>
+<pre>{
+  <span class="c">"hooks"</span>: {
+    <span class="s">"PreToolUse"</span>: [
+      {
+        <span class="c">"matcher"</span>: <span class="s">"Bash"</span>,
+        <span class="c">"hooks"</span>: [
+          {
+            <span class="c">"type"</span>: <span class="s">"command"</span>,
+            <span class="c">"command"</span>: <span class="s">"~/bin/guard.sh"</span>,
+            <span class="c">"timeout"</span>: 5,
+            <span class="g">"statusMessage"</span>: <span class="s">"Checking"</span>
+          }
+        ]
+      }
+    ]
+  }
+}</pre>
+    </div>
+  </div>
+
+  <p>Blocking works the same way in both: return
+    <code>{"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"&hellip;"}}</code>,
+    or exit <code>2</code> and write the reason to stderr. Codex adds <code>statusMessage</code>,
+    <code>additionalContextLimit</code> (default 2500 tokens; <code>0</code> passes the full context),
+    <code>async</code> for background hooks, and <code>commandWindows</code> for a Windows-specific override.</p>
+
+  <div class="callout alt">
+    <div class="ct">Codex will not run your hook until you trust it</div>
+    <p>&ldquo;Before a non-managed command hook can run, Codex requires you to review and trust the exact
+      hook definition. Codex records trust against the hook&rsquo;s current hash, so new or changed hooks
+      are marked for review and skipped until trusted.&rdquo; Use <code>/hooks</code> to review and trust.
+      <strong>Every time you edit a hook, its hash changes and it stops running until you re-trust it</strong>
+      &mdash; which looks exactly like a broken hook. Claude Code has no such gate.</p>
+  </div>
+
+  <h3>Custom agents: markdown vs TOML</h3>
+  <div class="code-pair">
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">.claude/agents/reviewer.md</span></div>
+<pre><span class="m">---</span>
+<span class="c">name</span>: reviewer
+<span class="c">description</span>: <span class="s">Reviews for correctness and security.</span>
+<span class="c">tools</span>: Read, Grep, Glob
+<span class="c">model</span>: sonnet
+<span class="m">---</span>
+
+You are a code reviewer. Focus on
+correctness, security, and missing tests.</pre>
+    </div>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">.codex/agents/reviewer.toml</span></div>
+<pre><span class="c">name</span> = <span class="s">"reviewer"</span>
+<span class="c">description</span> = <span class="s">"Reviews for correctness and security."</span>
+<span class="c">model</span> = <span class="s">"gpt-5.6-terra"</span>
+<span class="c">model_reasoning_effort</span> = <span class="s">"high"</span>
+<span class="c">sandbox_mode</span> = <span class="s">"read-only"</span>
+<span class="c">developer_instructions</span> = <span class="s">"""</span>
+<span class="s">You are a code reviewer. Focus on</span>
+<span class="s">correctness, security, and missing tests.</span>
+<span class="s">"""</span></pre>
+    </div>
+  </div>
+
+  <p>Codex requires exactly three fields &mdash; <code>name</code>, <code>description</code>,
+    <code>developer_instructions</code> &mdash; and lets you add any <code>config.toml</code> key on top,
+    including <code>sandbox_mode</code> and <code>mcp_servers</code>. Codex identifies the agent by its
+    <code>name</code> field, not its filename, and a custom agent whose name collides with a built-in
+    (<code>explorer</code>, <code>worker</code>, <code>default</code>) takes precedence. The docs are
+    candid that this &ldquo;can feel heavier than a dedicated agent manifest, and the format may evolve.&rdquo;</p>
+
+  <div class="callout">
+    <div class="ct">Runtime overrides beat the agent file</div>
+    <p>&ldquo;Codex also reapplies the parent turn&rsquo;s live runtime overrides when it spawns a child.
+      That includes sandbox and approval choices you set interactively during the session, such as
+      <code>/permissions</code> changes or <code>--yolo</code>, <strong>even if the selected custom agent
+      file sets different defaults</strong>.&rdquo; So a <code>sandbox_mode = "read-only"</code> reviewer
+      agent does <em>not</em> stay read-only in a <code>--yolo</code> session.</p>
+  </div>
+</section>
+
+<!-- ===================== 06 ===================== -->
+<section id="s6">
+  <div class="sec-head"><span class="sec-num">06</span><h2>Permissions &amp; Safety</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">The deepest architectural split in this guide. Claude Code gives you one ordered dial.
+    Codex gives you two independent axes, plus a scripting language for command policy.</p>
+
+  <p>Codex is explicit about the separation: &ldquo;The <strong>sandbox</strong> defines which files and
+    network resources ChatGPT can access. <strong>Approvals</strong> determine when ChatGPT pauses before
+    an action.&rdquo; And critically: <strong>&ldquo;Changing who reviews a request doesn&rsquo;t expand
+    the sandbox.&rdquo;</strong> Claude Code folds both concerns into a single permission mode.</p>
+
+  <div class="tbl-wrap">
+    <table class="matrix">
+      <thead><tr><th>Concern</th><th>Claude Code</th><th class="cx">Codex CLI</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Shape of the control</td><td>one ordered mode</td><td class="cx">two axes</td><td><span class="mono">--sandbox</span> &times; <span class="mono">--ask-for-approval</span></td></tr>
+        <tr><td>Mode / level names</td><td><span class="mono">default</span>, <span class="mono">acceptEdits</span>, <span class="mono">plan</span>, <span class="mono">auto</span>, <span class="mono">dontAsk</span>, <span class="mono">bypassPermissions</span></td><td class="cx"><span class="mono">read-only</span>, <span class="mono">workspace-write</span>, <span class="mono">danger-full-access</span> &times; <span class="mono">untrusted</span>, <span class="mono">on-request</span>, <span class="mono">never</span></td><td>No row-for-row equivalence. Compose, don&rsquo;t translate.</td></tr>
+        <tr><td>Cycle modes from the keyboard</td><td><span class="gy">&#10003;</span> Shift+Tab</td><td class="cx"><span class="gp">&#9679;</span> <span class="mono">/permissions</span></td><td>No documented Codex key-cycle.</td></tr>
+        <tr><td>Named reusable profiles</td><td><span class="gp">&#9679;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Built-ins <span class="mono">:read-only</span>, <span class="mono">:workspace</span>, <span class="mono">:danger-full-access</span>; custom via <span class="mono">[permissions.&lt;name&gt;]</span>.</td></tr>
+        <tr><td>Per-tool rules</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gn">&mdash;</span></td><td>Claude&rsquo;s <span class="mono">permissions.allow/deny/ask</span> name tools and patterns.</td></tr>
+        <tr><td>Per-command policy engine</td><td><span class="gp">&#9679;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex <span class="mono">.rules</span> in Starlark, with inline unit tests.</td></tr>
+        <tr><td>Offline policy testing</td><td><span class="gn">&mdash;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td><span class="mono">codex execpolicy check</span> prints the strictest decision and which rules matched.</td></tr>
+        <tr><td>Compound-command splitting</td><td><span class="gp">&#9679;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex tree-sitter-splits safe chains so a destructive command cannot ride along behind an allowed one.</td></tr>
+        <tr><td>Agentic approval reviewer</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Claude: auto mode + classifier. Codex: <span class="mono">approvals_reviewer = "auto_review"</span> + <span class="mono">/approve</span>.</td></tr>
+        <tr><td>Persisted in-session approvals</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td><b>Different scope:</b> Claude writes to project <span class="mono">.claude/settings.local.json</span>; Codex writes to <em>user</em> <span class="mono">~/.codex/rules/default.rules</span>.</td></tr>
+        <tr><td>Network off by default</td><td><span class="gp">&#9679;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex needs <span class="mono">[sandbox_workspace_write] network_access = true</span> to opt in.</td></tr>
+        <tr><td>Enterprise value bans</td><td><span class="gy">&#10003;</span></td><td class="cx"><span class="gy">&#10003;</span></td><td>Codex <span class="mono">requirements.toml</span> can forbid <span class="mono">approval_policy = "never"</span> outright.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Codex&rsquo;s documented presets</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Intent</th><th>Flags</th><th>Closest Claude Code posture</th></tr></thead>
+      <tbody>
+        <tr><td>Auto (the default)</td><td><span class="mono">--sandbox workspace-write --ask-for-approval on-request</span></td><td><span class="mono">--permission-mode default</span></td></tr>
+        <tr><td>Safe read-only browsing</td><td><span class="mono">--sandbox read-only --ask-for-approval on-request</span></td><td><span class="mono">--permission-mode plan</span></td></tr>
+        <tr><td>Read-only in CI</td><td><span class="mono">--sandbox read-only --ask-for-approval never</span></td><td><span class="mono">claude -p</span> with a read-only tool allowlist</td></tr>
+        <tr><td>Edit freely, ask before untrusted commands</td><td><span class="mono">--sandbox workspace-write --ask-for-approval untrusted</span></td><td><span class="mono">--permission-mode acceptEdits</span></td></tr>
+        <tr><td>Route approvals to a reviewer agent</td><td><span class="mono">-c approvals_reviewer=auto_review</span></td><td><span class="mono">--enable-auto-mode</span></td></tr>
+        <tr><td>No sandbox, no approvals</td><td><span class="mono">--yolo</span></td><td><span class="mono">--dangerously-skip-permissions</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Rules: a policy engine, not a config list</h3>
+  <div class="code">
+    <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">~/.codex/rules/default.rules — Starlark</span></div>
+<pre><span class="m"># Prompt before running `gh pr view` outside the sandbox.</span>
+<span class="c">prefix_rule</span>(
+    <span class="c">pattern</span> = [<span class="s">"gh"</span>, <span class="s">"pr"</span>, <span class="s">"view"</span>],
+    <span class="c">decision</span> = <span class="s">"prompt"</span>,          <span class="m"># allow | prompt | forbidden</span>
+    <span class="c">justification</span> = <span class="s">"Viewing PRs is allowed with approval"</span>,
+    <span class="g">match</span> = [                     <span class="m"># inline unit tests, validated at load</span>
+        <span class="s">"gh pr view 7888"</span>,
+        <span class="s">"gh pr view --repo openai/codex"</span>,
+    ],
+    <span class="g">not_match</span> = [
+        <span class="s">"gh pr --repo openai/codex view 7888"</span>,  <span class="m"># prefix must match exactly</span>
+    ],
+)</pre>
+  </div>
+
+  <p>Nothing in Claude Code is shaped like this. The closest equivalent is a list of permission strings in
+    <code>settings.json</code>. Codex gives you a sandboxed Python-like language, a three-level decision
+    lattice where <strong><code>forbidden</code> &gt; <code>prompt</code> &gt; <code>allow</code></strong>,
+    inline tests that run when the file loads, and a checker you can run in CI. Rules are marked
+    <strong>experimental and may change</strong>.</p>
+
+  <p>The splitting behaviour is the subtle part. When a shell script is a linear chain of plain words
+    joined by <code>&amp;&amp;</code>, <code>||</code>, <code>;</code> or <code>|</code>, Codex parses it
+    with tree-sitter and evaluates <em>each</em> command against your rules, applying the most restrictive
+    result &mdash; so allowing <code>git add</code> does not silently allow a destructive command chained
+    behind it. When the script uses redirection, substitution, variables, wildcards or control flow, Codex
+    refuses to interpret it and evaluates the whole thing as one opaque
+    <code>["bash", "-lc", "&lt;full script&gt;"]</code> invocation instead.</p>
+
+  <div class="callout alt">
+    <div class="ct">Both yolo flags mean the same thing. Treat them the same way.</div>
+    <p><code>--dangerously-skip-permissions</code> and <code>--dangerously-bypass-approvals-and-sandbox</code>
+      / <code>--yolo</code> disable the safety layer entirely. Codex&rsquo;s own table describes the effect as
+      &ldquo;No sandbox; no approvals <em>(not recommended)</em>.&rdquo; Use them only inside a container or
+      a disposable VM &mdash; never on a machine holding credentials you care about. The short
+      <code>--yolo</code> alias makes it easier to type than its Claude counterpart, which is precisely the
+      risk.</p>
+  </div>
+</section>
+
+<!-- ===================== 07 ===================== -->
+<section id="s7">
+  <div class="sec-head"><span class="sec-num">07</span><h2>Headless, CI &amp; GitHub Actions</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">Where the flag-vs-subcommand split matters most, and where Codex&rsquo;s stricter defaults
+    will silently no-op a naively ported script.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Need</th><th>Claude Code</th><th>Codex CLI</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Run one prompt</td><td><span class="mono">claude -p "&hellip;"</span></td><td><span class="mono">codex exec "&hellip;"</span></td><td>&mdash;</td></tr>
+        <tr><td>Default write access</td><td>governed by permission mode</td><td><b>read-only</b></td><td>Codex needs an explicit <span class="mono">--sandbox workspace-write</span>.</td></tr>
+        <tr><td>Git repo required</td><td>no</td><td><b>yes</b></td><td>Override with <span class="mono">--skip-git-repo-check</span>.</td></tr>
+        <tr><td>Stream events</td><td><span class="mono">--output-format stream-json</span></td><td><span class="mono">--json</span></td><td>Codex emits JSONL: <span class="mono">thread.started</span>, <span class="mono">turn.started</span>, <span class="mono">item.*</span>, <span class="mono">turn.completed</span>, <span class="mono">error</span>.</td></tr>
+        <tr><td>Final message only</td><td>default stdout</td><td>default stdout</td><td>Codex streams progress to <b>stderr</b> and prints only the final message to stdout &mdash; pipe-friendly by design.</td></tr>
+        <tr><td>Write final message to a file</td><td>redirect</td><td><span class="mono">-o</span> / <span class="mono">--output-last-message</span></td><td>Writes the file <em>and</em> still prints to stdout.</td></tr>
+        <tr><td>Constrain the answer shape</td><td><span class="mono">--json-schema</span></td><td><span class="mono">--output-schema ./schema.json</span></td><td>Codex validates the final response against the JSON Schema.</td></tr>
+        <tr><td>Continue a prior run</td><td><span class="mono">claude -p -r &lt;id&gt;</span></td><td><span class="mono">codex exec resume &lt;id&gt;</span> or <span class="mono">--last</span></td><td>Two-stage pipelines are a documented Codex pattern.</td></tr>
+        <tr><td>Don&rsquo;t persist the session</td><td><span class="mono">--no-session-persistence</span></td><td><span class="mono">--ephemeral</span></td><td>&mdash;</td></tr>
+        <tr><td>Cap the run</td><td><span class="mono">--max-turns</span>, <span class="mono">--max-budget-usd</span></td><td>&mdash;</td><td>No documented Codex turn/budget cap in this corpus.</td></tr>
+        <tr><td>Ignore user config</td><td><span class="mono">--setting-sources</span></td><td><span class="mono">--ignore-user-config</span></td><td>&mdash;</td></tr>
+        <tr><td>API key</td><td><span class="mono">ANTHROPIC_API_KEY</span></td><td><span class="mono">CODEX_API_KEY</span></td><td><b><span class="mono">CODEX_API_KEY</span> is only supported in <span class="mono">codex exec</span>.</b></td></tr>
+        <tr><td>Token auth</td><td><span class="mono">claude setup-token</span></td><td><span class="mono">CODEX_ACCESS_TOKEN</span> / <span class="mono">codex login --with-access-token</span></td><td><span class="mono">~/.codex/auth.json</span> holds tokens &mdash; treat it as a secret.</td></tr>
+        <tr><td>GitHub Action</td><td><span class="mono">anthropics/claude-code-action</span></td><td><span class="mono">openai/codex-action@v1</span></td><td>The Codex action starts a Responses API proxy to limit key exposure.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>In GitHub Actions</h3>
+  <div class="code-pair">
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">Claude Code</span></div>
+<pre><span class="c">name</span>: <span class="s">Claude review</span>
+<span class="c">on</span>:
+  <span class="c">pull_request</span>:
+    <span class="c">types</span>: [opened, synchronize]
+
+<span class="c">jobs</span>:
+  <span class="c">review</span>:
+    <span class="c">runs-on</span>: ubuntu-latest
+    <span class="c">permissions</span>:
+      <span class="c">contents</span>: read
+      <span class="c">pull-requests</span>: write
+    <span class="c">steps</span>:
+      - <span class="c">uses</span>: actions/checkout@v5
+
+      - <span class="c">uses</span>: anthropics/claude-code-action@v1
+        <span class="c">with</span>:
+          <span class="c">anthropic_api_key</span>: <span class="s">${{ secrets.ANTHROPIC_API_KEY }}</span>
+          <span class="c">prompt</span>: <span class="s">"Review this PR for bugs."</span></pre>
+    </div>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">Codex CLI</span></div>
+<pre><span class="c">name</span>: <span class="s">Codex review</span>
+<span class="c">on</span>:
+  <span class="c">pull_request</span>:
+    <span class="c">types</span>: [opened, synchronize]
+
+<span class="c">jobs</span>:
+  <span class="c">codex</span>:
+    <span class="c">runs-on</span>: ubuntu-latest
+    <span class="c">permissions</span>:
+      <span class="c">contents</span>: read
+    <span class="c">outputs</span>:
+      <span class="c">final_message</span>: <span class="s">${{ steps.run.outputs.final-message }}</span>
+    <span class="c">steps</span>:
+      - <span class="c">uses</span>: actions/checkout@v5
+        <span class="c">with</span>:
+          <span class="c">persist-credentials</span>: <span class="s">false</span>
+
+      - <span class="c">id</span>: run
+        <span class="c">uses</span>: openai/codex-action@v1
+        <span class="c">with</span>:
+          <span class="c">openai-api-key</span>: <span class="s">${{ secrets.OPENAI_API_KEY }}</span>
+          <span class="c">prompt-file</span>: <span class="s">.github/codex/review.md</span>
+          <span class="c">output-file</span>: <span class="s">codex-output.md</span></pre>
+    </div>
+  </div>
+
+  <div class="callout alt">
+    <div class="ct">Do not set the key job-wide</div>
+    <p>Straight from the Codex docs: &ldquo;Do not set <code>OPENAI_API_KEY</code> or
+      <code>CODEX_API_KEY</code> as a job-level environment variable in workflows that check out or run
+      repository-controlled code. Build scripts, tests, dependency lifecycle hooks, or a compromised action
+      in the same job can read those environment variables.&rdquo; Set it inline on the single
+      <code>codex exec</code> invocation, or let <code>openai/codex-action</code> proxy it for you. The
+      same threat model applies to <code>ANTHROPIC_API_KEY</code>; only Codex&rsquo;s docs spell it out.</p>
+  </div>
+
+  <div class="code">
+    <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">Codex — pipe in, structured out</span></div>
+<pre><span class="m"># stdin becomes context; the argument stays the instruction</span>
+curl -s https://example.com/issues.json \
+  | <span class="c">codex</span> exec <span class="s">"format the top 20 items into a markdown table"</span> \
+  &gt; table.md
+
+<span class="m"># schema-constrained result, written to disk and printed</span>
+<span class="c">codex</span> exec <span class="s">"Extract project metadata"</span> \
+  --output-schema ./schema.json \
+  -o ./project-metadata.json</pre>
+  </div>
+</section>
+
+<!-- ===================== 08 ===================== -->
+<section id="s8">
+  <div class="sec-head"><span class="sec-num">08</span><h2>Switching Gotchas</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">Eight Claude Code habits that fail quietly in Codex. Each card states the habit; flip it
+    for what actually happens and the fix.</p>
+
+  <div class="flow">
+
+    <div class="flow-item">
+      <div class="flow-rail">01</div>
+      <div class="flow-grid">
+        <div class="flow-cell flow-prob">
+          <div class="flow-k">The habit</div>
+          <div class="flow-h">You port <code>claude -p</code> to <code>codex exec</code> and expect it to edit files.</div>
+          <div class="flow-p">The script runs, reports plausible work, and exits clean.</div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true"></div>
+        <div class="flow-cell flow-sol flip-cell">
+          <div class="flip">
+            <div class="flip-inner">
+              <button class="flip-front" type="button" aria-expanded="false">
+                <span class="flip-q">So why is the working tree unchanged?</span>
+                <span class="flip-cta">Reveal</span>
+              </button>
+              <div class="flip-back">
+                <button class="flip-reset" type="button" aria-label="Reset card">&#10005;</button>
+                <div class="flow-k">What happens</div>
+                <div class="flow-h">codex exec is read-only by default.</div>
+                <div class="flow-p">Nothing was ever going to be written. Add the sandbox flag explicitly.</div>
+                <div class="flow-chips"><span class="flow-chip">--sandbox workspace-write</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-item">
+      <div class="flow-rail">02</div>
+      <div class="flow-grid">
+        <div class="flow-cell flow-prob">
+          <div class="flow-k">The habit</div>
+          <div class="flow-h">You tap <strong>Shift+Tab</strong> to enter plan mode before a risky task.</div>
+          <div class="flow-p">Nothing visible changes, so you type the prompt anyway.</div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true"></div>
+        <div class="flow-cell flow-sol flip-cell">
+          <div class="flip">
+            <div class="flip-inner">
+              <button class="flip-front" type="button" aria-expanded="false">
+                <span class="flip-q">Where did plan mode go?</span>
+                <span class="flip-cta">Reveal</span>
+              </button>
+              <div class="flip-back">
+                <button class="flip-reset" type="button" aria-label="Reset card">&#10005;</button>
+                <div class="flow-k">What happens</div>
+                <div class="flow-h">Plan mode is a command, not a permission mode.</div>
+                <div class="flow-p">Codex separates planning from permissions entirely. There is no documented Shift+Tab cycle.</div>
+                <div class="flow-chips"><span class="flow-chip">/plan</span><span class="flow-chip">/permissions</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-item">
+      <div class="flow-rail">03</div>
+      <div class="flow-grid">
+        <div class="flow-cell flow-prob">
+          <div class="flow-k">The habit</div>
+          <div class="flow-h">You drop a skill into <code>~/.codex/skills/</code>.</div>
+          <div class="flow-p">Everything else Codex owns lives under <code>~/.codex</code>, so this is the obvious guess.</div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true"></div>
+        <div class="flow-cell flow-sol flip-cell">
+          <div class="flip">
+            <div class="flip-inner">
+              <button class="flip-front" type="button" aria-expanded="false">
+                <span class="flip-q">Why does /skills show nothing?</span>
+                <span class="flip-cta">Reveal</span>
+              </button>
+              <div class="flip-back">
+                <button class="flip-reset" type="button" aria-label="Reset card">&#10005;</button>
+                <div class="flow-k">What happens</div>
+                <div class="flow-h">Skills live outside the Codex home directory.</div>
+                <div class="flow-p">Codex follows the vendor-neutral agent-skills convention. Nothing warns you about the wrong path.</div>
+                <div class="flow-chips"><span class="flow-chip">~/.agents/skills</span><span class="flow-chip">.agents/skills</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-item">
+      <div class="flow-rail">04</div>
+      <div class="flow-grid">
+        <div class="flow-cell flow-prob">
+          <div class="flow-k">The habit</div>
+          <div class="flow-h">You tweak a hook script and re-run, the way you would in Claude Code.</div>
+          <div class="flow-p">The hook fired a minute ago. Now it does not.</div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true"></div>
+        <div class="flow-cell flow-sol flip-cell">
+          <div class="flip">
+            <div class="flip-inner">
+              <button class="flip-front" type="button" aria-expanded="false">
+                <span class="flip-q">Did editing the hook break it?</span>
+                <span class="flip-cta">Reveal</span>
+              </button>
+              <div class="flip-back">
+                <button class="flip-reset" type="button" aria-label="Reset card">&#10005;</button>
+                <div class="flow-k">What happens</div>
+                <div class="flow-h">Trust is pinned to the hook&rsquo;s hash.</div>
+                <div class="flow-p">Any edit invalidates trust and the hook is skipped until you re-review it. Claude Code has no equivalent gate.</div>
+                <div class="flow-chips"><span class="flow-chip">/hooks</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-item">
+      <div class="flow-rail">05</div>
+      <div class="flow-grid">
+        <div class="flow-cell flow-prob">
+          <div class="flow-k">The habit</div>
+          <div class="flow-h">You reach for <code>--allowedTools</code> to lock a run down.</div>
+          <div class="flow-p">It is the first thing you configure in every Claude Code automation.</div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true"></div>
+        <div class="flow-cell flow-sol flip-cell">
+          <div class="flip">
+            <div class="flip-inner">
+              <button class="flip-front" type="button" aria-expanded="false">
+                <span class="flip-q">What is the Codex equivalent?</span>
+                <span class="flip-cta">Reveal</span>
+              </button>
+              <div class="flip-back">
+                <button class="flip-reset" type="button" aria-label="Reset card">&#10005;</button>
+                <div class="flow-k">What happens</div>
+                <div class="flow-h">There isn&rsquo;t one, because Codex gates commands, not tools.</div>
+                <div class="flow-p">Filesystem and network go through the sandbox; shell commands go through Starlark rules. Only MCP tools get allow/deny lists, and those live in config.</div>
+                <div class="flow-chips"><span class="flow-chip">--sandbox</span><span class="flow-chip">.rules</span><span class="flow-chip">enabled_tools</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-item">
+      <div class="flow-rail">06</div>
+      <div class="flow-grid">
+        <div class="flow-cell flow-prob">
+          <div class="flow-k">The habit</div>
+          <div class="flow-h">You write a 400-line <code>AGENTS.md</code>, the way your <code>CLAUDE.md</code> grew.</div>
+          <div class="flow-p">Claude Code loads long files in full and merely warns that adherence may drop.</div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true"></div>
+        <div class="flow-cell flow-sol flip-cell">
+          <div class="flip">
+            <div class="flip-inner">
+              <button class="flip-front" type="button" aria-expanded="false">
+                <span class="flip-q">Does Codex read all of it?</span>
+                <span class="flip-cta">Reveal</span>
+              </button>
+              <div class="flip-back">
+                <button class="flip-reset" type="button" aria-label="Reset card">&#10005;</button>
+                <div class="flow-k">What happens</div>
+                <div class="flow-h">Codex stops adding files at 32 KiB.</div>
+                <div class="flow-p">The cap is enforced, not advisory, and it applies to the <em>combined</em> chain. Raise the limit or split guidance into nested directories.</div>
+                <div class="flow-chips"><span class="flow-chip">project_doc_max_bytes</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-item">
+      <div class="flow-rail">07</div>
+      <div class="flow-grid">
+        <div class="flow-cell flow-prob">
+          <div class="flow-k">The habit</div>
+          <div class="flow-h">You give a reviewer subagent <code>sandbox_mode = "read-only"</code> and assume it is contained.</div>
+          <div class="flow-p">You started the session with <code>--yolo</code> because you were moving fast.</div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true"></div>
+        <div class="flow-cell flow-sol flip-cell">
+          <div class="flip">
+            <div class="flip-inner">
+              <button class="flip-front" type="button" aria-expanded="false">
+                <span class="flip-q">Is the subagent actually read-only?</span>
+                <span class="flip-cta">Reveal</span>
+              </button>
+              <div class="flip-back">
+                <button class="flip-reset" type="button" aria-label="Reset card">&#10005;</button>
+                <div class="flow-k">What happens</div>
+                <div class="flow-h">No. The parent&rsquo;s runtime override wins.</div>
+                <div class="flow-p">Codex reapplies live session overrides to spawned children &ldquo;even if the selected custom agent file sets different defaults.&rdquo; The agent file is a default, not a ceiling.</div>
+                <div class="flow-chips"><span class="flow-chip">don&rsquo;t rely on agent-file sandboxing</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-item">
+      <div class="flow-rail">08</div>
+      <div class="flow-grid">
+        <div class="flow-cell flow-prob">
+          <div class="flow-k">The habit</div>
+          <div class="flow-h">You port a custom slash command from <code>.claude/commands/deploy.md</code>.</div>
+          <div class="flow-p">You look for the matching Codex directory and find nothing.</div>
+        </div>
+        <div class="flow-arrow" aria-hidden="true"></div>
+        <div class="flow-cell flow-sol flip-cell">
+          <div class="flip">
+            <div class="flip-inner">
+              <button class="flip-front" type="button" aria-expanded="false">
+                <span class="flip-q">Where do custom commands go?</span>
+                <span class="flip-cta">Reveal</span>
+              </button>
+              <div class="flip-back">
+                <button class="flip-reset" type="button" aria-label="Reset card">&#10005;</button>
+                <div class="flow-k">What happens</div>
+                <div class="flow-h">They become skills &mdash; on both sides.</div>
+                <div class="flow-p">Codex deprecated custom prompts outright; Claude Code says commands and skills &ldquo;are now the same mechanism.&rdquo; <code>/import</code> performs exactly this conversion for you.</div>
+                <div class="flow-chips"><span class="flow-chip">SKILL.md</span><span class="flow-chip">/import</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================== 09 ===================== -->
+<section id="s9">
+  <div class="sec-head"><span class="sec-num">09</span><h2>What Codex CLI Has That Claude Code Doesn&rsquo;t</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">Every row is backed by a Codex doc page and was checked against the Claude Code corpus.
+    Where Claude reaches the same outcome by another route, the row says so instead of claiming a gap.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Capability</th><th>What it is</th><th>Why it matters</th></tr></thead>
+      <tbody>
+        <tr><td><b>Migration importer</b><br><span class="mono">/import</span></td><td>Reads a Claude Code (or Cursor) install and converts instructions, settings, skills, plugins, MCP config, hooks, subagents, memories and up to 50 recent chats.</td><td>The single most useful thing in this guide is a command. Codex will do most of the translation for you.</td></tr>
+        <tr><td><b>Starlark command policy</b><br><span class="mono">.rules</span></td><td>A real policy language with <span class="mono">prefix_rule()</span>, a <span class="mono">forbidden &gt; prompt &gt; allow</span> lattice, inline unit tests, and tree-sitter splitting of compound commands.</td><td>Claude&rsquo;s permission strings cannot express &ldquo;allow this prefix but forbid it when chained.&rdquo;</td></tr>
+        <tr><td><b>Offline policy testing</b><br><span class="mono">codex execpolicy check</span></td><td>Runs a command through your rule files and prints the strictest decision plus every matching rule.</td><td>You can unit-test your security posture in CI. There is no Claude Code equivalent.</td></tr>
+        <tr><td><b>Hook trust</b></td><td>Hooks are hash-pinned; changed hooks are skipped until re-reviewed via <span class="mono">/hooks</span>. Managed hooks are policy-trusted and cannot be disabled.</td><td>A supply-chain control for a directory that executes arbitrary shell.</td></tr>
+        <tr><td><b>Named permission profiles</b></td><td><span class="mono">:read-only</span>, <span class="mono">:workspace</span>, <span class="mono">:danger-full-access</span>, plus custom <span class="mono">[permissions.&lt;name&gt;]</span> tables.</td><td>Reusable posture instead of remembering two flags every time.</td></tr>
+        <tr><td><b>Config profile files</b><br><span class="mono">--profile</span></td><td>A whole extra precedence layer at <span class="mono">~/.codex/NAME.config.toml</span>.</td><td>Swap model + sandbox + MCP set with one flag.</td></tr>
+        <tr><td><b>Schema-constrained output</b><br><span class="mono">--output-schema</span></td><td>The final message is validated against a JSON Schema file.</td><td>Downstream pipeline steps get stable fields instead of parsing prose.</td></tr>
+        <tr><td><b>Required MCP servers</b></td><td><span class="mono">required = true</span> makes <span class="mono">codex exec</span> exit with an error rather than run without the server.</td><td>Fails loudly instead of silently degrading in CI.</td></tr>
+        <tr><td><b>Codex as an MCP server</b></td><td>A documented mode for invoking Codex from the Agents SDK to build multi-agent workflows.</td><td>Codex becomes a callable component, not just a caller.</td></tr>
+        <tr><td><b>Local / OSS model path</b></td><td><span class="mono">--oss</span>, <span class="mono">--local-provider</span>, and <span class="mono">openai_base_url</span> for proxies and data-residency endpoints.</td><td>Point the built-in provider at a router without defining a custom provider.</td></tr>
+        <tr><td><b>Persistent goals</b><br><span class="mono">/goal</span></td><td>Set, pause, resume, view or clear a target that Codex tracks across a long task.</td><td>Survives compaction in a way an ordinary prompt does not.</td></tr>
+        <tr><td><b>Enforced instruction cap</b></td><td><span class="mono">project_doc_max_bytes</span>, 32 KiB by default.</td><td>Debatable as a feature, but it is deterministic. Context bloat fails visibly.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 10 ===================== -->
+<section id="s10">
+  <div class="sec-head"><span class="sec-num">10</span><h2>What Claude Code Has That Codex CLI Doesn&rsquo;t</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">The mirror section, same evidentiary standard. &ldquo;Not documented&rdquo; means exactly
+    that at the August 2026 harvest &mdash; Codex ships fast and several of these may close.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Capability</th><th>What it is</th><th>Why it matters</th></tr></thead>
+      <tbody>
+        <tr><td><b>~3&times; the hook events</b></td><td>Beyond the 11 Codex shares: <span class="mono">Notification</span>, <span class="mono">PostToolBatch</span>, <span class="mono">PostToolUseFailure</span>, <span class="mono">FileChanged</span>, <span class="mono">CwdChanged</span>, <span class="mono">DirectoryAdded</span>, <span class="mono">ConfigChange</span>, <span class="mono">InstructionsLoaded</span>, <span class="mono">TaskCreated</span>/<span class="mono">TaskCompleted</span>, <span class="mono">WorktreeCreate</span>/<span class="mono">Remove</span>, <span class="mono">Setup</span>, <span class="mono">StopFailure</span> and more.</td><td>Whole classes of automation &mdash; react to a file change, to a failed tool call, to config drift &mdash; have no Codex trigger.</td></tr>
+        <tr><td><b>Background hooks that wake the agent</b></td><td><span class="mono">asyncRewake</span>: runs in the background and wakes Claude on exit code 2, surfacing stderr as a system reminder.</td><td>A long-running check can interrupt the agent later. Codex has <span class="mono">async</span> but no documented rewake.</td></tr>
+        <tr><td><b>Per-tool permissions</b></td><td><span class="mono">--allowed-tools</span> / <span class="mono">--disallowed-tools</span> and <span class="mono">permissions.allow/deny/ask</span> naming tools directly.</td><td>&ldquo;This run may read but never edit&rdquo; is one flag, not a sandbox plus a rules file.</td></tr>
+        <tr><td><b>System-prompt control</b></td><td><span class="mono">--system-prompt</span>, <span class="mono">--append-system-prompt</span>, <span class="mono">--system-prompt-file</span>, <span class="mono">--append-subagent-system-prompt</span>.</td><td>Codex steers via <span class="mono">developer_instructions</span>, which is not the same lever.</td></tr>
+        <tr><td><b>Checkpointing &amp; undo</b></td><td><span class="mono">/rewind</span>, <span class="mono">/undo</span>, and <span class="mono">file-history/</span> pre-edit snapshots.</td><td>Codex has <span class="mono">/fork</span> to branch a chat, but no documented restore of edited files.</td></tr>
+        <tr><td><b>Path-scoped rule files</b></td><td><span class="mono">.claude/rules/*.md</span> with <span class="mono">paths:</span> frontmatter loads a rule only when a matching file is read.</td><td>Codex scopes instructions by directory depth only &mdash; no glob-conditional loading.</td></tr>
+        <tr><td><b>Run caps</b></td><td><span class="mono">--max-turns</span>, <span class="mono">--max-budget-usd</span>, <span class="mono">--fallback-model</span>.</td><td>Hard ceilings on an autonomous run. No documented Codex equivalent.</td></tr>
+        <tr><td><b>Scheduling &amp; routines</b></td><td><span class="mono">/schedule</span>, <span class="mono">/routines</span>, <span class="mono">/workflows</span>.</td><td>Codex has scheduled tasks in the ChatGPT surface, but not as CLI primitives.</td></tr>
+        <tr><td><b>Deeper review commands</b></td><td><span class="mono">/security-review</span>, <span class="mono">/code-review</span>, <span class="mono">ultrareview</span>, <span class="mono">/deep-research</span>.</td><td>Codex counters with a whole Codex Security product line &mdash; different packaging, comparable ambition.</td></tr>
+        <tr><td><b>Personal project settings</b></td><td><span class="mono">.claude/settings.local.json</span>, auto-gitignored, merging arrays with the team file.</td><td>Codex&rsquo;s nearest analogue is a named profile, which is global rather than per-repo.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <div class="ct">Read these two sections together</div>
+    <p>Codex is deeper on <strong>policy and containment</strong>: a real rules language, hash-pinned hook
+      trust, named profiles, enforced caps, schema-validated output. Claude Code is deeper on
+      <strong>surface area and recovery</strong>: three times the hook events, per-tool permissions,
+      system-prompt control, checkpointing, run budgets. Which one is &ldquo;safer&rdquo; depends entirely on
+      whether your risk is <em>an agent doing the wrong thing</em> or <em>an agent doing the right thing
+      badly</em>.</p>
+  </div>
+</section>
+
+<!-- ===================== 11 ===================== -->
+<section id="s11">
+  <div class="sec-head"><span class="sec-num">11</span><h2>The Cheat Sheet</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">Ten equivalent pairs. The Claude Code line first, the Codex line second. Copy a pair and
+    keep it next to your terminal.</p>
+
+  <div class="prompt-list">
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">01</span><span class="ptitle">Start interactive in this repo</span></div>
+        <div class="pdesc">Bare launch. Both read their instruction file on startup.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude&#10;codex">Copy pair</button>
+    </div>
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">02</span><span class="ptitle">One-shot, allowed to edit</span></div>
+        <div class="pdesc">The flag-to-subcommand jump, plus Codex&rsquo;s mandatory write opt-in.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude -p &quot;fix the failing test&quot; --permission-mode acceptEdits&#10;codex exec &quot;fix the failing test&quot; --sandbox workspace-write">Copy pair</button>
+    </div>
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">03</span><span class="ptitle">Machine-readable event stream</span></div>
+        <div class="pdesc">Claude emits stream-json; Codex emits JSON Lines.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude -p &quot;summarize the repo&quot; --output-format stream-json&#10;codex exec &quot;summarize the repo&quot; --json | jq">Copy pair</button>
+    </div>
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">04</span><span class="ptitle">Resume the last session here</span></div>
+        <div class="pdesc">Codex scopes <code>--last</code> to the current directory unless you add <code>--all</code>.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude --continue&#10;codex resume --last">Copy pair</button>
+    </div>
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">05</span><span class="ptitle">Scaffold the instruction file</span></div>
+        <div class="pdesc">Same command, different output: <code>CLAUDE.md</code> vs <code>AGENTS.md</code>.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude&#10;codex&#10;# then, in either TUI:  /init">Copy pair</button>
+    </div>
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">06</span><span class="ptitle">Add an MCP server</span></div>
+        <div class="pdesc">Nearly identical ergonomics; Codex stores the entry in <code>~/.codex/config.toml</code>.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude mcp add context7 -- npx -y @upstash/context7-mcp&#10;codex mcp add context7 -- npx -y @upstash/context7-mcp">Copy pair</button>
+    </div>
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">07</span><span class="ptitle">Read-only run for CI</span></div>
+        <div class="pdesc">Codex composes two axes; Claude uses one mode plus a tool allowlist.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude -p &quot;audit this repo&quot; --permission-mode plan --allowed-tools &quot;Read,Grep,Glob&quot;&#10;codex exec &quot;audit this repo&quot; --sandbox read-only --ask-for-approval never">Copy pair</button>
+    </div>
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">08</span><span class="ptitle">Bypass all safety (containers only)</span></div>
+        <div class="pdesc">Identical blast radius. Never run either on a machine with live credentials.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude --dangerously-skip-permissions&#10;codex --dangerously-bypass-approvals-and-sandbox   # alias: --yolo">Copy pair</button>
+    </div>
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">09</span><span class="ptitle">Diagnose the install</span></div>
+        <div class="pdesc">Same subcommand name on both sides.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude doctor&#10;codex doctor">Copy pair</button>
+    </div>
+
+    <div class="prow">
+      <div class="prow-main">
+        <div class="prow-id"><span class="pnum">10</span><span class="ptitle">Move your setup across</span></div>
+        <div class="pdesc">The one asymmetric pair: Codex reads a Claude Code install directly.</div>
+      </div>
+      <button class="copy-btn" type="button" data-prompt="claude import        # Claude Code's own import surface&#10;codex&#10;# then, in the Codex TUI:  /import  ->  choose &quot;Claude Code&quot;">Copy pair</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================== 12 ===================== -->
+<section id="s12">
+  <div class="sec-head"><span class="sec-num">12</span><h2>Sources &amp; Provenance</h2></div>
+  <div class="lead-rule"></div>
+  <p class="sub">Every claim above traces to a page harvested on <strong>12 August 2026</strong>. Snapshots
+    are committed alongside this document so the guide can be audited without re-fetching.</p>
+
+  <h3>Codex CLI &mdash; <span class="mono">learn.chatgpt.com/docs/&lt;slug&gt;.md</span></h3>
+  <ul class="clean">
+    <li><b>Index:</b> <a href="https://developers.openai.com/codex/llms.txt">developers.openai.com/codex/llms.txt</a> &mdash; 307-line page map</li>
+    <li><b>Complete manual:</b> <a href="https://learn.chatgpt.com/docs/codex-manual.md">codex-manual.md</a> &mdash; 1.9&nbsp;MB, and the <em>only</em> source with fully rendered flag, command and config tables</li>
+    <li>CLI &amp; commands: <span class="mono">codex/cli</span>, <span class="mono">developer-commands</span>, <span class="mono">cli-customization</span></li>
+    <li>Config: <span class="mono">config-file/config-basic</span>, <span class="mono">config-advanced</span>, <span class="mono">config-reference</span>, <span class="mono">config-sample</span>, <span class="mono">environment-variables</span></li>
+    <li>Agent configuration: <span class="mono">agent-configuration/agents-md</span>, <span class="mono">rules</span>, <span class="mono">subagents</span>, <span class="mono">speed</span></li>
+    <li>Customization: <span class="mono">customization/overview</span>, <span class="mono">customization/memories</span>, <span class="mono">build-skills</span>, <span class="mono">skills-and-plugins</span>, <span class="mono">plugins</span>, <span class="mono">build-plugins</span></li>
+    <li>Extensibility: <span class="mono">hooks</span>, <span class="mono">extend/mcp</span>, <span class="mono">mcp-server</span>, <span class="mono">codex-sdk</span></li>
+    <li>Safety: <span class="mono">agent-approvals-security</span>, <span class="mono">sandboxing</span>, <span class="mono">permission-modes</span>, <span class="mono">permissions</span>, <span class="mono">enterprise/managed-configuration</span></li>
+    <li>Automation: <span class="mono">non-interactive-mode</span>, <span class="mono">github-action</span>, <span class="mono">code-review</span></li>
+    <li>Other: <span class="mono">auth</span>, <span class="mono">models</span>, <span class="mono">import</span>, <span class="mono">glossary</span>, <span class="mono">notifications</span>, <span class="mono">pricing</span>, <span class="mono">environments/local-environment</span></li>
+  </ul>
+
+  <h3>Claude Code &mdash; <span class="mono">code.claude.com/docs/en/&lt;slug&gt;.md</span></h3>
+  <ul class="clean">
+    <li><b>Index:</b> <a href="https://code.claude.com/docs/llms.txt">code.claude.com/docs/llms.txt</a></li>
+    <li><span class="mono">cli-reference</span>, <span class="mono">commands</span>, <span class="mono">settings</span>, <span class="mono">claude-directory</span>, <span class="mono">memory</span>, <span class="mono">overview</span></li>
+    <li><span class="mono">hooks</span>, <span class="mono">hooks-guide</span>, <span class="mono">skills</span>, <span class="mono">sub-agents</span>, <span class="mono">mcp</span>, <span class="mono">plugins</span>, <span class="mono">plugins-reference</span></li>
+    <li><span class="mono">permission-modes</span>, <span class="mono">sandboxing</span>, <span class="mono">auto-mode-config</span>, <span class="mono">iam</span></li>
+    <li><span class="mono">headless</span>, <span class="mono">github-actions</span>, <span class="mono">interactive-mode</span></li>
+  </ul>
+
+  <div class="callout alt">
+    <div class="ct">Two things to know about these sources</div>
+    <p><strong>Fetch with <code>-L</code>.</strong> Every <code>developers.openai.com/codex/*</code> URL
+      answers a 308 redirect; without <code>-L</code> you get the string <code>Redirecting&hellip;</code>
+      and a false negative.</p>
+    <p><strong>The per-page Markdown twins have holes.</strong> Pages that rendered an MDX
+      <code>&lt;ConfigTable/&gt;</code>, <code>&lt;FileTree/&gt;</code> or
+      <code>&lt;ContentModeSwitch/&gt;</code> component leave the placeholder unexpanded &mdash;
+      <code>developer-commands.md</code> alone has 29 of them, which is exactly where the flag tables should
+      be. Read <code>codex-manual.md</code> for anything tabular.</p>
+  </div>
+
+  <div class="callout">
+    <div class="ct">Churn caveat</div>
+    <p>Codex CLI moves fast, and Claude Code&rsquo;s docs reorganised between this harvest and the
+      previous one in this series &mdash; <code>slash-commands.md</code> now serves the skills page and the
+      command reference moved to <code>commands.md</code>. Codex&rsquo;s Rules feature is explicitly marked
+      experimental. Re-run the fetches against the slugs listed above before trusting any specific flag or
+      path here more than a quarter from now.</p>
+  </div>
+
+  <p class="cap-note">Harvested 2026-08-12 &middot; 58 pages &middot; every &ldquo;&mdash;&rdquo; glyph in this
+    document means &ldquo;not documented at harvest date,&rdquo; never &ldquo;proven absent.&rdquo;</p>
+</section>
+
+</div><!-- /.wrap -->
+
+<footer>
+  <div class="wrap">
+    <div class="fq">Learn one vocabulary. Get the second agent free.</div>
+    <div class="fm">
+      Codex CLI vs Claude Code &middot; fetched 12 August 2026<br>
+      &#10003; documented &middot; &#9679; partial &middot; &mdash; not documented
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Copy buttons: the data-prompt holds the exact text (here: command pairs).
+  // Rendered into .ptext verbatim (mono, pre-wrap) so what you see is what you copy.
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    var raw = btn.getAttribute('data-prompt') || '';
+    var main = btn.parentNode.querySelector('.prow-main');
+    if (main && !main.querySelector('.ptext')) {
+      var q = document.createElement('div');
+      q.className = 'ptext';
+      q.textContent = raw;
+      main.appendChild(q);
+    }
+  });
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.getAttribute('data-prompt') || '';
+      var done = function(){
+        var prev = 'Copy pair';
+        btn.textContent = 'Copied ✓';
+        btn.classList.add('copied');
+        setTimeout(function(){ btn.textContent = prev; btn.classList.remove('copied'); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function(){ fallback(text); done(); });
+      } else {
+        fallback(text); done();
+      }
+    });
+  });
+  // Fallback: inject the text into a textarea, auto-select it, and copy.
+  function fallback(text){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  // Flip cards: reveal each gotcha's answer on demand. Toggling .flipped on the row
+  // drives the card flip, the amber->green cell color, and the center "?"->arrow.
+  document.querySelectorAll('.flip-front').forEach(function(front){
+    front.addEventListener('click', function(){
+      var item = front.closest('.flow-item');
+      if (item){ item.classList.add('flipped'); front.setAttribute('aria-expanded','true'); }
+    });
+  });
+  document.querySelectorAll('.flip-reset').forEach(function(reset){
+    reset.addEventListener('click', function(){
+      var item = reset.closest('.flow-item');
+      if (item){
+        item.classList.remove('flipped');
+        var f = item.querySelector('.flip-front');
+        if (f) f.setAttribute('aria-expanded','false');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

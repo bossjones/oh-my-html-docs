@@ -310,3 +310,5 @@ specs/boss-experimental/03-agents-and-conventions.md
 
 # playwright-cli scratch (page snapshots written during browser validation)
 .playwright-cli/
+.oh-my-html-docs/
+
