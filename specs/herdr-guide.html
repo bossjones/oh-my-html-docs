@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="planf3 spec: build a self-contained HTML showcase of Herdr (herdr.dev) — mental model, control loop, agent states, 30 orchestration prompts, socket API — import it into oh-my-html-docs and verify it with playwright-cli.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0c0c0b">
+<title>Plan: Herdr Guide — Run Them Anywhere, Leave Them Running</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c0c0b'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='monospace' font-size='17' font-weight='700' fill='%234a9eff'%3Eh%3C/text%3E%3C/svg%3E">
+<style>
+  /* ===== Synced visual identity — herdr "ink" ground + herdr blue. Every embedded image matches this. ===== */
+  :root{
+    --bg:#0c0c0b; --bg-soft:#101010; --surface:#131312; --surface-2:#191917;
+    --border:#252522; --border-bright:#3a3a35;
+    --text:#f0ece0; --muted:#c9c4b4; --faint:#8a8a80;
+    --accent:#4a9eff; --accent-dim:#2a5f9e; --accent-glow:rgba(74,158,255,.14);
+    --accent-2:#e6b84a; --ok:#52c97a; --bad:#e05a5a;
+    --maxw:1140px; --bar-h:52px;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Archivo','Inter',ui-rounded,system-ui,sans-serif;
+    --body:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+  body{color:var(--text);font-family:var(--body);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;background:var(--bg);
+    background-image:radial-gradient(900px 480px at 80% -10%, var(--accent-glow), transparent 60%);background-repeat:no-repeat}
+  ::selection{background:var(--accent);color:var(--bg)}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+  main{max-width:var(--maxw);margin:0 auto;padding:34px 26px 90px}
+
+  header h1{font-family:var(--disp);font-weight:800;letter-spacing:-.022em;line-height:1.1;font-size:clamp(30px,5vw,52px);margin:10px 0 6px}
+  header h1::before{content:"PLANF3 · SPEC";display:block;font-family:var(--mono);font-size:12px;letter-spacing:.26em;color:var(--accent);margin-bottom:14px}
+  details.meta{margin:22px 0 8px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+  details.meta summary{cursor:pointer;padding:12px 18px;font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  details.meta dl{display:grid;grid-template-columns:140px 1fr;gap:8px 18px;padding:6px 20px 18px}
+  details.meta dt{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-top:2px}
+  details.meta dd{font-size:14px;color:var(--text);word-break:break-word}
+  details.meta dd code{font-size:.85em}
+
+  h2{font-family:var(--disp);font-weight:800;letter-spacing:-.022em;font-size:clamp(24px,3.4vw,36px);line-height:1.12}
+  h2::before{content:"";display:block;height:2px;width:56px;margin:0 0 14px;background:linear-gradient(90deg,var(--accent),transparent);border-radius:2px}
+  h3{font-family:var(--disp);font-weight:700;font-size:21px;margin:26px 0 8px}
+  h4{font-family:var(--disp);font-weight:700;font-size:16.5px;margin:22px 0 6px;color:var(--text)}
+  section{padding:64px 0 10px;border-top:1px solid var(--border);margin-top:44px;scroll-margin-top:calc(var(--bar-h) + 18px)}
+  section:first-of-type{border-top:none;margin-top:0}
+  p{margin:12px 0;color:var(--text);opacity:.92}
+  ul,ol{margin:10px 0 10px 22px} li{margin:7px 0}
+  code{font-family:var(--mono);font-size:.86em;color:var(--accent);background:var(--accent-glow);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);padding:1px 6px;border-radius:5px}
+  pre{background:#000;border:1px solid var(--border);border-radius:12px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0}
+  pre code{background:none;border:0;padding:0;color:var(--text)}
+  figure{margin:34px 0;text-align:center}
+  figure img{max-width:min(100%,960px);width:100%;display:block;margin:0 auto;border:1px solid var(--border-bright);border-radius:14px;box-shadow:0 18px 50px -24px rgba(0,0,0,.8), 0 0 0 1px var(--accent-glow)}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:11px;letter-spacing:.04em}
+
+  .tag{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 9px;border-radius:999px;margin-right:6px;border:1px solid}
+  .tag.existing{color:var(--accent-2);border-color:color-mix(in srgb,var(--accent-2) 40%,transparent);background:rgba(230,184,74,.1)}
+  .tag.new{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:rgba(82,201,122,.1)}
+  .files ul{list-style:none;margin-left:0} .files li{padding:8px 0;border-bottom:1px solid var(--border);font-size:15px} .files li:last-child{border-bottom:none}
+
+  .phase{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:12px;padding:22px 26px;margin:22px 0}
+  .phase h3{margin-top:0}
+  .checklist{list-style:none;margin-left:0} .checklist li{display:flex;gap:12px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border);font-size:15px}
+  .checklist li:last-child{border-bottom:none}
+  code.status{flex:none;min-width:44px;text-align:center;color:var(--faint);background:var(--bg-soft);border-color:var(--border)}
+  code.status.done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:rgba(82,201,122,.1)}
+  .loop{margin:18px 0 4px;padding:14px 18px;border:1px dashed var(--accent-dim);border-radius:10px;background:var(--accent-glow);font-size:15px}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;margin:16px 0}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--bg-soft)}
+  .tbl{overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin:16px 0}
+  .tbl table{margin:0}
+  details.q{border:1px solid var(--border);border-radius:10px;background:var(--surface);margin:10px 0}
+  details.q summary{cursor:pointer;padding:12px 16px;font-weight:600}
+  details.q p{padding:0 16px 14px}
+  .callout{background:var(--bg-soft);border:1px solid var(--border);border-left:3px solid var(--accent-2);border-radius:0 12px 12px 0;padding:14px 18px;margin:20px 0;font-size:15px}
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ===== HEADER + UPDATABLE METADATA ===== -->
+  <header>
+    <h1>Plan: Herdr Guide — Run Them Anywhere, Leave Them Running</h1>
+    <details class="meta" open>
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-08-26T13:00:00Z</dd>
+        <dt>modified</dt>     <dd>2026-08-26T13:23:00Z</dd>
+        <dt>commits</dt>      <dd>(pending — appended by the commit that lands this spec)</dd>
+        <dt>agent name</dt>   <dd>claude-fable-5</dd>
+        <dt>session id</dt>   <dd>session_016dZKcS544n4wDBFwzdzaMV</dd>
+        <dt>back refs</dt>    <dd><code>specs/oh-my-html-docs.md</code>, <code>specs/codex-cli-vs-claude-code.html</code>, <code>docs/pages/cmux-guide/index.html</code></dd>
+        <dt>forward refs</dt> <dd><code>docs/pages/herdr-guide/index.html</code>, <code>docs/library/guides/herdr-guide.md</code>, <code>specs/herdr-guide/doc/index.html</code></dd>
+      </dl>
+    </details>
+  </header>
+
+  <figure>
+    <img src="herdr-guide/hero.webp" alt="Blueprint of a long single web page with numbered sections 00–08 beside a browser window with a camera icon, the screenshot feedback loop">
+    <figcaption>The deliverable at a glance: one self-contained page, nine numbered sections, verified by a screenshot loop.</figcaption>
+  </figure>
+
+  <!-- ===== PURPOSE / PROBLEM / SOLUTION ===== -->
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>Add a standalone HTML field guide for <strong>Herdr</strong> (<a href="https://herdr.dev">herdr.dev</a> — "the runtime coding agents run on", v0.8.2, Rust, Apache-2.0) to <code>oh-my-html-docs</code>, in the same "showcase everything the tool can do" style as the existing <code>cmux-guide</code>: a mental model, the control loop, agent states, a tiered library of copy-able orchestration prompts, the socket API, keyboard, integrations, and a comparison against tmux / cmux / Warp. Import it as a verbatim bundle + library card, and validate the render with <code>playwright-cli</code>.</p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>Herdr's knowledge is spread over 21 docs pages, a README, a bundled <code>SKILL.md</code>, a compare page and a marketplace page. Someone deciding whether to run their agents on it — or an orchestrator agent trying to drive it — has no single page that shows the whole surface (CLI + socket + states + persistence + plugins) with runnable prompts. The repo's house style for exactly this kind of page exists (<code>cmux-guide</code>), but nothing covers Herdr.</p>
+    <figure>
+      <img src="herdr-guide/problem.webp" alt="A scattered pile of documentation page icons under a question mark, a broken dashed line to a lone terminal">
+      <figcaption>Twenty-odd pages, no single map.</figcaption>
+    </figure>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>One self-contained <code>index.html</code> (own CSS/JS, six generated <code>.webp</code> figures, one SVG favicon), rethemed from the cmux skeleton to Herdr's own "ink" identity (near-black ground, off-white text, herdr-blue <code>#4a9eff</code> accent, Archivo / Inter / JetBrains Mono). Nine sections: 00 Problem &amp; Solution (flip cards) · 01 Mental Model · 02 Control Loop · 03 States &amp; Notifications (with an HTML/CSS terminal mock) · 04 What Can Herdr Do? (30 prompts in 5 tiers + customization, each with a Copy button) · 05 Agentic Access (skill → CLI → socket) · 06 Keyboard · 07 Agents &amp; Integrations · 08 Herdr vs tmux vs cmux vs Warp. Every command is cross-checked against the CLI reference and socket API docs. The bundle is imported under <code>docs/pages/herdr-guide/</code> with a card at <code>docs/library/guides/herdr-guide.md</code> and a screenshot preview.</p>
+    <figure>
+      <img src="herdr-guide/solution.webp" alt="A single tall page card glowing blue with copy buttons down its side and a checkmark badge; arrows converge into it">
+      <figcaption>One page, every capability, each prompt one click from an orchestrator.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== RELEVANT FILES ===== -->
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+    <h3>Existing Files</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>docs/pages/cmux-guide/index.html</code> — the house-style source: CSS skeleton (topbar-less hero, metastrip, toc, flip cards, tier/prompt rows, code blocks, matrix) and the copy-button / flip-card JS reused verbatim.</li>
+      <li><span class="tag existing">existing</span> <code>docs/library/guides/cmux-guide.md</code> — card front-matter shape to mirror (<code>title, description, tags, category, html, source, added</code>).</li>
+      <li><span class="tag existing">existing</span> <code>docs/library/index.md</code> — the Library landing page; gets one new bullet under <em>guides</em>.</li>
+      <li><span class="tag existing">existing</span> <code>docs/assets/previews/*.png</code> — 1200×750 card previews; the new one is captured with playwright-cli.</li>
+      <li><span class="tag existing">existing</span> <code>specs/codex-cli-vs-claude-code.html</code> + <code>specs/codex-cli-vs-claude-code/doc/</code> — precedent for keeping an authoring copy of the bundle beside the spec.</li>
+      <li><span class="tag existing">existing</span> <code>mkdocs.yml</code>, <code>justfile</code>, <code>CLAUDE.md</code> — strict build, lint, and the documented playwright-cli validation loop.</li>
+    </ul>
+    <h3>New Files</h3>
+    <ul>
+      <li><span class="tag new">new</span> <code>docs/pages/herdr-guide/index.html</code> — the verbatim bundle (the deliverable).</li>
+      <li><span class="tag new">new</span> <code>docs/pages/herdr-guide/images/{hero,model,loop,states,tiers,access}.webp</code>, <code>favicon.svg</code> — figures generated to the synced identity, converted with <code>cwebp -q 82</code>.</li>
+      <li><span class="tag new">new</span> <code>docs/library/guides/herdr-guide.md</code> — the card.</li>
+      <li><span class="tag new">new</span> <code>docs/assets/previews/herdr-guide.png</code> — 1200×750 preview for the card.</li>
+      <li><span class="tag new">new</span> <code>specs/herdr-guide.html</code> + <code>specs/herdr-guide/*.webp</code> — this spec and its images.</li>
+      <li><span class="tag new">new</span> <code>specs/herdr-guide/doc/</code> — authoring copy of the bundle (identical to <code>docs/pages/herdr-guide/</code>).</li>
+    </ul>
+  </section>
+
+  <!-- ===== IMPLEMENTATION PHASES ===== -->
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. This plan was built in the same session it was created in, so the markers below reflect the finished state (see Amendments).</p>
+
+    <div class="phase">
+      <h3><code class="status done">[x]</code> Phase 1: Research &amp; Spec</h3>
+      <p>Distill every herdr.dev docs page (fetched with <code>curl</code>, stripped of markup), the README, <code>SKILL.md</code>, the compare page and the marketplace page into a factual reference; author this spec; generate its images.</p>
+      <h4>1. Gather facts</h4>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> Fetch <code>/docs/</code> index + all 20 subpages, <code>/compare</code>, <code>/plugins</code>, GitHub README and <code>skills/herdr/SKILL.md</code>; cache plain-text copies in the scratchpad.</li>
+        <li><code class="status done">[x]</code> Record version (0.8.2), protocol (20), licence, stats, full CLI command list, socket method families, config keys, keybindings, agent/integration tables, persistence matrix, compare matrix.</li>
+        <li><code class="status done">[x]</code> Extract the site's visual identity (ink palette, <code>#4a9eff</code> accent, Archivo / Inter / JetBrains Mono).</li>
+      </ul>
+      <h4>2. Author the spec</h4>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> Write <code>specs/herdr-guide.html</code> from the planf3 template; fill metadata; no <code>&#123;&#123;</code> tokens left.</li>
+        <li><code class="status done">[x]</code> Generate hero / problem / solution / per-phase images with <code>generate_gpt_image.py --size 1536x1024 --quality high</code>, in parallel; convert to webp into <code>specs/herdr-guide/</code>.</li>
+      </ul>
+      <h4>3. Testing Strategy</h4>
+      <p>Static checks on the spec file itself.</p>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> <code>grep -c '&#123;&#123;' specs/herdr-guide.html</code> — returns 0: every placeholder replaced.</li>
+        <li><code class="status done">[x]</code> <code>open -a "Google Chrome" specs/herdr-guide.html</code> — every figure renders.</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status done">[x]</code> Phase 2: Scaffold &amp; Theme</h3>
+      <p>Copy the cmux CSS skeleton, swap the tokens to Herdr's ink/blue identity, build the hero, metastrip, TOC and section shells, and add one new component — a pure HTML/CSS terminal mock of the Herdr TUI.</p>
+      <figure>
+        <img src="herdr-guide/phase-build.webp" alt="Wireframe blocks sliding into a vertical page column while a paint roller tints the top block blue">
+        <figcaption>Skeleton first, then paint: the cmux structure under Herdr's colours.</figcaption>
+      </figure>
+      <h4>1. Build the shell</h4>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> <code>:root</code> tokens: <code>--bg #0c0c0b</code>, <code>--text #f0ece0</code>, <code>--accent #4a9eff</code>, <code>--ok #52c97a</code>, <code>--bad #e05a5a</code>, <code>--accent-2 #e6b84a</code>; Google Fonts Archivo 600/800/900 + Inter + JetBrains Mono.</li>
+        <li><code class="status done">[x]</code> Hero: lowercase eyebrow, two-line H1 with blue second line, lede, install one-liner with a Copy button, hero figure.</li>
+        <li><code class="status done">[x]</code> Metastrip (version · runtime · agents detected · community) and a 9-entry TOC.</li>
+        <li><code class="status done">[x]</code> Terminal mock (<code>.term</code>): sidebar with spaces + agents and coloured state glyphs, tab bar, two panes (Claude Code working, a test watcher with a <code>wait-output</code> match).</li>
+        <li><code class="status done">[x]</code> Reuse the copy-button + flip-card JS from <code>cmux-guide/index.html:929-1000</code>; scope the prompt-text renderer to <code>.prow .copy-btn</code> so the hero Copy button stays a plain button.</li>
+      </ul>
+      <h4>2. Testing Strategy</h4>
+      <p>Early screenshot loop with playwright-cli against a static server on <code>docs/</code>.</p>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> <code>python3 -m http.server -d docs 8765 &amp;</code> then <code>playwright-cli open http://localhost:8765/pages/herdr-guide/index.html</code> — page loads, title correct.</li>
+        <li><code class="status done">[x]</code> <code>playwright-cli --raw eval "document.fonts …"</code> — Archivo, Inter, JetBrains Mono all loaded.</li>
+        <li><code class="status done">[x]</code> <code>playwright-cli screenshot</code> at 1440×900 — hero, metastrip and TOC read as one system.</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status done">[x]</code> Phase 3: Content &amp; Prompt Library</h3>
+      <p>Write sections 00–08 and the 30-prompt library. Every flag, method name, state name and config key is checked against the cached CLI reference, socket API, config reference and agent-automation pages — nothing invented.</p>
+      <figure>
+        <img src="herdr-guide/phase-content.webp" alt="A long list of prompt cards, each with a copy button, arranged in five groups">
+        <figcaption>Thirty prompts in five tiers plus customization — each one a rung an orchestrator can copy.</figcaption>
+      </figure>
+      <h4>1. Sections</h4>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> 00 three flip cards: lid-closing → server/client; which-is-stuck → semantic states; agents-can't-drive → CLI/socket + skill.</li>
+        <li><code class="status done">[x]</code> 01 Server / Session / Workspace / Worktree / Tab / Pane / Agent table with ID shapes and verbs; three ways to work (local, SSH, <code>--remote</code>).</li>
+        <li><code class="status done">[x]</code> 02 the docs' reviewer recipe verbatim (<code>pane split</code> → <code>agent start</code> → <code>agent prompt --wait</code> → <code>agent read</code> → <code>agent wait --until blocked</code> → <code>send-keys esc</code>; <code>pane run</code> + <code>wait-output --regex</code>); control-surface table with error codes.</li>
+        <li><code class="status done">[x]</code> 03 five-state table in the docs' wording; push-vs-poll table; <code>[ui.toast]</code>/<code>[ui.sound]</code> config; custom reporter callout.</li>
+        <li><code class="status done">[x]</code> 04 30 prompts: Tier 1 Foundations (5) · Tier 2 One Agent (6) · Tier 3 Fleet (6) · Tier 4 Layouts &amp; Metadata (5) · Tier 5 Persist &amp; Remote (6) · Customization (2). Each <code>data-prompt</code> uses only documented commands.</li>
+        <li><code class="status done">[x]</code> 05 skill → CLI → socket layers, NDJSON request/response/error samples, method-family table, env vars, skill rules.</li>
+        <li><code class="status done">[x]</code> 06 "learn these five first", full key grid, prefix-free <code>ctrl+alt</code> config sample, copy-mode keys.</li>
+        <li><code class="status done">[x]</code> 07 agents × <code>--kind</code> × authority × integration × resume table; integration/manifest commands; plugins / marketplace / Windows cards.</li>
+        <li><code class="status done">[x]</code> 08 compare matrix condensed from herdr.dev/compare; three one-liners; "pairs with the cmux guide" callout.</li>
+      </ul>
+      <h4>2. Testing Strategy</h4>
+      <p>DOM-level checks through playwright-cli: count, rendering, interaction.</p>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> <code>document.querySelectorAll('.prow').length === 30 &amp;&amp; '.ptext' === 30</code> — every prompt renders its text from <code>data-prompt</code>.</li>
+        <li><code class="status done">[x]</code> Click a <code>.copy-btn</code> → text becomes <code>Copied ✓</code> and class <code>copied</code> is set.</li>
+        <li><code class="status done">[x]</code> Click a <code>.flip-front</code> → the row gains <code>.flipped</code> and the green answer face is visible in a screenshot.</li>
+        <li><code class="status done">[x]</code> <code>document.body.scrollWidth === innerWidth</code> at 1440 and at 390 — no horizontal overflow.</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status done">[x]</code> Phase 4: Figures</h3>
+      <p>Six page figures generated to the synced identity, converted to webp, embedded with figcaptions.</p>
+      <h4>1. Generate &amp; embed</h4>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> <code>hero</code> (laptop lid → herdr server → three running terminals), <code>model</code> (nested workspace/tab/pane/agent), <code>loop</code> (run · read · wait · prompt), <code>states</code> (sidebar with the blocked row belled), <code>tiers</code> (five steps to a remote server), <code>access</code> (skill / cli / socket stack).</li>
+        <li><code class="status done">[x]</code> <code>cwebp -q 82</code> each PNG → <code>docs/pages/herdr-guide/images/*.webp</code> (14–28 KB each); remove PNG sources.</li>
+        <li><code class="status done">[x]</code> Hand-drawn <code>favicon.svg</code> (ink square, blue "h", green working dot).</li>
+      </ul>
+      <h4>2. Testing Strategy</h4>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> <code>playwright-cli --raw eval "JSON.stringify([...document.images].map(i =&gt; ({file: i.currentSrc.split('/').pop(), ok: i.complete &amp;&amp; i.naturalWidth &gt; 0})))"</code> — all six <code>ok: true</code>.</li>
+        <li><code class="status done">[x]</code> Visual review of every PNG for identity match and legibility (fewer than 8 words per image).</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status done">[x]</code> Phase 5: Import, Verify &amp; Ship</h3>
+      <p>Import the bundle, write the card, capture the preview, run the repo's strict build and lint, then the full playwright-cli validation loop from <code>CLAUDE.md</code> against the built <code>site/</code>.</p>
+      <figure>
+        <img src="herdr-guide/phase-verify.webp" alt="A browser window under a magnifying glass beside a terminal showing green check marks and a loop arrow">
+        <figcaption>The feedback loop: build, serve, open, screenshot, assert — until every check is green.</figcaption>
+      </figure>
+      <h4>1. Import</h4>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> Copy <code>specs/herdr-guide/doc/</code> → <code>docs/pages/herdr-guide/</code>.</li>
+        <li><code class="status done">[x]</code> Write <code>docs/library/guides/herdr-guide.md</code> (tags <code>herdr, agents, orchestration, terminal</code>, category <code>guides</code>, added 2026-08-26) and the bullet in <code>docs/library/index.md</code>.</li>
+        <li><code class="status done">[x]</code> <code>playwright-cli resize 1200 750</code> + <code>screenshot --filename=docs/assets/previews/herdr-guide.png</code>.</li>
+      </ul>
+      <h4>2. Testing Strategy</h4>
+      <p>The repo's own gates plus the CLAUDE.md render loop.</p>
+      <ul class="checklist">
+        <li><code class="status done">[x]</code> <code>just build</code> — strict MkDocs build passes with zero warnings.</li>
+        <li><code class="status done">[x]</code> <code>just lint</code> — ruff + rumdl clean.</li>
+        <li><code class="status done">[x]</code> <code>python3 -m http.server -d site 8766 &amp;</code>; <code>playwright-cli goto http://localhost:8766/pages/herdr-guide/index.html</code> — title, all images ok, console shows 0 errors.</li>
+        <li><code class="status done">[x]</code> <code>playwright-cli goto http://localhost:8766/library/guides/herdr-guide/</code> — "Open the document →" resolves to <code>/pages/herdr-guide/</code> and the preview image loads.</li>
+        <li><code class="status done">[x]</code> Screenshots at 1440 (sections 00, 01, 03 mock, 05, 06, 08, a prompt row) and 390 (hero, mock, flip cards, layers) reviewed by eye.</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+  </section>
+
+  <!-- ===== GLOBAL VALIDATION ===== -->
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these commands to validate the entire plan is complete:</p>
+    <ul class="checklist">
+      <li><code class="status done">[x]</code> <code>just build</code> — strict build, no warnings.</li>
+      <li><code class="status done">[x]</code> <code>just lint</code> — ruff + rumdl clean.</li>
+      <li><code class="status done">[x]</code> <code>grep -c '&#123;&#123;' specs/herdr-guide.html</code> — 0.</li>
+      <li><code class="status done">[x]</code> <code>diff -r specs/herdr-guide/doc docs/pages/herdr-guide</code> — authoring copy and bundle identical.</li>
+      <li><code class="status done">[x]</code> <code>playwright-cli</code> loop from CLAUDE.md — page title correct, every image <code>ok: true</code>, console clean, card button resolves.</li>
+      <li><code class="status done">[x]</code> <code>playwright-cli --raw eval "document.body.scrollWidth === innerWidth"</code> at 1440 and 390 — true.</li>
+    </ul>
+    <div class="loop">🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong></div>
+  </section>
+
+  <!-- ===== NOTES ===== -->
+  <section id="notes">
+    <h2>Notes</h2>
+    <h3>Decisions</h3>
+    <ul>
+      <li><strong>Identity: Herdr's, not cmux's.</strong> The cmux guide is gold-on-black; this one is herdr-blue on ink so the two guides read as siblings in structure but each carries its subject's brand. Archivo is herdr.dev's own display face.</li>
+      <li><strong>Prompts assume the skill.</strong> Every prompt is written for an agent running <em>inside</em> a Herdr pane with the bundled skill loaded (<code>HERDR_ENV=1</code>), matching how herdr.dev expects agents to drive it. No live Herdr install was required to author them; each command was validated against the docs text.</li>
+      <li><strong>No <code>herdr events</code> CLI.</strong> Event subscription exists only on the socket (<code>events.subscribe</code> / <code>events.wait</code>); the page routes CLI-level waiting through <code>agent wait</code> / <code>pane wait-output</code> and shows the socket form separately.</li>
+      <li><strong>Terminal mock is HTML, not an image</strong>, so it stays crisp, copyable and cheap, and demonstrates the state glyph colours directly.</li>
+      <li><strong>The hero Copy button</strong> shares the copy JS but is excluded from the prompt-text renderer (selector <code>.prow .copy-btn</code>).</li>
+    </ul>
+    <h3>Bugs caught by the playwright loop</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td><code>body.scrollWidth</code> 2115 at 1440 wide; Tier 3 rows blown out</td><td><code>\"</code> inside <code>data-prompt</code> attributes (JS-style escape, not HTML) terminated the attribute early</td><td>Replace with <code>&amp;quot;</code> (8 occurrences)</td></tr>
+        <tr><td>450 px wide at a 390 viewport</td><td>Long unbreakable tokens (paths, <code>npx skills add …</code>) inside <code>.ptext</code> and <code>.layer .ld</code></td><td><code>overflow-wrap:anywhere</code> + <code>min-width:0</code> on the grid/flex children</td></tr>
+        <tr><td>Strict build failed</td><td>Card referenced <code>assets/previews/herdr-guide.png</code> before it was captured</td><td>Capture the preview from the verbatim page served straight from <code>docs/</code>, then build</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Source material</h3>
+    <ul>
+      <li>herdr.dev: home, <code>/docs/</code> + quick-start, install, concepts, how-to-work, agents, agent-automation, agent-skill, session-state, persistence-remote, socket-api, cli-reference, config-reference, configuration, keyboard, plugins, marketplace, integrations, troubleshooting, windows-beta; <code>/compare</code>; <code>/plugins</code>.</li>
+      <li>GitHub <code>herdrdev/herdr</code> README and <code>skills/herdr/SKILL.md</code>; <code>herdr.dev/latest.json</code> (version 0.8.2, protocol 20).</li>
+    </ul>
+    <h3>Future work</h3>
+    <ul>
+      <li>Re-run the prompt library against a live Herdr install and record which prompts need per-version tweaks (e.g. the <code>-m gpt-5.4</code> Codex argument from the docs).</li>
+      <li>A light "paper" theme toggle, mirroring herdr.dev's ink/paper ground.</li>
+      <li>When herdr.dev ships the "where do agents run while you sleep?" feature (05 on the homepage, redacted), add a Tier 5 prompt for it.</li>
+    </ul>
+    <div class="callout">The page is an independent guide distilled from public documentation; it is not affiliated with Herdr, Inc. The footer says so.</div>
+  </section>
+
+  <!-- ===== AMENDMENTS ===== -->
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <details class="q">
+      <summary>2026-08-26T13:23:00Z — Built in the same session as created</summary>
+      <p>The Create Plan and Build Plan workflows ran back-to-back in one session (planf3 invoked from plan mode, plan approved, then executed). All phase and validation markers were set to <code>[x]</code> once the corresponding commands passed; the three bugs found by the playwright loop are recorded under Notes.</p>
+    </details>
+  </section>
+
+</main>
+</body>
+</html>

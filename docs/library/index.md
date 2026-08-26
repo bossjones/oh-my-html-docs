@@ -18,6 +18,9 @@ Cards are organized by **category** (subfolders of `docs/library/`) and filterab
 - [Copilot CLI vs Claude Code](guides/copilot-cli-vs-claude-code.md) — conversion field guide between
   the two terminal agents: config files, flags, slash commands, hooks, permissions, CI, and each
   tool's exclusive features.
+- [Herdr — Run Them Anywhere, Leave Them Running](guides/herdr-guide.md) — visual field guide to Herdr,
+  the runtime coding agents run on: mental model, control loop, agent states, 30 copy-able
+  orchestration prompts, socket API, keyboard, integrations, and Herdr vs tmux / cmux / Warp.
 - [Opus 5 Mastery — Unhobble the Model](guides/opus-5-mastery.md) — field guide to getting the best
   out of Claude Opus 5: delete Claude-4-era constraints, pull the effort/thinking/context levers, and
   paste 18 ready-made prompts.
