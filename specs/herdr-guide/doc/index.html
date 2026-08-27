@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Visual field guide to Herdr, the runtime coding agents run on: the mental model, the control loop, agent states, 30 copy-able orchestration prompts, the socket API, keyboard, integrations, and how it compares to tmux, cmux and Warp.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0c0c0b">
+<title>Herdr — Run Them Anywhere, Leave Them Running</title>
+<link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+<link rel="apple-touch-icon" href="images/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== Synced visual identity — herdr "ink" ground + herdr blue. Generated figures match this. ===== */
+  :root{
+    --bg:#0c0c0b; --bg-soft:#101010; --surface:#131312; --surface-2:#191917;
+    --border:#252522; --border-bright:#3a3a35;
+    --text:#f0ece0; --muted:#c9c4b4; --faint:#8a8a80;
+    --accent:#4a9eff;                 /* the ONE accent — herdr blue */
+    --accent-dim:#2a5f9e;
+    --accent-glow:rgba(74,158,255,.14);
+    --accent-2:#e6b84a;               /* semantic — yellow (question / attention) */
+    --accent-2-dim:rgba(230,184,74,.14);
+    --ok:#52c97a;                     /* working */
+    --bad:#e05a5a;                    /* blocked */
+    --maxw:1225px;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Archivo','Inter',system-ui,sans-serif;
+    --body:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    color:var(--text); font-family:var(--body);
+    font-size:19px; line-height:1.7; -webkit-font-smoothing:antialiased;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(900px 500px at 78% -8%, var(--accent-glow), transparent 60%),
+      repeating-linear-gradient(0deg, transparent 0 39px, rgba(240,236,224,.025) 39px 40px);
+    background-attachment:fixed, fixed;
+  }
+  ::selection{background:var(--accent);color:var(--bg)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+
+  /* ---- hero ---- */
+  .hero{border-bottom:1px solid var(--border);padding:56px 0 64px;text-align:center}
+  .hero-copy{display:flex;flex-direction:column;align-items:center}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.26em;color:var(--accent);text-transform:lowercase;font-weight:500}
+  .hero h1{font-family:var(--disp);font-weight:900;line-height:1.02;letter-spacing:-.02em;
+    font-size:clamp(34px,6.4vw,76px);margin:14px auto 22px;max-width:22ch}
+  .hero h1 .gc{color:var(--accent)}
+  .hero .lede{font-size:clamp(17px,2.2vw,21px);color:var(--muted);max-width:60ch;margin:0 auto;font-weight:500;line-height:1.55}
+  .hero .lede strong{color:var(--text);font-weight:600}
+  .install{display:inline-flex;align-items:center;gap:14px;margin:30px auto 0;background:#000;border:1px solid var(--border-bright);
+    border-radius:12px;padding:12px 14px 12px 18px;font-family:var(--mono);font-size:14.5px;color:var(--text);max-width:100%}
+  .install .ps{color:var(--ok)}
+  .install code{background:none;border:0;padding:0;color:var(--text);font-size:1em;white-space:nowrap;overflow-x:auto}
+  .hero-img{display:block;margin:44px auto 0;width:min(100%,960px);height:auto;border-radius:16px;
+    border:1px solid var(--border);box-shadow:0 28px 90px rgba(0,0,0,.6)}
+
+  /* ---- COMPONENT: metastrip ---- */
+  .metastrip{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);
+    border-radius:14px;overflow:hidden;margin:34px 0 8px;background:var(--surface)}
+  .metastrip div{padding:18px 20px;border-right:1px solid var(--border)}
+  .metastrip div:last-child{border-right:none}
+  .metastrip .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;color:var(--faint);text-transform:uppercase}
+  .metastrip .v{font-family:var(--disp);font-size:21px;font-weight:800;color:var(--text);margin-top:5px;line-height:1.15}
+  .metastrip .v.cy{color:var(--accent)}
+  @media(max-width:760px){.metastrip{grid-template-columns:repeat(2,1fr)}.metastrip div:nth-child(2){border-right:none}}
+
+  /* ---- COMPONENT: table of contents ---- */
+  .toc{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:24px 26px 14px;margin:34px 0 8px}
+  .toc-h{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  .toc ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+  @media(max-width:760px){.toc ol{grid-template-columns:1fr}}
+  .toc a{display:block;padding:10px 10px;border-radius:9px;border:1px solid transparent}
+  .toc a:hover{background:var(--accent-glow);border-color:var(--border);text-decoration:none}
+  .toc .trow{display:flex;align-items:baseline;gap:11px}
+  .toc .tnum{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent)}
+  .toc .tt{font-family:var(--disp);font-weight:800;font-size:15.5px;color:var(--text);letter-spacing:-.005em}
+  .toc .td{display:block;font-size:12.5px;color:var(--muted);margin:3px 0 0 23px;line-height:1.42}
+
+  /* ---- sections ---- */
+  section{padding:104px 0 24px;border-top:1px solid var(--border)}
+  section:first-of-type{border-top:none}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+  .sec-num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700;letter-spacing:.05em}
+  h2{font-family:var(--disp);font-weight:900;letter-spacing:-.02em;font-size:clamp(30px,4vw,46px);line-height:1.08}
+  h3{font-family:var(--disp);font-weight:800;font-size:24px;margin:32px 0 10px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:20.5px;max-width:74ch;margin:16px 0 8px;line-height:1.6}
+  p{margin:15px 0;color:var(--text);opacity:.92}
+  strong{color:var(--text);font-weight:600}
+  .lead-rule{height:2px;width:64px;background:linear-gradient(90deg,var(--accent),transparent);margin:18px 0 6px;border-radius:2px}
+
+  figure{margin:38px 0}
+  figure img{width:100%;display:block;border:1px solid var(--border-bright);border-radius:14px;
+    box-shadow:0 18px 50px -24px rgba(0,0,0,.8), 0 0 0 1px var(--accent-glow)}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--faint);text-align:center;margin-top:11px;letter-spacing:.04em}
+
+  .subpoints{list-style:none;margin:18px 0 8px;padding:0;max-width:76ch}
+  .subpoints li{position:relative;padding-left:26px;margin:13px 0;color:var(--muted);font-size:18px;line-height:1.58}
+  .subpoints li::before{content:"";position:absolute;left:3px;top:9px;width:7px;height:7px;border-radius:2px;
+    background:var(--accent);transform:rotate(45deg)}
+  .subpoints li b,.subpoints li strong{color:var(--text);font-weight:600}
+  .subpoints li code{font-size:.86em}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:24px 0}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px}
+  .card h4{font-family:var(--disp);font-size:17px;font-weight:800;margin-bottom:7px;color:var(--text)}
+  .card p{font-size:16px;margin:7px 0 0;color:var(--muted);opacity:1;line-height:1.55}
+  .card .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
+
+  /* ---- COMPONENT: problem -> solution flow rows + flip cards ---- */
+  .flow{display:grid;gap:18px;margin:32px 0 10px}
+  .flow-item{display:grid;grid-template-columns:60px 1fr;background:var(--surface);
+    border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .15s ease}
+  .flow-item:hover{border-color:var(--border-bright)}
+  .flow-rail{display:flex;align-items:center;justify-content:center;background:var(--bg-soft);
+    border-right:1px solid var(--border);font-family:var(--disp);font-size:28px;font-weight:900;color:var(--border-bright)}
+  .flow-grid{display:grid;grid-template-columns:1fr 52px 1.18fr;align-items:stretch}
+  .flow-cell{padding:24px 26px}
+  .flow-k{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px}
+  .flow-prob .flow-k{color:var(--accent-2)}
+  .flow-sol .flow-k{color:var(--ok)}
+  .flow-h{font-family:var(--disp);font-size:20px;font-weight:800;color:var(--text);line-height:1.22;margin-bottom:7px}
+  .flow-sol .flow-h{color:var(--ok)}
+  .flow-p{font-size:16.5px;color:var(--muted);line-height:1.52}
+  .flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--accent-2);font-size:26px;
+    background:var(--bg-soft);border-left:1px solid var(--border);border-right:1px solid var(--border)}
+  .flow-arrow::before{content:"?";font-weight:700}
+  .flow-item.flipped .flow-arrow{color:var(--ok)}
+  .flow-item.flipped .flow-arrow::before{content:"\279E";font-weight:400}
+  .flow-sol{background:linear-gradient(180deg,var(--accent-2-dim),transparent 72%)}
+  .flow-item.flipped .flow-sol{background:linear-gradient(180deg,rgba(82,201,122,.16),transparent 72%)}
+  .flow-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .flow-chip{font-family:var(--mono);font-size:12.5px;color:var(--ok);background:var(--surface);
+    border:1px solid color-mix(in srgb,var(--ok) 38%,transparent);padding:4px 12px;border-radius:20px}
+  @media(max-width:760px){
+    .flow-item{grid-template-columns:1fr}
+    .flow-rail{flex-direction:row;justify-content:flex-start;padding:10px 22px;border-right:none;border-bottom:1px solid var(--border);font-size:20px}
+    .flow-grid{grid-template-columns:1fr}
+    .flow-arrow{padding:6px;border:none;border-top:1px solid var(--border);border-bottom:1px solid var(--border);transform:rotate(90deg)}
+  }
+  .flow-sol.flip-cell{padding:0}
+  .flip{perspective:1200px}
+  .flip-inner{display:grid;transition:transform .55s cubic-bezier(.2,.75,.25,1);transform-style:preserve-3d}
+  .flow-item.flipped .flip-inner{transform:rotateY(180deg)}
+  .flip-front,.flip-back{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:24px 26px}
+  .flip-front{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px;
+    min-height:158px;width:100%;border:0;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .flip-q{font-family:var(--disp);font-weight:800;font-size:21px;color:var(--accent-2);letter-spacing:-.01em;line-height:1.22}
+  .flip-front:hover .flip-q{color:var(--text)}
+  .flip-cta{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);
+    background:var(--accent-2-dim);border:1px solid color-mix(in srgb,var(--accent-2) 42%,transparent);
+    padding:8px 15px;border-radius:999px;transition:all .15s ease}
+  .flip-front:hover .flip-cta{background:var(--accent-2);color:var(--bg);border-color:var(--accent-2)}
+  .flip-back{transform:rotateY(180deg);position:relative}
+  .flip-reset{position:absolute;top:12px;right:14px;font-family:var(--mono);font-size:13px;line-height:1;color:var(--faint);
+    background:transparent;border:1px solid var(--border);border-radius:7px;padding:5px 9px;cursor:pointer;transition:all .15s ease}
+  .flip-reset:hover{color:var(--accent);border-color:var(--accent)}
+  @media print{
+    .flip-inner{transform:none !important}
+    .flip-front{display:none !important}
+    .flip-back{transform:none !important;position:static !important;-webkit-backface-visibility:visible !important;backface-visibility:visible !important}
+    .flip-reset{display:none !important}
+  }
+
+  /* ---- COMPONENT: callout & pull-quote ---- */
+  .callout{background:var(--bg-soft);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;padding:18px 22px;margin:34px 0 22px}
+  .callout.alt{border-left-color:var(--accent-2)}
+  .callout.bad{border-left-color:var(--bad)}
+  .callout .ct{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
+  .callout.alt .ct{color:var(--accent-2)}
+  .callout.bad .ct{color:var(--bad)}
+  .callout p{margin:5px 0;font-size:17px}
+  .pquote{font-family:var(--disp);font-weight:600;font-size:clamp(20px,2.8vw,27px);line-height:1.32;
+    color:var(--text);border-left:3px solid var(--accent);padding:6px 0 6px 22px;margin:30px 0;letter-spacing:-.01em}
+  .pquote .src{display:block;font-family:var(--mono);font-size:12px;color:var(--faint);font-weight:400;margin-top:12px;letter-spacing:.05em}
+
+  /* ---- COMPONENT: table ---- */
+  .tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--border);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:620px}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--bg-soft)}
+  tr:last-child td{border-bottom:none}
+  td b{color:var(--text)}
+  td .mono{font-family:var(--mono);color:var(--accent);font-size:13px}
+  tbody tr:hover{background:var(--accent-glow)}
+  .matrix td:first-child,.matrix th:first-child{color:var(--text);font-weight:600}
+  .matrix .hd{background:rgba(74,158,255,.07);border-left:1px solid var(--accent-dim);border-right:1px solid var(--accent-dim)}
+  .matrix thead .hd{color:var(--accent);background:rgba(74,158,255,.12)}
+  .matrix tbody tr:hover .hd{background:rgba(74,158,255,.15)}
+  .matrix .y{color:var(--accent);font-weight:700}
+  .matrix .p{color:var(--accent-2);font-weight:700}
+  .matrix .n{color:var(--faint);font-weight:700}
+  .matrix td small{display:block;color:var(--muted);font-size:11.5px;line-height:1.4;margin-top:1px}
+  .cap-note{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.03em;margin:10px 0 0}
+  .cap-note a{color:var(--faint);text-decoration:underline}
+  .cap-note a:hover{color:var(--accent)}
+
+  /* ---- state glyphs ---- */
+  .st{font-family:var(--mono);font-weight:700}
+  .st.working{color:var(--ok)} .st.blocked{color:var(--bad)} .st.done{color:var(--accent)} .st.idle{color:var(--faint)} .st.unknown{color:var(--accent-2)}
+
+  /* ---- COMPONENT: code block ---- */
+  .code{background:#000;border:1px solid var(--border);border-radius:12px;margin:22px 0;overflow:hidden}
+  .code .cbar{display:flex;align-items:center;gap:8px;padding:9px 15px;border-bottom:1px solid var(--border);background:var(--bg-soft)}
+  .code .cbar .dot{width:9px;height:9px;border-radius:50%;background:var(--border-bright)}
+  .code .cbar .cl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-left:6px}
+  .code pre{margin:0;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:var(--text);tab-size:2}
+  .code pre .c{color:var(--accent)}
+  .code pre .m{color:var(--faint)}
+  .code pre .s{color:var(--accent-2)}
+  .code pre .g{color:var(--ok)}
+  code{font-family:var(--mono);font-size:.88em;color:var(--accent);background:var(--accent-glow);
+    border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);padding:1px 6px;border-radius:5px}
+  kbd{font-family:var(--mono);font-size:.82em;color:var(--text);background:var(--surface-2);border:1px solid var(--border-bright);
+    border-bottom-width:2px;padding:1px 7px;border-radius:5px;white-space:nowrap}
+
+  /* ---- COMPONENT: terminal mock (herdr TUI) ---- */
+  .term{background:#000;border:1px solid var(--border-bright);border-radius:14px;overflow:hidden;margin:34px 0;
+    font-family:var(--mono);font-size:12.5px;line-height:1.5;box-shadow:0 28px 80px -30px rgba(0,0,0,.9)}
+  .term-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .term-bar .dot{width:10px;height:10px;border-radius:50%;background:var(--border-bright)}
+  .term-bar .title{margin-left:8px;color:var(--faint);font-size:11px;letter-spacing:.08em}
+  .term-body{display:grid;grid-template-columns:230px 1fr;min-height:360px}
+  .term-side{background:#0a0a0a;border-right:1px solid var(--border);padding:12px 0}
+  .term-side .h{padding:4px 14px;color:var(--faint);font-size:10.5px;letter-spacing:.14em;text-transform:lowercase}
+  .term-side .row{padding:5px 14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .term-side .row.active{background:var(--accent-glow);color:var(--text);border-left:2px solid var(--accent)}
+  .term-side .row .sub{display:block;font-size:11px;color:var(--faint);margin:0;padding-left:16px;line-height:1.35}
+  .term-panes{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr}
+  .term-tabs{grid-column:1/-1;display:flex;gap:2px;background:var(--surface);border-bottom:1px solid var(--border);padding:4px 8px 0}
+  .term-tabs span{padding:4px 12px;color:var(--faint);border-radius:6px 6px 0 0}
+  .term-tabs span.on{background:var(--accent);color:#000;font-weight:700}
+  .term-pane{padding:12px 14px;border-right:1px solid var(--border);color:var(--muted);white-space:pre-wrap;word-break:break-word}
+  .term-pane:last-child{border-right:none}
+  .term-pane .lbl{display:inline-block;margin-bottom:8px;font-size:10.5px;letter-spacing:.1em;color:var(--accent);border:1px solid var(--accent-dim);padding:1px 8px;border-radius:4px}
+  .term-pane .k{color:var(--ok)} .term-pane .u{color:var(--text)} .term-pane .d{color:var(--faint)} .term-pane .b{color:var(--bad)}
+  @media(max-width:820px){.term-body{grid-template-columns:1fr}.term-side{border-right:none;border-bottom:1px solid var(--border)}.term-panes{grid-template-columns:1fr}.term-pane{border-right:none;border-bottom:1px solid var(--border)}}
+
+  /* ---- COMPONENT: layer stack (agentic access) ---- */
+  .layers{display:grid;gap:10px;margin:26px 0;min-width:0}
+  .layer{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:16px 20px}
+  .layer .ln{font-family:var(--disp);font-weight:900;font-size:18px;color:var(--accent);letter-spacing:-.01em}
+  .layer .ld{font-size:15.5px;color:var(--muted);line-height:1.5;min-width:0;overflow-wrap:anywhere}
+  .layer{min-width:0}
+  .layer .ld code{font-size:.85em}
+  @media(max-width:620px){.layer{grid-template-columns:1fr;gap:6px}}
+
+  /* ---- COMPONENT: key grid ---- */
+  .keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:22px 0}
+  .key{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:11px 14px;font-size:14.5px;color:var(--muted)}
+  .key kbd{flex:none}
+
+  /* ---- misc ---- */
+  ul.clean{margin:14px 0 14px 2px;padding-left:20px}
+  ul.clean li{margin:8px 0;color:var(--text);opacity:.92}
+  ul.clean li::marker{color:var(--accent)}
+
+  footer{margin-top:70px;border-top:1px solid var(--border);padding:46px 0 70px;text-align:center}
+  footer .fq{font-family:var(--disp);font-size:24px;font-weight:800;color:var(--text)}
+  footer .fm{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:14px;letter-spacing:.05em;line-height:1.9}
+
+  @media print{
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    @page{ size:Letter; margin:0; }
+    html,body{ background:var(--bg) !important; }
+    body{ background-image:none !important; }
+    section{ break-before:page; page-break-before:always; padding:54px 0 26px; }
+    figure,.callout,.pquote,.metastrip,.toc,.tbl-wrap,.code,.card,.prow,.term,.layer{ break-inside:avoid; page-break-inside:avoid; }
+    .sec-head,h2,h3,.sub,.lead-rule{ break-after:avoid; page-break-after:avoid; }
+    a{ color:var(--accent) !important; text-decoration:none; }
+  }
+
+  /* ---- COMPONENT: tier library (prompt rows + copy buttons) ---- */
+  .tiergroup{margin:40px 0 8px}
+  .tiergroup:first-of-type{margin-top:24px}
+  .tg-head{border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:6px}
+  .tg-head h3{margin:0;font-size:22px;color:var(--text)}
+  .tg-desc{font-size:15px;color:var(--muted);margin:7px 0 0;max-width:78ch}
+  .prompt-list{display:grid;gap:10px;margin:18px 0 6px}
+  .prow{display:flex;align-items:flex-start;gap:16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:15px 18px;transition:border-color .15s ease,background .15s ease}
+  .prow:hover{border-color:var(--border-bright);background:var(--surface-2)}
+  .prow-main{flex:1;min-width:0;overflow-wrap:anywhere}
+  .prow{min-width:0}
+  .prow-id{display:flex;align-items:baseline;gap:11px}
+  .prow-id .pnum{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);flex:none}
+  .prow-id .ptitle{font-family:var(--disp);font-weight:800;font-size:18px;color:var(--text);letter-spacing:-.005em}
+  .pdesc{font-size:15.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .pdesc code{font-size:.84em}
+  .ptext{margin-top:12px;padding:13px 16px;background:var(--bg-soft);border:1px solid var(--border);
+    border-left:2px solid var(--accent);border-radius:0 9px 9px 0;font-size:15px;line-height:1.62;
+    color:var(--text);opacity:.94}
+  .ptext .pq{font-family:var(--mono);color:var(--accent);opacity:.6;margin-right:4px}
+  .ptext strong{color:var(--text);font-weight:600}
+  .ptext em{color:var(--muted);font-style:italic}
+  .ptext code{font-size:.85em}
+  .copy-btn{flex:none;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-glow);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);
+    padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .15s ease}
+  .copy-btn:hover{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  .copy-btn.copied{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  @media(max-width:620px){
+    .prow{flex-direction:column;align-items:stretch;gap:12px}
+    .copy-btn{align-self:flex-start}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="wrap hero-copy">
+    <div class="eyebrow">herdr · the agent runtime</div>
+    <h1>Run them anywhere.<br><span class="gc">Leave them running.</span></h1>
+    <p class="lede">Herdr is the runtime your coding agents live on. A server holds <strong>real terminals</strong> open on your laptop, desktop, or a box you rent — so the work survives the lid closing, every agent's state is visible at a glance, and <strong>agents can drive the terminal themselves</strong> over a CLI and socket API.</p>
+    <div class="install"><span class="ps">$</span><code>curl -fsSL https://herdr.dev/install.sh | sh</code><button class="copy-btn" data-prompt="curl -fsSL https://herdr.dev/install.sh | sh" data-label="Copy" aria-label="Copy the install command">Copy</button></div>
+    <img class="hero-img" src="images/hero.webp" alt="A laptop closing its lid, connected to a herdr server that keeps three agent terminals running">
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="metastrip">
+    <div><div class="k">Version</div><div class="v cy">v0.8.2 · Apache 2.0</div></div>
+    <div><div class="k">Runtime</div><div class="v">One Rust binary, no Electron</div></div>
+    <div><div class="k">Agents detected</div><div class="v">20 CLIs</div></div>
+    <div><div class="k">Community</div><div class="v">~32k ★ · 762 plugins</div></div>
+  </div>
+
+  <!-- ===== TABLE OF CONTENTS ===== -->
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-h">Contents</div>
+    <ol>
+      <li><a href="#s0"><span class="trow"><span class="tnum">00</span><span class="tt">Problem &amp; Solution</span></span><span class="td">Three ways agents die or go dark, three runtime answers.</span></a></li>
+      <li><a href="#s1"><span class="trow"><span class="tnum">01</span><span class="tt">The Mental Model</span></span><span class="td">Session → Workspace → Tab → Pane → Agent.</span></a></li>
+      <li><a href="#s2"><span class="trow"><span class="tnum">02</span><span class="tt">The Control Loop</span></span><span class="td">run · read · wait-output, then start · prompt · wait.</span></a></li>
+      <li><a href="#s3"><span class="trow"><span class="tnum">03</span><span class="tt">States &amp; Notifications</span></span><span class="td">blocked · working · done · idle — and how to get told.</span></a></li>
+      <li><a href="#s4"><span class="trow"><span class="tnum">04</span><span class="tt">What Can Herdr Do?</span></span><span class="td">30 prompts, tiered. Copy any one into your orchestrator.</span></a></li>
+      <li><a href="#s5"><span class="trow"><span class="tnum">05</span><span class="tt">Agentic Access</span></span><span class="td">Skill → CLI → socket. NDJSON, schema, events.</span></a></li>
+      <li><a href="#s6"><span class="trow"><span class="tnum">06</span><span class="tt">Keyboard</span></span><span class="td">Prefix <code>ctrl+b</code>, the five to learn first, copy mode.</span></a></li>
+      <li><a href="#s7"><span class="trow"><span class="tnum">07</span><span class="tt">Agents &amp; Integrations</span></span><span class="td">Who is detected, who reports state, who resumes.</span></a></li>
+      <li><a href="#s8"><span class="trow"><span class="tnum">08</span><span class="tt">Herdr vs tmux vs cmux vs Warp</span></span><span class="td">A runtime, not another window.</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ===== SECTION 00 ===== -->
+  <section id="s0">
+    <div class="sec-head"><span class="sec-num">00</span><h2>Problem &amp; Solution</h2></div>
+    <div class="lead-rule"></div>
+    <p class="pquote">Apps manage the herd. Herdr runs it.<span class="src">herdr.dev/compare</span></p>
+
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-rail">1</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Problem</div>
+            <div class="flow-h">Close the lid, lose the agent</div>
+            <div class="flow-p">A manager app, a desktop terminal, a web tab: when the window you are looking at goes away, the agents inside it go with it. Long tasks die with your laptop's sleep timer.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">Can Herdr Solve This?</span>
+                  <span class="flip-cta">Reveal the answer &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">herdr solution</div>
+                  <div class="flow-h">A server owns the terminals; every UI is a client</div>
+                  <div class="flow-p">Herdr runs as a background server plus one or more attached clients. Detach with <code>prefix+q</code>, SSH in from a phone, or <code>herdr --remote workbox</code> — the PTYs never noticed. Even <code>herdr update --handoff</code> keeps the processes alive.</div>
+                  <div class="flow-chips"><span class="flow-chip">Tier 5</span><span class="flow-chip">§03 states</span></div>
+                  <button type="button" class="flip-reset" aria-label="Ask again">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">2</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Problem</div>
+            <div class="flow-h">Which one is stuck?</div>
+            <div class="flow-p">Six agents in six identical panes. One has been waiting on a permission prompt for twenty minutes. tmux sees panes; it has no idea which terminal is an agent, let alone which one is waiting on you.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">Can Herdr Solve This?</span>
+                  <span class="flip-cta">Reveal the answer &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">herdr solution</div>
+                  <div class="flow-h">Semantic agent state, rolled up to the sidebar</div>
+                  <div class="flow-p">Every pane carries <span class="st blocked">◉ blocked</span> · <span class="st working">● working</span> · <span class="st done">● done</span> · <span class="st idle">○ idle</span>, detected from lifecycle hooks or screen manifests. A blocked agent turns its pane, tab and workspace red, fires a toast and a sound, and <code>agent wait --until blocked</code> returns.</div>
+                  <div class="flow-chips"><span class="flow-chip">§03</span><span class="flow-chip">prompt 12</span></div>
+                  <button type="button" class="flip-reset" aria-label="Ask again">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-item">
+        <div class="flow-rail">3</div>
+        <div class="flow-grid">
+          <div class="flow-cell flow-prob">
+            <div class="flow-k">Problem</div>
+            <div class="flow-h">Agents can't drive their own terminal</div>
+            <div class="flow-p">If a multiplexer can only be scripted by scraping screens and guessing at prompts, an orchestrator agent can't reliably spawn a reviewer, hand it a prompt, and know when it is finished. A human stays in the loop.</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-cell flow-sol flip-cell">
+            <div class="flip">
+              <div class="flip-inner">
+                <button type="button" class="flip-front" aria-expanded="false">
+                  <span class="flip-q">Can Herdr Solve This?</span>
+                  <span class="flip-cta">Reveal the answer &#8594;</span>
+                </button>
+                <div class="flip-back">
+                  <div class="flow-k">herdr solution</div>
+                  <div class="flow-h">The whole CLI is the API — and the skill file</div>
+                  <div class="flow-p">Every command prints JSON. <code>agent start</code>, <code>agent prompt --wait</code>, <code>agent read</code>, <code>pane wait-output --regex</code> ride the same NDJSON socket integrations use. A bundled <code>SKILL.md</code> (<code>herdr --skill</code>) teaches any agent the rules, guarded by <code>HERDR_ENV=1</code>.</div>
+                  <div class="flow-chips"><span class="flow-chip">§02 loop</span><span class="flow-chip">§05 access</span></div>
+                  <button type="button" class="flip-reset" aria-label="Ask again">&#8634;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 01 ===== -->
+  <section id="s1">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The Mental Model</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Herdr is a terminal workspace manager: it keeps real terminal processes running and adds structure around them. Learn the boxes and the verbs fall out of them.</p>
+    <figure>
+      <img src="images/model.webp" alt="Four nested boxes: workspace contains tab contains pane contains agent">
+      <figcaption>Fig. 1 · A Session holds Workspaces, which hold Tabs, which hold Panes. An Agent is what Herdr recognizes inside a pane.</figcaption>
+    </figure>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Box</th><th>What it is</th><th>ID shape</th><th>The verb</th></tr></thead>
+        <tbody>
+          <tr><td><b>Server</b></td><td>Background process that owns every pane and PTY. Clients attach and detach.</td><td class="mono">~/.config/herdr/herdr.sock</td><td class="mono">herdr · herdr server stop</td></tr>
+          <tr><td><b>Session</b></td><td>A persistent server namespace. The default one is plain <code>herdr</code>; named ones get their own panes and socket.</td><td class="mono">work</td><td class="mono">herdr --session work</td></tr>
+          <tr><td><b>Workspace</b> <small>("space")</small></td><td>Top-level project container — one per repo or task. Its sidebar state rolls up from the agents inside.</td><td class="mono">w1</td><td class="mono">herdr workspace create --cwd … --label …</td></tr>
+          <tr><td><b>Worktree</b></td><td>A workspace with Git checkout provenance, grouped under its parent repo.</td><td class="mono">w3</td><td class="mono">herdr worktree create --branch …</td></tr>
+          <tr><td><b>Tab</b></td><td>One layout inside a workspace.</td><td class="mono">w1:t1</td><td class="mono">herdr tab create --label …</td></tr>
+          <tr><td><b>Pane</b></td><td>A real terminal. Split right or down, rename, read, send input, close.</td><td class="mono">w1:p1 · term_abc123</td><td class="mono">herdr pane split --direction right</td></tr>
+          <tr><td><b>Agent</b></td><td>A process Herdr recognizes in a pane, with a lifecycle state and an optional name.</td><td class="mono">reviewer</td><td class="mono">herdr agent start reviewer --kind codex --pane w1:p2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="tag">Mode 1 · local</div><h4><code>herdr</code></h4><p>Launch or attach to the default session in the terminal you already use — Ghostty, kitty, iTerm, Alacritty, Windows Terminal.</p></div>
+      <div class="card"><div class="tag">Mode 2 · ssh in</div><h4><code>ssh box</code> then <code>herdr</code></h4><p>tmux-style: the server lives on the box, any tty attaches. Works from phone SSH clients; on iPhone the docs recommend Moshi.</p></div>
+      <div class="card"><div class="tag">Mode 3 · thin client</div><h4><code>herdr --remote workbox</code></h4><p>A local client streams the remote UI, keeps your local keybindings, and bridges clipboard image paste. Auto-installs the matching binary on the host.</p></div>
+    </div>
+    <div class="callout">
+      <div class="ct">Memorize this</div>
+      <p>Workspace → Tab → Pane, and an Agent lives in a Pane. Every create call returns the IDs you need next: <code>.result.workspace.workspace_id</code>, <code>.result.tab.tab_id</code>, <code>.result.root_pane.pane_id</code>, <code>.result.pane.pane_id</code>. Capture them with <code>jq</code> and thread them through every later call.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 02 ===== -->
+  <section id="s2">
+    <div class="sec-head"><span class="sec-num">02</span><h2>The Control Loop</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Two layers of verbs. <strong>Pane</strong> commands address the raw terminal regardless of who is in it. <strong>Agent</strong> commands resolve the live agent and understand its lifecycle.</p>
+    <ul class="subpoints">
+      <li><b>pane run</b> submits a command (text + Enter, bracketed-paste aware). <b>send-text</b> types without Enter; <b>send-keys</b> presses <code>esc</code>, <code>ctrl+c</code>, <code>up</code>…</li>
+      <li><b>pane read</b> is the orchestrator's eyes: <code>--source visible | recent | recent-unwrapped | detection</code>, <code>--lines N</code>.</li>
+      <li><b>pane wait-output --regex</b> blocks until a line matches. No default timeout — always pass <code>--timeout MS</code>.</li>
+      <li><b>agent start / prompt / read / wait</b> do the same for a recognized agent, returning when its <em>state</em> settles, not when text appears.</li>
+    </ul>
+    <figure>
+      <img src="images/loop.webp" alt="A four-node loop: run, read, wait, prompt around a terminal">
+      <figcaption>Fig. 2 · One orchestrator, one loop: put work in, read what came out, wait for a settled state, prompt again.</figcaption>
+    </figure>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">the reviewer recipe · from docs/agent-automation</span></div>
+      <pre><span class="m"># 1. topology first — agent start never creates layout</span>
+split=$(<span class="c">herdr</span> pane split --current --direction right --no-focus)
+review_pane=$(printf '%s\n' "$split" | jq -r <span class="s">'.result.pane.pane_id'</span>)
+
+<span class="m"># 2. start a named agent in that shell pane, args after -- go to the executable</span>
+<span class="c">herdr</span> agent start reviewer --kind codex --pane "$review_pane" -- -m gpt-5.4
+
+<span class="m"># 3. prompt and block until it settles (idle | done | blocked by default)</span>
+<span class="c">herdr</span> agent prompt reviewer <span class="s">"Review the current diff"</span> --wait --timeout 120000
+<span class="c">herdr</span> agent read reviewer --source recent-unwrapped --lines 120
+
+<span class="m"># 4. wait for a question, look at it, answer its UI</span>
+<span class="c">herdr</span> agent wait reviewer --until blocked --timeout 120000
+<span class="c">herdr</span> agent read reviewer --source recent-unwrapped --lines 80
+<span class="c">herdr</span> agent send-keys reviewer esc
+
+<span class="m"># 5. an ordinary process is just a pane</span>
+<span class="c">herdr</span> pane run w1:p3 <span class="s">"just test --watch"</span>
+<span class="c">herdr</span> pane wait-output w1:p3 --regex <span class="s">"passed|failed"</span> --timeout 120000</pre>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Goal</th><th>Command</th><th>Returns / gotcha</th></tr></thead>
+        <tbody>
+          <tr><td>Run a shell command and submit it</td><td class="mono">pane run &lt;id&gt; "cmd"</td><td>Prefer over <code>send-text</code> + <code>send-keys enter</code>.</td></tr>
+          <tr><td>Send literal text without Enter</td><td class="mono">pane send-text &lt;id&gt; "…"</td><td>Low-level, non-submitting.</td></tr>
+          <tr><td>Press keys or chords</td><td class="mono">pane send-keys &lt;id&gt; ctrl+c</td><td><code>enter tab esc backspace up down f1 minus plus backtick</code>; legacy <code>C-c</code>.</td></tr>
+          <tr><td>Wait for output text</td><td class="mono">pane wait-output &lt;id&gt; --regex "…" --timeout MS</td><td>Searches the snapshot immediately, so text already present matches.</td></tr>
+          <tr><td>Start a supported agent</td><td class="mono">agent start &lt;name&gt; --kind claude --pane &lt;id&gt;</td><td>Pane must be at its shell prompt. 30 s default startup timeout. <code>agent_not_ready</code> if it blocks during startup.</td></tr>
+          <tr><td>Submit a prompt, optionally waiting</td><td class="mono">agent prompt &lt;name&gt; "…" --wait --until done</td><td><code>agent_blocked</code> if it is already asking you something; <code>agent_prompt_stalled</code> if nothing changes in 5 s.</td></tr>
+          <tr><td>Wait for a lifecycle state</td><td class="mono">agent wait &lt;name&gt; --until blocked --until idle</td><td>Event-driven, server-owned; pinned to the current occupant.</td></tr>
+          <tr><td>Read history from a full-screen agent</td><td class="mono">agent read &lt;name&gt; --lines 400</td><td>Pages through Claude Code / OpenCode alt-screen via mouse-scroll; needs idle, else <code>agent_not_idle</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout alt">
+      <div class="ct">Gotchas</div>
+      <p><code>send-text</code> types; <code>run</code> submits. Waits have no default timeout. <code>agent start</code> requires an <em>existing</em> shell pane and never creates, splits, or moves layout. Names must match <code>[a-z][a-z0-9_-]{0,31}</code> and are cleared when the agent exits. Server errors are JSON on stderr with exit 1; bad syntax exits 2.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 03 ===== -->
+  <section id="s3">
+    <div class="sec-head"><span class="sec-num">03</span><h2>States &amp; Notifications</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Five states, one authority per pane. Lifecycle hooks (Pi, OMP, OpenCode, Kimi, Kilo, MastraCode) are authoritative; everyone else is classified from a TOML screen manifest evaluated against the live bottom of the screen.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>State</th><th>Meaning (docs wording)</th><th>Rollup</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st blocked">◉ blocked</span></td><td>Needs input, approval, or a decision. Detection is deliberately strict.</td><td>Pane, tab and workspace all look blocked. Toast + "request" sound.</td></tr>
+          <tr><td><span class="st working">● working</span></td><td>Actively running.</td><td>Workspace shows active.</td></tr>
+          <tr><td><span class="st done">● done</span></td><td>Finished and you have not looked at it yet. Same underlying idle state until the tab is focused.</td><td>Stays visible until viewed. Reading via CLI does <em>not</em> mark it seen.</td></tr>
+          <tr><td><span class="st idle">○ idle</span></td><td>Finished or waiting and has been seen.</td><td>Quiet.</td></tr>
+          <tr><td><span class="st unknown">? unknown</span></td><td>Cannot confidently classify. Does not prove completion.</td><td>Use exact <code>--until</code> states when it matters.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="term" role="img" aria-label="Mock of the Herdr TUI: a sidebar listing spaces and agents with state glyphs, and two panes running Claude Code and a test watcher">
+      <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title">herdr · session default · 3 spaces · 4 agents</span></div>
+      <div class="term-body">
+        <div class="term-side">
+          <div class="h">spaces</div>
+          <div class="row active"><span class="st working">●</span> herdr <span class="sub">master ✓</span></div>
+          <div class="row"><span class="st blocked">◉</span> web-dashboard <span class="sub">feat/usage-charts *</span></div>
+          <div class="row"><span class="st done">●</span> data-pipeline <span class="sub">backfill/events-v2</span></div>
+          <div class="h" style="margin-top:10px">agents</div>
+          <div class="row"><span class="st working">●</span> herdr · working · claude</div>
+          <div class="row"><span class="st idle">○</span> explore · idle · opencode</div>
+          <div class="row"><span class="st blocked">◉</span> web-dashboard · blocked · claude</div>
+          <div class="row"><span class="st done">●</span> data-pipeline · done · codex</div>
+        </div>
+        <div class="term-panes">
+          <div class="term-tabs"><span class="on">claude</span><span>dev server</span><span>+</span></div>
+          <div class="term-pane"><span class="lbl">w1:p1 · claude · working</span>
+<span class="u">❯</span> finish the usage chart and ship it to staging
+
+<span class="k">●</span> Wrote src/components/UsageChart.tsx — stacked area,
+  empty state, and the tooltip you asked for.
+<span class="k">●</span> Typecheck and build are clean, 41.2 kB gzipped.
+
+<span class="d">⠋ Baking… (13m 36s · esc to interrupt)</span></div>
+          <div class="term-pane"><span class="lbl">w1:p2 · shell</span>
+<span class="u">❯</span> just test --watch
+<span class="d">running 84 tests</span>
+<span class="k">test session_restore ... ok</span>
+<span class="k">test pane_split_ratio ... ok</span>
+<span class="b">test agent_prompt_stalled ... FAILED</span>
+
+<span class="d">herdr pane wait-output w1:p2 --regex "passed|failed"
+→ matched_line: "1 failed, 83 passed"</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p>An orchestrator gets told two ways: <strong>push</strong> the discrete lifecycle events, <strong>poll</strong> only the free-form text you must inspect.</p>
+    <figure>
+      <img src="images/states.webp" alt="A sidebar of four agent rows; the blocked row is highlighted with a bell">
+      <figcaption>Fig. 3 · The sidebar is the doorbell: a blocked agent is red at pane, tab and workspace level.</figcaption>
+    </figure>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>To know…</th><th>Use</th><th>Push or poll</th></tr></thead>
+        <tbody>
+          <tr><td>an agent settled (idle / done / blocked)</td><td class="mono">herdr agent wait reviewer --timeout 120000</td><td><b>push</b> (blocks)</td></tr>
+          <tr><td>an agent needs you, specifically</td><td class="mono">herdr agent wait reviewer --until blocked</td><td><b>push</b> (blocks)</td></tr>
+          <tr><td>any status change on any pane</td><td class="mono">{"method":"events.subscribe","params":{"subscriptions":[{"type":"pane.agent_status_changed"}]}}</td><td><b>push</b> (socket stream)</td></tr>
+          <tr><td>a log line appeared</td><td class="mono">herdr pane wait-output w1:p3 --regex "…"</td><td>poll-until-match</td></tr>
+          <tr><td>what the agent actually wrote</td><td class="mono">herdr agent read reviewer --source recent-unwrapped --lines 120</td><td>poll</td></tr>
+          <tr><td>the human, in the room</td><td class="mono">herdr notification show "reviewer done" --body "…" --sound done</td><td>toast · sound · system</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">~/.config/herdr/config.toml · how you get told</span></div>
+      <pre><span class="c">[ui.toast]</span>
+delivery = <span class="s">"herdr"</span>        <span class="m"># off | herdr | terminal | system</span>
+delay_seconds = 1
+
+<span class="c">[ui.toast.herdr]</span>
+position = <span class="s">"bottom-right"</span>
+
+<span class="c">[ui.sound]</span>
+enabled = true
+done_path = <span class="s">"~/sounds/done.mp3"</span>
+request_path = <span class="s">"~/sounds/request.mp3"</span>
+
+<span class="c">[ui.sound.agents]</span>
+droid = <span class="s">"off"</span>              <span class="m"># per-agent override: default | on | off</span>
+
+<span class="c">[ui]</span>
+status_indicators = <span class="s">"symbols"</span>   <span class="m"># dots | symbols</span>
+agent_panel_sort = <span class="s">"priority"</span>   <span class="m"># spaces | priority — blocked floats to the top</span></pre>
+    </div>
+    <div class="callout">
+      <div class="ct">Custom reporters</div>
+      <p>Anything can own a pane's state: <code>herdr pane report-agent "$HERDR_PANE_ID" --source custom:my-agent --agent my-agent --state working</code>, then <code>pane release-agent</code> on exit. Display-only titles, labels and <code>$tokens</code> for sidebar rows go through <code>pane report-metadata … --title … --token cost=$1.20 --ttl-ms 60000</code>.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 04 ===== -->
+  <section id="s4">
+    <div class="sec-head"><span class="sec-num">04</span><h2>What Can Herdr Do?</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">The capability library: 30 natural-language prompts that climb from "open one workspace" to "a fleet of reviewers across worktrees that survives a laptop reboot", then customize the whole thing. Hit <strong>Copy prompt</strong> and hand any one to an agent running inside Herdr.</p>
+    <figure>
+      <img src="images/tiers.webp" alt="A staircase of five steps from a single terminal to a remote server">
+      <figcaption>Fig. 4 · Five tiers plus a customization track. Every prompt is one rung.</figcaption>
+    </figure>
+    <div class="callout alt">
+      <div class="ct">Before you paste</div>
+      <p>Each prompt assumes the agent has the Herdr skill (<code>npx skills add herdrdev/herdr --skill herdr -g</code>, or read <code>herdr --skill</code>) and is running <em>inside</em> a Herdr pane, where <code>HERDR_ENV=1</code>. The skill's rules apply: use <code>--no-focus</code> for background work, parse IDs from JSON, never close what you didn't create, never <code>herdr server stop</code>.</p>
+    </div>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Tier 1 · Foundations</h3><p class="tg-desc">The atomic loop: make a workspace, split it, type into it, read it back, tidy up. No agents yet — just the orchestrator and terminals.</p></div>
+      <div class="prompt-list">
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">01</span><span class="ptitle">Hello, Workspace</span></div><div class="pdesc">Create a workspace without stealing focus, run a command, read the result from JSON.</div></div><button class="copy-btn" data-prompt="Using Herdr (confirm `HERDR_ENV=1` first): create a new workspace labeled **scratch** in a fresh temp directory with `--no-focus`, capture its root pane id from the JSON, run `uname -a` in it with `herdr pane run`, wait for the output with `pane wait-output --regex` and a 10s timeout, then tell me exactly what it printed." aria-label="Copy the prompt for Hello, Workspace">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">02</span><span class="ptitle">Read It Back</span></div><div class="pdesc">Pull output that scrolled off-screen with <code>--source recent-unwrapped --lines</code>.</div></div><button class="copy-btn" data-prompt="In Herdr, in the **scratch** workspace's root pane, create 120 throwaway files and list them with `ls -la`. Then read the last 200 rows with `herdr pane read <id> --source recent-unwrapped --lines 200` and tell me how many files there are and name three. Explain the difference between the `visible`, `recent`, `recent-unwrapped` and `detection` sources in one line each." aria-label="Copy the prompt for Read It Back">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">03</span><span class="ptitle">Split Into a Grid</span></div><div class="pdesc">Turn one pane into a 2×2 dashboard with <code>pane split --direction right|down --ratio</code>.</div></div><button class="copy-btn" data-prompt="Build me a monitoring dashboard in a new Herdr workspace called **dash**: split the root pane into a 2×2 grid using `herdr pane split --direction right` then `--direction down` on each half (all `--no-focus`). Top-left run `htop`, top-right `watch -n1 date`, bottom-left `tail -f` a temp log file you own, bottom-right leave a plain shell. Rename each pane with `herdr pane rename` so the labels say what they run. Finish by printing `herdr pane layout` for the tab." aria-label="Copy the prompt for Split Into a Grid">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">04</span><span class="ptitle">Map the World</span></div><div class="pdesc">Dump every workspace / tab / pane with <code>api snapshot</code> and <code>pane process-info</code>.</div></div><button class="copy-btn" data-prompt="Show me everything Herdr is running right now. Use `herdr api snapshot` for the full workspace → tab → pane tree, then `herdr pane process-info --pane <id>` on every pane for the foreground process and cwd. Give me a tidy report grouped by workspace, and flag any pane whose foreground process is an agent CLI." aria-label="Copy the prompt for Map the World">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">05</span><span class="ptitle">Tidy Up</span></div><div class="pdesc">Rename, zoom, close panes one by one, then the workspace — only what you created.</div></div><button class="copy-btn" data-prompt="Take the **dash** workspace you built: rename it to **retired** with `herdr workspace rename`, zoom the htop pane with `herdr pane zoom --on`, then unzoom it, close its extra panes one at a time with `herdr pane close`, and finally `herdr workspace close` it. Never touch panes or workspaces you did not create. Report each command and its JSON result." aria-label="Copy the prompt for Tidy Up">Copy prompt</button></div>
+      </div>
+    </div>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Tier 2 · Driving One Agent</h3><p class="tg-desc">The pivot: the pane an agent controls can itself hold another agent. Start it, prompt it, wait on its <em>state</em>, read what it said.</p></div>
+      <div class="prompt-list">
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">06</span><span class="ptitle">Spawn a Reviewer</span></div><div class="pdesc">Split, then <code>agent start --kind codex</code> in the new shell pane with a name.</div></div><button class="copy-btn" data-prompt="In Herdr, split my current pane to the right with `--no-focus`, capture `.result.pane.pane_id`, and start a Codex agent named **reviewer** in it with `herdr agent start reviewer --kind codex --pane <id> -- -m gpt-5.4`. Confirm with `herdr agent get reviewer` that its state is idle before doing anything else." aria-label="Copy the prompt for Spawn a Reviewer">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">07</span><span class="ptitle">Prompt and Wait</span></div><div class="pdesc"><code>agent prompt --wait --timeout</code> returns when the agent settles, not when text appears.</div></div><button class="copy-btn" data-prompt="Ask the **reviewer** agent in Herdr to review the current git diff for correctness bugs only, using `herdr agent prompt reviewer &quot;…&quot; --wait --timeout 180000`. When it returns, read its answer with `herdr agent read reviewer --source recent-unwrapped --lines 200` and summarize the findings for me in a bullet list with file:line references." aria-label="Copy the prompt for Prompt and Wait">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">08</span><span class="ptitle">Answer Its Question</span></div><div class="pdesc">Wait <code>--until blocked</code>, inspect the dialog, respond with <code>agent send-keys</code>.</div></div><button class="copy-btn" data-prompt="Give the **reviewer** agent a task that will need a permission decision (ask it to run the test suite). Then `herdr agent wait reviewer --until blocked --timeout 120000`, read the visible screen with `herdr agent read reviewer --source visible`, tell me exactly what it is asking, and if it is a yes/no approval to run tests, approve it with `herdr agent send-keys reviewer enter`. Otherwise press `esc` and report." aria-label="Copy the prompt for Answer Its Question">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">09</span><span class="ptitle">Why Does Herdr Think That?</span></div><div class="pdesc"><code>agent explain</code> shows which manifest rule or hook produced the state.</div></div><button class="copy-btn" data-prompt="Run `herdr agent explain reviewer --verbose` and explain to me, in plain English, how Herdr decided the reviewer's current state: is the authority a lifecycle hook or a screen manifest, which rule matched, and what evidence (bottom buffer lines, OSC title) it used. Then run `herdr agent list` and do the same one-liner for every other live agent." aria-label="Copy the prompt for Why Does Herdr Think That?">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">10</span><span class="ptitle">Long Transcript, Full Read</span></div><div class="pdesc">Page a full-screen agent's alt-screen history; fall back to a Markdown file if needed.</div></div><button class="copy-btn" data-prompt="Start a Claude Code agent named **writer** in a fresh split (`--kind claude`) and ask it to write a 600-word explanation of Rust lifetimes. Wait until it is idle, then read the whole answer with `herdr agent read writer --source recent-unwrapped --lines 400`. If the read returns `agent_not_idle` or is truncated, use the skill's fallback: ask the agent to write the response to a Markdown file in a temp directory and reply only with the path, then read that file. Show me the final text." aria-label="Copy the prompt for Long Transcript, Full Read">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">11</span><span class="ptitle">Interrupt and Redirect</span></div><div class="pdesc"><code>send-keys esc</code>, then a new prompt; handle <code>agent_blocked</code> deliberately.</div></div><button class="copy-btn" data-prompt="The **writer** agent is going in the wrong direction. Interrupt it with `herdr agent send-keys writer esc`, wait until it is idle, then send a corrected prompt with `--wait`. If `agent prompt` returns `agent_blocked`, do not retry blindly: read the screen, tell me what the dialog says, and only then decide which key to send." aria-label="Copy the prompt for Interrupt and Redirect">Copy prompt</button></div>
+      </div>
+    </div>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Tier 3 · Orchestrating a Fleet</h3><p class="tg-desc">One orchestrator, many agents. Shard across worktrees, wait on whichever needs you first, triage from <code>agent list --json</code>.</p></div>
+      <div class="prompt-list">
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">12</span><span class="ptitle">Who Needs Me?</span></div><div class="pdesc">Triage the whole herd from <code>agent list</code>; blocked first.</div></div><button class="copy-btn" data-prompt="Run `herdr agent list` and give me a triage board: every live agent with its workspace, pane, kind, state and whether it has been seen. Put **blocked** agents at the top. For each blocked one, read its visible screen and tell me in one line what it is waiting for." aria-label="Copy the prompt for Who Needs Me?">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">13</span><span class="ptitle">A Worktree Per Feature</span></div><div class="pdesc"><code>worktree create --branch</code> opens a grouped workspace with its own checkout.</div></div><button class="copy-btn" data-prompt="For each of these three branch names — `feat/search`, `feat/export`, `fix/login-redirect` — create a Herdr worktree from the current repo with `herdr worktree create --branch <name> --label <name> --no-focus`, capture the new workspace and root pane ids, and start a Claude Code agent named after the branch slug in each root pane. Report the three (workspace, pane, agent) triples as a table." aria-label="Copy the prompt for A Worktree Per Feature">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">14</span><span class="ptitle">Broadcast a Prompt</span></div><div class="pdesc">Same instruction to N agents, collect every answer, dedupe.</div></div><button class="copy-btn" data-prompt="Send the same prompt — &quot;List every TODO comment in this checkout with file and line, nothing else&quot; — to all three worktree agents using `herdr agent prompt <name> &quot;…&quot; --wait --timeout 180000`, one after another. Then read each with `agent read --source recent-unwrapped --lines 150`, merge the three lists, dedupe, and give me one table." aria-label="Copy the prompt for Broadcast a Prompt">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">15</span><span class="ptitle">First to Block Wins My Attention</span></div><div class="pdesc">Poll a set of <code>agent wait</code>s; whoever goes blocked first gets handled.</div></div><button class="copy-btn" data-prompt="Give each of the three worktree agents a real task (implement the feature named by its branch). Then loop: run `herdr agent list`, and for any agent whose state is **blocked**, read its screen, decide whether it is a safe yes/no (file write, running tests) and answer it with `agent send-keys`; if it is anything riskier, stop and ask me. Repeat until all three are **done** or **idle**, then summarize what each one shipped." aria-label="Copy the prompt for First to Block Wins My Attention">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">16</span><span class="ptitle">Reviewer Reviews the Builders</span></div><div class="pdesc">Chain agents: builders finish → reviewer reads their diffs → verdict.</div></div><button class="copy-btn" data-prompt="Once all three worktree agents are idle, start a fourth agent named **qa** (`--kind codex`) in a new tab of the main workspace. For each worktree, prompt **qa** with `--wait` to review `git -C <worktree-path> diff main` and produce PASS/FAIL with reasons. Collect the three verdicts and tell me which branches are safe to open PRs for." aria-label="Copy the prompt for Reviewer Reviews the Builders">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">17</span><span class="ptitle">Teardown, Carefully</span></div><div class="pdesc">Stop agents, close only what you created, remove worktrees with <code>worktree remove</code>.</div></div><button class="copy-btn" data-prompt="Wind down the fleet: for each agent you started, send `ctrl+c` or the agent's quit keys with `herdr agent send-keys`, wait until the pane is back at a shell prompt, then close the panes you created. Remove the three worktrees with `herdr worktree remove --workspace <id>` (use `--force` only if I confirm a dirty checkout). Do NOT run `herdr server stop`. Print a checklist of what was removed." aria-label="Copy the prompt for Teardown, Carefully">Copy prompt</button></div>
+      </div>
+    </div>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Tier 4 · Layouts, Metadata &amp; Views</h3><p class="tg-desc">Declare whole tabs as a BSP tree, decorate panes with live tokens, and filter the agent sidebar programmatically.</p></div>
+      <div class="prompt-list">
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">18</span><span class="ptitle">Declare the Layout</span></div><div class="pdesc"><code>layout.apply</code> over the socket: editor | tests | server as a nested split tree.</div></div><button class="copy-btn" data-prompt="Using the Herdr socket API (write NDJSON to `$HERDR_SOCKET_PATH` with `socat` or `nc -U`), call `layout.apply` on a new tab to build: a 65/35 vertical split whose left pane is labeled **editor** with cwd of this repo, and whose right side is split down into **tests** running `[&quot;sh&quot;,&quot;-c&quot;,&quot;just test --watch&quot;]` and **server** running the dev server. First run `herdr api schema --json` and read the `layout.apply` params so the tree shape is exactly right. Show me the request you sent and the response." aria-label="Copy the prompt for Declare the Layout">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">19</span><span class="ptitle">Live Cost Badge</span></div><div class="pdesc"><code>pane report-metadata --token</code> + a sidebar row using <code>$cost</code>.</div></div><button class="copy-btn" data-prompt="Make the agent sidebar show a live cost per agent. Every 30 seconds, for each live agent, run `herdr pane report-metadata <pane> --source custom:cost --token cost=<estimate> --ttl-ms 60000`. Then show me the `[ui.sidebar.agents]` config change that adds a row `[[&quot;agent&quot;],[&quot;$cost&quot;]]` so the token renders, and tell me to run `herdr server reload-config`." aria-label="Copy the prompt for Live Cost Badge">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">20</span><span class="ptitle">Rename What You See</span></div><div class="pdesc">Titles and state labels without changing semantic state.</div></div><button class="copy-btn" data-prompt="For the **reviewer** agent, use `herdr pane report-metadata` to set `--title &quot;PR #142 review&quot;`, `--display-agent &quot;codex · reviewer&quot;` and `--state-label working=&quot;reading diff&quot;`. Confirm with `herdr agent get reviewer` that the semantic state did not change, only the display fields. Then clear them with `--clear-title --clear-display-agent --clear-state-labels`." aria-label="Copy the prompt for Rename What You See">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">21</span><span class="ptitle">Move a Pane Across Workspaces</span></div><div class="pdesc"><code>pane move --new-workspace</code>; IDs change, aliases stay.</div></div><button class="copy-btn" data-prompt="Move the **tests** pane into a brand-new workspace labeled **ci** with `herdr pane move <id> --new-workspace --label ci --tab-label main --no-focus`. Read `.result.move_result.pane.pane_id` and `.previous_pane_id` from the response and explain why the pane id changed, why the running process's `HERDR_PANE_ID` did not, and why `--current` still works for it." aria-label="Copy the prompt for Move a Pane Across Workspaces">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">22</span><span class="ptitle">Filter the Sidebar</span></div><div class="pdesc"><code>agent.view.set</code>: show only blocked agents, sorted by attention.</div></div><button class="copy-btn" data-prompt="Over the socket, call `agent.view.set` with a filter that shows only agents where `status` is `in [&quot;blocked&quot;,&quot;done&quot;]` and `seen` is false, sorted by `attention`. Show me the exact JSON request, then `agent.view.clear` to restore the default view. Use `herdr api schema --json` to check the filter operators (`all`, `any`, `not`, `eq`, `in`, `exists`) before sending." aria-label="Copy the prompt for Filter the Sidebar">Copy prompt</button></div>
+      </div>
+    </div>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Tier 5 · Persist, Remote &amp; Resilience</h3><p class="tg-desc">The runtime's whole point: detach and the herd keeps going. Named sessions, SSH thin client, live handoff on update, native agent resume after restart.</p></div>
+      <div class="prompt-list">
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">23</span><span class="ptitle">Prove It Survives Detach</span></div><div class="pdesc">Start a long job, detach, reattach, verify it never stopped.</div></div><button class="copy-btn" data-prompt="In a new pane, run a 3-minute job that appends a timestamp to a file every 5 seconds. Tell me to detach the client with `ctrl+b q`, wait a minute, and run `herdr` again to reattach. Then read the file and the pane's scrollback and prove from the timestamps that the job never paused. Explain what the server owned while no client was attached." aria-label="Copy the prompt for Prove It Survives Detach">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">24</span><span class="ptitle">Named Sessions</span></div><div class="pdesc">Separate panes, sockets and state per session; shared global config.</div></div><button class="copy-btn" data-prompt="List Herdr sessions with `herdr session list --json`. Explain how to start an isolated session called **agents** (`herdr --session agents`), where its socket lives (`~/.config/herdr/sessions/agents/herdr.sock`), what it shares with the default session (config) and what it does not (panes, runtime state). Show how a script targets it with `HERDR_SESSION=agents herdr agent list`." aria-label="Copy the prompt for Named Sessions">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">25</span><span class="ptitle">Run the Herd on a Rented Box</span></div><div class="pdesc"><code>herdr --remote user@host</code>: local client, remote runtime, local keys + clipboard.</div></div><button class="copy-btn" data-prompt="Walk me through moving my agents to a Linux box: what `herdr --remote ssh://me@box:22` does on first connect (auto-installs the matching binary to `~/.local/bin/herdr` from herdr.dev/latest.json), how `[remote] manage_ssh_config` keeps the connection alive, when to pass `--remote-keybindings server`, and how `--session agents` combines with `--remote`. Then give me the equivalent plain-SSH flow (`ssh box` then `herdr`) and when I'd prefer each." aria-label="Copy the prompt for Run the Herd on a Rented Box">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">26</span><span class="ptitle">Update Without Killing Anything</span></div><div class="pdesc"><code>herdr update --handoff</code> hands live PTYs to the new server.</div></div><button class="copy-btn" data-prompt="Check `herdr channel show` and `herdr -V`. Explain the difference between `herdr update` (server restart, processes die, layout restored from session.json) and `herdr update --handoff` (live handoff: PTYs, agent identity and plugin state preserved; in-flight waits interrupted; Unix only). Then tell me which of my running panes would be affected by each, using `herdr pane list`." aria-label="Copy the prompt for Update Without Killing Anything">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">27</span><span class="ptitle">Resume Every Agent After Reboot</span></div><div class="pdesc">Native session restore: <code>claude --resume</code>, <code>codex resume</code>, <code>pi --session</code>…</div></div><button class="copy-btn" data-prompt="Show me what Herdr restores after a full server restart: layout, cwd and focus from session.json; pane screen history only if `[experimental] pane_history = true`; and native agent conversations only if `[session] resume_agents_on_restore = true`. For each live agent, run `herdr agent get <name>` and report its `agent_session` (the integration-reported session id) and which resume command Herdr would use (`claude --resume <id>`, `codex resume <id>`, `opencode --session`, …)." aria-label="Copy the prompt for Resume Every Agent After Reboot">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">28</span><span class="ptitle">Attach to One Agent, Raw</span></div><div class="pdesc"><code>terminal session observe</code> streams NDJSON frames; <code>control --takeover</code> types into it.</div></div><button class="copy-btn" data-prompt="Stream the **reviewer** pane's live screen for 10 seconds with `herdr terminal session observe <pane> --cols 120 --rows 40`, decode a couple of the base64 `terminal.frame` payloads, and show me what a frame looks like. Then explain when I'd use `herdr agent attach reviewer` (interactive, shares the pane) versus `--takeover`, and why neither works on Windows hosts yet." aria-label="Copy the prompt for Attach to One Agent, Raw">Copy prompt</button></div>
+      </div>
+    </div>
+
+    <div class="tiergroup">
+      <div class="tg-head"><h3>Customization · Config, Keys &amp; Plugins</h3><p class="tg-desc">167 config keys, a keymap that can go prefix-free, and a plugin API that is simply the CLI. Everything reloads live with <code>herdr server reload-config</code>.</p></div>
+      <div class="prompt-list">
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">29</span><span class="ptitle">Make It Mine</span></div><div class="pdesc">Theme, sidebar rows, tab-bar widgets, a popup command bound to a key.</div></div><button class="copy-btn" data-prompt="Write me a `~/.config/herdr/config.toml` that: sets `[theme] name = &quot;tokyo-night&quot;` with `auto_switch = true` and `light_name = &quot;tokyo-night-day&quot;`; makes `[ui.sidebar.spaces] rows = [[&quot;state_icon&quot;,&quot;workspace&quot;],[&quot;branch&quot;,&quot;git_status&quot;]]`; puts `hostname` and `datetime` in `tab_bar_right`; and adds a `[[keys.command]]` bound to `prefix+shift+l` that opens `lazygit` as a `popup` 90% wide. Start from `herdr --default-config`, show only the changed keys, and finish with `herdr server reload-config`." aria-label="Copy the prompt for Make It Mine">Copy prompt</button></div>
+        <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">30</span><span class="ptitle">Write a Plugin in Ten Lines</span></div><div class="pdesc"><code>herdr-plugin.toml</code> + a shell script; react to <code>worktree.created</code>; link and test it.</div></div><button class="copy-btn" data-prompt="Create a Herdr plugin in a temp directory: a `herdr-plugin.toml` with `id`, `name`, `version`, `min_herdr_version`, one `[[actions]]` entry (context `workspace`) that runs a script, and one `[[events]]` entry on `worktree.created` that runs `&quot;$HERDR_BIN_PATH&quot; pane run &quot;$HERDR_ACTIVE_PANE_ID&quot; &quot;just install&quot;` in the new worktree (read the event JSON from `HERDR_PLUGIN_EVENT_JSON`). Link it with `herdr plugin link <path>`, invoke the action with `herdr plugin action invoke`, check `herdr plugin log list`, then unlink it. Show me every file." aria-label="Copy the prompt for Write a Plugin in Ten Lines">Copy prompt</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 05 ===== -->
+  <section id="s5">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Agentic Access</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Three layers, one protocol. The skill teaches the rules, the CLI wraps every method and prints JSON, and the socket is what integrations, plugins and your own clients speak directly.</p>
+    <figure>
+      <img src="images/access.webp" alt="Three stacked layers labeled skill, cli, socket with an arrow descending to a unix socket">
+      <figcaption>Fig. 5 · Skill → CLI → socket. Same methods all the way down; <code>herdr api schema --json</code> is the contract.</figcaption>
+    </figure>
+    <div class="layers">
+      <div class="layer"><div class="ln">1 · Skill</div><div class="ld"><code>herdr --skill</code> prints the bundled <code>SKILL.md</code>; install into an agent with <code>npx skills add herdrdev/herdr --skill herdr -g</code>. Guardrail: if <code>HERDR_ENV=1</code> is not set, the agent should stop and say it is not running inside a Herdr-managed pane. A separate <code>https://herdr.dev/agent-guide.md</code> exists for an agent <em>teaching a human</em>.</div></div>
+      <div class="layer"><div class="ln">2 · CLI</div><div class="ld">Every subcommand — <code>workspace</code>, <code>worktree</code>, <code>tab</code>, <code>pane</code>, <code>agent</code>, <code>terminal</code>, <code>session</code>, <code>plugin</code>, <code>integration</code>, <code>notification</code>, <code>api</code> — talks to the server over the socket and prints JSON for deterministic scripting. Inside a pane, <code>--current</code> resolves via <code>HERDR_PANE_ID</code>.</div></div>
+      <div class="layer"><div class="ln">3 · Socket</div><div class="ld">Newline-delimited JSON over <code>~/.config/herdr/herdr.sock</code> (named sessions: <code>~/.config/herdr/sessions/&lt;name&gt;/herdr.sock</code>; Windows: a named pipe). Resolution order: <code>--session</code> → <code>HERDR_SOCKET_PATH</code> → <code>HERDR_SESSION</code> → default. Protocol 20.</div></div>
+    </div>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">raw socket · NDJSON request / response</span></div>
+      <pre><span class="m"># request</span>
+{<span class="c">"id"</span>:<span class="s">"req_split"</span>,<span class="c">"method"</span>:<span class="s">"pane.split"</span>,<span class="c">"params"</span>:{<span class="c">"direction"</span>:<span class="s">"right"</span>,<span class="c">"ratio"</span>:0.333,<span class="c">"env"</span>:{<span class="c">"HERDR_ROLE"</span>:<span class="s">"tests"</span>}}}
+<span class="m"># response</span>
+{<span class="c">"id"</span>:<span class="s">"req_split"</span>,<span class="c">"result"</span>:{<span class="c">"type"</span>:<span class="s">"pane_info"</span>,<span class="c">"pane"</span>:{<span class="c">"pane_id"</span>:<span class="s">"w1:p2"</span>,<span class="c">"terminal_id"</span>:<span class="s">"term_abc123"</span>,<span class="c">"workspace_id"</span>:<span class="s">"w1"</span>,<span class="c">"tab_id"</span>:<span class="s">"w1:t1"</span>,<span class="c">"focused"</span>:false,<span class="c">"agent_status"</span>:<span class="s">"unknown"</span>,<span class="c">"revision"</span>:42}}}
+<span class="m"># error</span>
+{<span class="c">"id"</span>:<span class="s">"req_9"</span>,<span class="c">"error"</span>:{<span class="c">"code"</span>:<span class="s">"not_found"</span>,<span class="c">"message"</span>:<span class="s">"pane not found"</span>}}
+
+<span class="m"># prompt + wait in ONE request — no race between separate calls</span>
+{<span class="c">"id"</span>:<span class="s">"req_p"</span>,<span class="c">"method"</span>:<span class="s">"agent.prompt"</span>,<span class="c">"params"</span>:{<span class="c">"target"</span>:<span class="s">"reviewer"</span>,<span class="c">"text"</span>:<span class="s">"Review the diff"</span>,<span class="c">"wait"</span>:{<span class="c">"until"</span>:[<span class="s">"idle"</span>,<span class="s">"blocked"</span>],<span class="c">"timeout_ms"</span>:120000}}}
+
+<span class="m"># subscribe to the doorbell</span>
+{<span class="c">"id"</span>:<span class="s">"req_ev"</span>,<span class="c">"method"</span>:<span class="s">"events.subscribe"</span>,<span class="c">"params"</span>:{<span class="c">"subscriptions"</span>:[{<span class="c">"type"</span>:<span class="s">"pane.agent_status_changed"</span>,<span class="c">"agent_status"</span>:<span class="s">"blocked"</span>}]}}</pre>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Family</th><th>Methods</th></tr></thead>
+        <tbody>
+          <tr><td><b>server</b></td><td class="mono">ping · server.stop · server.reload_config · server.agent_manifests · server.reload_agent_manifests · session.snapshot · notification.show</td></tr>
+          <tr><td><b>workspace / worktree / tab</b></td><td class="mono">workspace.create|list|get|focus|rename|move|move_block|report_metadata|close · worktree.list|create|open|remove · tab.create|list|get|focus|rename|move|close</td></tr>
+          <tr><td><b>pane</b></td><td class="mono">pane.split|swap|move|zoom|layout|process_info|neighbor|edges|focus_direction|resize|list|current|get|rename|send_text|send_keys|send_input|read|wait_for_output|report_agent|report_agent_session|report_metadata|release_agent|close · pane.graphics.* (experimental kitty graphics)</td></tr>
+          <tr><td><b>layout</b></td><td class="mono">layout.export · layout.apply · layout.set_split_ratio</td></tr>
+          <tr><td><b>agent</b></td><td class="mono">agent.list|get|read|explain|send_keys|prompt|wait|rename|focus|start · agent.view.set|clear</td></tr>
+          <tr><td><b>events</b></td><td class="mono">events.subscribe · events.wait — workspace.* · tab.* · pane.created|updated|closed|focused|moved|exited|agent_detected|output_matched|agent_status_changed|scroll_changed · layout.updated · worktree.*</td></tr>
+          <tr><td><b>plugin / integration</b></td><td class="mono">plugin.link|list|unlink|enable|disable · plugin.action.list|invoke · plugin.log.list · plugin.pane.open|focus|close · integration.install|uninstall</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="tag">env inside a pane</div><h4>What the agent already knows</h4><p><code>HERDR_ENV=1</code> · <code>HERDR_PANE_ID</code> · <code>HERDR_TAB_ID</code> · <code>HERDR_WORKSPACE_ID</code> · <code>HERDR_SOCKET_PATH</code> · <code>HERDR_SESSION</code> · <code>HERDR_BIN_PATH</code> (plugins) · <code>HERDR_ACTIVE_PANE_CWD</code> (custom commands).</p></div>
+      <div class="card"><div class="tag">skill rules</div><h4>How a well-behaved agent drives Herdr</h4><p>Use <code>--no-focus</code> for background work. Use <code>--current</code> or explicit IDs, never guess. Parse IDs from JSON. Split wide panes right, tall panes down. Preserve <code>--cwd "$PWD"</code>. Never close things you didn't create. Never <code>herdr server stop</code>.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 06 ===== -->
+  <section id="s6">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Keyboard</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">tmux muscle memory works: the prefix is <kbd>ctrl+b</kbd>. The docs say learn these five first.</p>
+    <div class="keys">
+      <div class="key"><span>New tab</span><kbd>prefix c</kbd></div>
+      <div class="key"><span>Split right / down</span><kbd>prefix v</kbd> <kbd>prefix -</kbd></div>
+      <div class="key"><span>Move between panes</span><kbd>prefix h j k l</kbd></div>
+      <div class="key"><span>Workspace navigation</span><kbd>prefix w</kbd></div>
+      <div class="key"><span>Detach (herd keeps running)</span><kbd>prefix q</kbd></div>
+    </div>
+    <h3>Everything else</h3>
+    <div class="keys">
+      <div class="key"><span>Zoom pane</span><kbd>prefix z</kbd></div>
+      <div class="key"><span>Close pane / tab / workspace</span><kbd>prefix x</kbd> <kbd>⇧x</kbd> <kbd>⇧d</kbd></div>
+      <div class="key"><span>Swap panes</span><kbd>prefix ⇧h/j/k/l</kbd></div>
+      <div class="key"><span>Resize mode</span><kbd>prefix r</kbd></div>
+      <div class="key"><span>Copy mode (vim motions)</span><kbd>prefix [</kbd></div>
+      <div class="key"><span>Scrollback in $EDITOR</span><kbd>prefix e</kbd></div>
+      <div class="key"><span>Rename pane / tab / workspace</span><kbd>prefix ⇧p</kbd> <kbd>⇧t</kbd> <kbd>⇧w</kbd></div>
+      <div class="key"><span>Next / prev tab · jump</span><kbd>prefix n</kbd> <kbd>p</kbd> <kbd>1–9</kbd></div>
+      <div class="key"><span>New workspace / worktree</span><kbd>prefix ⇧n</kbd> <kbd>⇧g</kbd></div>
+      <div class="key"><span>Go-to picker</span><kbd>prefix g</kbd></div>
+      <div class="key"><span>Toggle sidebar</span><kbd>prefix b</kbd></div>
+      <div class="key"><span>Open notification target</span><kbd>prefix o</kbd></div>
+      <div class="key"><span>Settings · help · reload config</span><kbd>prefix s</kbd> <kbd>?</kbd> <kbd>⇧r</kbd></div>
+      <div class="key"><span>Remote image paste</span><kbd>ctrl+v</kbd></div>
+    </div>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">config.toml · prefix-free bindings</span></div>
+      <pre><span class="c">[keys]</span>
+<span class="m"># bindings may be arrays — add a prefix-free chord alongside the default</span>
+focus_pane_left  = [<span class="s">"prefix+h"</span>, <span class="s">"ctrl+alt+h"</span>]
+focus_pane_right = [<span class="s">"prefix+l"</span>, <span class="s">"ctrl+alt+l"</span>]
+split_right      = [<span class="s">"prefix+v"</span>, <span class="s">"ctrl+alt+v"</span>]
+
+<span class="c">[[keys.command]]</span>
+key = <span class="s">"prefix+shift+l"</span>
+type = <span class="s">"popup"</span>            <span class="m"># popup | pane | shell | plugin_action</span>
+command = <span class="s">"lazygit"</span>
+width = 90
+height = 90</pre>
+    </div>
+    <div class="callout">
+      <div class="ct">Which modifier family</div>
+      <p>The docs recommend <kbd>ctrl+alt</kbd> as "almost untouched everywhere" (mapped in Ghostty, iTerm2, Terminal.app, kitty, WezTerm, Alacritty, Warp, Windows Terminal, GNOME Terminal, Konsole). Avoid <code>ctrl+alt+arrows</code>, <code>ctrl+alt+t</code>, <code>ctrl+alt+l/a</code>, <code>ctrl+alt+s/u</code>, and <code>ctrl+alt+f1..f12</code>. Copy mode is vim: <code>h j k l w b e { } ctrl+u/d / ? n N v y q</code>.</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 07 ===== -->
+  <section id="s7">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Agents &amp; Integrations</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Twenty agent CLIs are detected out of the box. Integrations come in two kinds: <strong>lifecycle authority</strong> (the agent tells Herdr its state through hooks) and <strong>session identity</strong> (the agent tells Herdr which conversation it is, so it can be resumed).</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Agent</th><th><code>--kind</code></th><th>State authority</th><th>Integration gives</th><th>Resume after restart</th></tr></thead>
+        <tbody>
+          <tr><td><b>Claude Code</b></td><td class="mono">claude</td><td>screen manifest</td><td>session identity (hooks in <code>~/.claude/settings.json</code>)</td><td class="mono">claude --resume &lt;id&gt;</td></tr>
+          <tr><td><b>Codex</b></td><td class="mono">codex</td><td>screen manifest</td><td>session identity (<code>~/.codex/hooks.json</code>, <code>[features] hooks = true</code>)</td><td class="mono">codex resume &lt;id&gt;</td></tr>
+          <tr><td><b>Pi</b></td><td class="mono">pi</td><td>lifecycle hooks</td><td>state + session (<code>~/.pi/agent/extensions/…</code>)</td><td class="mono">pi --session</td></tr>
+          <tr><td><b>OpenCode</b></td><td class="mono">opencode</td><td>plugin (lifecycle)</td><td>state + session</td><td class="mono">opencode --session</td></tr>
+          <tr><td><b>OMP</b> · <b>Kimi Code</b> · <b>Kilo Code</b> · <b>MastraCode</b></td><td class="mono">omp · kimi · kilo · mastracode</td><td>lifecycle hooks</td><td>state + session</td><td class="mono">--resume= · --session · --thread</td></tr>
+          <tr><td><b>GitHub Copilot CLI</b> · <b>Cursor</b> · <b>Devin</b> · <b>Droid</b> · <b>Qoder</b> · <b>Qwen</b> · <b>Hermes</b> · <b>Antigravity</b> · <b>Grok</b></td><td class="mono">copilot · cursor · devin · droid · qodercli · qwen · hermes · agy · grok</td><td>screen manifest</td><td>session identity</td><td class="mono">copilot --resume= · cursor-agent --resume · …</td></tr>
+          <tr><td><b>Amp</b> · <b>Kiro</b> · <b>Maki</b> · <b>Gemini CLI</b> · <b>Cline</b></td><td class="mono">amp · kiro · maki · gemini · cline</td><td>screen manifest</td><td>none (Gemini/Cline "detected but less thoroughly tested")</td><td class="mono">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code">
+      <div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">integrations &amp; manifests</span></div>
+      <pre><span class="c">herdr</span> integration install claude        <span class="m"># writes ~/.claude/hooks/herdr-agent-state.sh + settings.json hooks</span>
+<span class="c">herdr</span> integration install codex pi opencode
+<span class="c">herdr</span> integration status --outdated-only
+
+<span class="c">herdr</span> server agent-manifests            <span class="m"># which TOML manifests are active, remote versions</span>
+<span class="c">herdr</span> server update-agent-manifests     <span class="m"># fetch updates from herdr.dev now</span>
+<span class="m"># local overrides always win:</span> ~/.config/herdr/agent-detection/&lt;agent&gt;.toml
+<span class="c">herdr</span> agent explain w1:p2 --verbose     <span class="m"># which rule matched, what evidence</span>
+<span class="c">herdr</span> agent explain --file screen.txt --agent codex --json
+
+<span class="m"># wrap anything that isn't detected:</span>
+HERDR_AGENT=claude fence -- claude</pre>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="tag">plugins</div><h4>The CLI is the plugin API</h4><p>A directory with <code>herdr-plugin.toml</code> and argv commands in any language. <code>[[actions]]</code>, <code>[[events]]</code>, <code>[[panes]]</code> (overlay · popup · split · tab · zoomed), <code>[[link_handlers]]</code>. No sandbox — treat like an editor extension.</p></div>
+      <div class="card"><div class="tag">marketplace</div><h4>Built by the herd</h4><p><code>herdr plugin install owner/repo</code>. herdr.dev/plugins auto-indexes every public GitHub repo tagged <code>herdr-plugin</code> every 30 minutes — 762 plugins, no submission, no review queue. Seen often: herdr-lazygit, herdr-hud, herdr-kanban, herdr-ntfy-notify, herdr-layout.</p></div>
+      <div class="card"><div class="tag">windows</div><h4>Native, ConPTY-based</h4><p>Local persistent sessions, <code>--remote</code> to Linux/macOS hosts, cmd.exe panes, notifications. Not yet: <code>terminal attach</code>, Windows as a remote host, live handoff. Paste is <kbd>ctrl+shift+v</kbd>.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 08 ===== -->
+  <section id="s8">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Herdr vs tmux vs cmux vs Warp</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">The columns are categories, not enemies. The row that sorts the field is the second one: what happens to the agents when the thing you're looking at goes away.</p>
+    <div class="tbl-wrap">
+      <table class="matrix">
+        <thead><tr><th>Capability</th><th class="hd">herdr</th><th>tmux · zellij</th><th>cmux · warp</th><th>conductor · emdash · superset</th></tr></thead>
+        <tbody>
+          <tr><td>Kind of thing</td><td class="hd">runtime + clients</td><td>terminal multiplexer</td><td>terminal app</td><td>manager app</td></tr>
+          <tr><td>Work survives its own UI closing</td><td class="hd"><span class="y">yes</span><small>the server owns the terminals</small></td><td><span class="y">yes</span><small>detach</small></td><td><span class="p">partial</span><small>session restore</small></td><td><span class="n">while the app is open</span></td></tr>
+          <tr><td>Runs inside your existing terminal</td><td class="hd"><span class="y">yes</span></td><td><span class="y">yes</span></td><td><span class="n">replaces it</span></td><td><span class="n">desktop app</span></td></tr>
+          <tr><td>Semantic agent state</td><td class="hd"><span class="y">blocked · working · done · idle</span></td><td><span class="n">—</span></td><td><span class="p">attention cues</span></td><td><span class="p">workspace status</span></td></tr>
+          <tr><td>Detach, reattach, SSH in</td><td class="hd"><span class="y">yes, any tty</span></td><td><span class="y">yes</span></td><td><span class="p">partial</span></td><td><span class="p">remote projects</span></td></tr>
+          <tr><td>Direct attach to one agent</td><td class="hd"><span class="y">yes</span></td><td><span class="n">—</span></td><td><span class="n">—</span></td><td><span class="n">—</span></td></tr>
+          <tr><td>API: agents drive themselves</td><td class="hd"><span class="y">read · send · wait · split · attach</span></td><td><span class="p">terminal scripting</span></td><td><span class="p">app APIs</span></td><td><span class="p">workflow APIs</span></td></tr>
+          <tr><td>Worktree and diff review flow</td><td class="hd"><span class="p">pairs with it</span><small>worktrees yes, diff review no</small></td><td><span class="n">—</span></td><td><span class="p">partial</span></td><td><span class="y">yes, their core</span></td></tr>
+          <tr><td>Clients on the same runtime</td><td class="hd"><span class="y">TUI · CLI · plain SSH</span><small>more coming</small></td><td>its own client</td><td>the app only</td><td>the app only</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap-note">Condensed from <a href="https://herdr.dev/compare">herdr.dev/compare</a> ("9 tools compared · one runtime"). Solo, the process dashboard, is omitted here.</p>
+    <div class="grid-3">
+      <div class="card"><div class="tag">herdr vs tmux</div><p>tmux keeps terminals alive; so does Herdr. The difference is Herdr knows which terminals are agents, what state each one is in, and how to wait on them. tmux sees panes.</p></div>
+      <div class="card"><div class="tag">herdr vs cmux</div><p>cmux is a Mac terminal app built around agents. Herdr isn't an app: it's the runtime underneath, in whatever terminal you already use, reachable over SSH.</p></div>
+      <div class="card"><div class="tag">herdr vs warp</div><p>Warp wants to be your terminal and your platform. Herdr keeps your terminal and owns what runs inside it.</p></div>
+    </div>
+    <div class="callout">
+      <div class="ct">Pairs with the cmux guide</div>
+      <p>If you run cmux on a Mac, the two compose: cmux is the window, Herdr is the runtime the agents live on inside it. The orchestration verbs map almost one-to-one — <code>cmux send / send-key / read-screen</code> ↔ <code>herdr pane send-text / send-keys / read</code> — with Herdr adding the agent layer (<code>agent start / prompt / wait</code>) and detach.</p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="fq">Give them somewhere to live.</div>
+    <div class="fm">Sources: <a href="https://herdr.dev">herdr.dev</a> · <a href="https://herdr.dev/docs/">docs</a> · <a href="https://herdr.dev/compare">compare</a> · <a href="https://github.com/herdrdev/herdr">github.com/herdrdev/herdr</a> (Rust, Apache-2.0)<br>Distilled from Herdr v0.8.2 documentation · socket protocol 20 · August 2026 · Independent guide, not affiliated with Herdr, Inc.</div>
+  </div>
+</footer>
+
+<script>
+  // Render each prompt's text INSIDE its card, from the same data-prompt the button copies.
+  // Light markdown: escape HTML first, then `code`, **bold**, *italic*.
+  function renderPrompt(raw){
+    var s = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+    return s;
+  }
+  document.querySelectorAll('.prow .copy-btn').forEach(function(btn){
+    var raw = btn.getAttribute('data-prompt') || '';
+    var main = btn.parentNode.querySelector('.prow-main');
+    if (main && !main.querySelector('.ptext')) {
+      var q = document.createElement('div');
+      q.className = 'ptext';
+      q.innerHTML = '<span class="pq">&#10095;</span>' + renderPrompt(raw);
+      main.appendChild(q);
+    }
+  });
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.getAttribute('data-prompt') || '';
+      var prev = btn.textContent;
+      var done = function(){
+        btn.textContent = 'Copied ✓';
+        btn.classList.add('copied');
+        setTimeout(function(){ btn.textContent = prev; btn.classList.remove('copied'); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function(){ fallback(text); done(); });
+      } else {
+        fallback(text); done();
+      }
+    });
+  });
+  function fallback(text){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  // Flip cards: reveal each problem-row's herdr solution on demand.
+  document.querySelectorAll('.flip-front').forEach(function(front){
+    front.addEventListener('click', function(){
+      var item = front.closest('.flow-item');
+      if (item){ item.classList.add('flipped'); front.setAttribute('aria-expanded','true'); }
+    });
+  });
+  document.querySelectorAll('.flip-reset').forEach(function(reset){
+    reset.addEventListener('click', function(){
+      var item = reset.closest('.flow-item');
+      if (item){
+        item.classList.remove('flipped');
+        var f = item.querySelector('.flip-front');
+        if (f) f.setAttribute('aria-expanded','false');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
