@@ -21,6 +21,10 @@ Cards are organized by **category** (subfolders of `docs/library/`) and filterab
 - [Opus 5 Mastery — Unhobble the Model](guides/opus-5-mastery.md) — field guide to getting the best
   out of Claude Opus 5: delete Claude-4-era constraints, pull the effort/thinking/context levers, and
   paste 18 ready-made prompts.
+- [Pi — The Coding Harness](guides/pi-harness-guide.md) — from-zero field guide to
+  [Pi](https://pi.dev) (earendil-works), the minimal programmable harness: quickstart, recommended
+  setup, TypeScript extensions, VS Code/Cursor config, 12 ecosystem packages, and
+  [IndyDevDan](https://www.youtube.com/@indydevdan)'s Pi repos.
 
 ## specs
 

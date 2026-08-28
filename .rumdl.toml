@@ -20,6 +20,7 @@ include = [
 exclude = [
     "specs/copilot-cli-vs-claude-code/research/**",
     "specs/codex-cli-vs-claude-code/research/**",
+    "specs/pi-harness-guide/research/**",
 ]
 
 # Rules turned OFF. All other default-on rules — including the token-strippers

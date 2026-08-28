@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Field guide to Pi (pi.dev), the minimal programmable coding harness: quickstart, recommended setup, advanced extension authoring in TypeScript, VS Code / Cursor configuration, the package ecosystem, and IndyDevDan's Pi work.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F4F2ED">
+<title>Pi — The Coding Harness</title>
+<link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+<link rel="apple-touch-icon" href="images/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== Synced visual identity — Pi's "engineer's notebook".
+     Derived from pi.dev: paper + graph-grid ground, serif-italic display (Plantin there,
+     Source Serif 4 here), mono small-caps labels, steel-blue accent (#6a9fcc, darkened to
+     #3D6E9E for AA on paper), rust #8f3222 secondary. Generated figures match this. ===== */
+  :root{
+    --bg:#F4F2ED; --bg-soft:#EDEAE3; --surface:#FBFAF7; --surface-2:#F1EEE7;
+    --border:#D8D3C8; --border-bright:#C2BBAC;
+    --ink:#1C222B;
+    --text:#1C222B; --muted:#4A5361; --faint:#7A8290;
+    --accent:#3D6E9E;                 /* steel-blue ink — the ONE accent */
+    --accent-dim:#6A9FCC;             /* pi.dev's raw accent — fills/borders */
+    --accent-glow:rgba(106,159,204,.16);
+    --accent-2:#8F3222;               /* rust — warnings / gotchas */
+    --accent-2-dim:rgba(143,50,34,.10);
+    --ok:#2E7D4F;
+    --bad:#B3362A;
+    --grid:rgba(28,34,43,.045);
+    --maxw:1225px;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Source Serif 4',Georgia,'Times New Roman',serif;
+    --body:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+  body{
+    color:var(--text); font-family:var(--body);
+    font-size:18px; line-height:1.68; -webkit-font-smoothing:antialiased;
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:24px 24px;
+  }
+  ::selection{background:var(--accent);color:var(--bg)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+
+  /* ---- sticky topbar ---- */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(244,242,237,.86);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+  .topbar-in{max-width:var(--maxw);margin:0 auto;padding:0 26px;height:50px;display:flex;align-items:center;gap:18px}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent);flex:none;text-decoration:none}
+  .brand:hover{text-decoration:none;color:var(--text)}
+  .bar-toc{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;margin:0;padding:0;list-style:none}
+  .bar-toc::-webkit-scrollbar{display:none}
+  .bar-toc a{display:block;white-space:nowrap;font-size:12.5px;color:var(--faint);padding:5px 8px;border-radius:7px;text-decoration:none}
+  .bar-toc a:hover{color:var(--text);background:var(--surface-2);text-decoration:none}
+  .bar-toc a[aria-current="true"]{color:var(--accent);background:var(--accent-glow)}
+  .progress{position:absolute;left:0;bottom:-1px;height:2px;width:0;background:linear-gradient(90deg,var(--accent-dim),var(--accent));transition:width .08s linear}
+
+  /* ---- hero ---- */
+  .hero{border-bottom:1px solid var(--border);padding:60px 0 64px;text-align:center}
+  .hero-copy{display:flex;flex-direction:column;align-items:center}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.26em;color:var(--accent);text-transform:lowercase;font-weight:500}
+  .hero h1{font-family:var(--disp);font-style:italic;font-weight:600;line-height:1.06;letter-spacing:-.015em;
+    font-size:clamp(34px,6vw,72px);margin:16px auto 22px;max-width:22ch}
+  .hero h1 .gc{color:var(--accent)}
+  .hero .lede{font-size:clamp(17px,2.2vw,20.5px);color:var(--muted);max-width:62ch;margin:0 auto;font-weight:500;line-height:1.58}
+  .hero .lede strong{color:var(--text);font-weight:600}
+  .install{display:inline-flex;align-items:center;gap:14px;margin:30px auto 0;background:var(--ink);border:1px solid var(--border-bright);
+    border-radius:12px;padding:11px 12px 11px 18px;font-family:var(--mono);font-size:14.5px;color:#E8ECF2;max-width:100%}
+  .install .ps{color:#7FBF8E}
+  .install code{background:none;border:0;padding:0;color:#E8ECF2;font-size:1em;white-space:nowrap;overflow-x:auto}
+  .hero-img{display:block;margin:44px auto 0;width:min(100%,960px);height:auto;border-radius:16px;
+    border:1px solid var(--border-bright);box-shadow:0 22px 60px -28px rgba(28,34,43,.45)}
+
+  /* ---- metastrip ---- */
+  .metastrip{display:grid;grid-template-columns:repeat(6,1fr);gap:0;border:1px solid var(--border);
+    border-radius:14px;overflow:hidden;margin:36px 0 8px;background:var(--surface)}
+  .metastrip div{padding:16px 18px;border-right:1px solid var(--border)}
+  .metastrip div:last-child{border-right:none}
+  .metastrip .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
+  .metastrip .v{font-family:var(--disp);font-size:19px;font-weight:700;color:var(--text);margin-top:5px;line-height:1.15}
+  .metastrip .v.cy{color:var(--accent)}
+  @media(max-width:900px){.metastrip{grid-template-columns:repeat(3,1fr)}.metastrip div:nth-child(3n){border-right:none}.metastrip div{border-bottom:1px solid var(--border)}.metastrip div:nth-child(n+4){border-bottom:none}}
+  @media(max-width:560px){.metastrip{grid-template-columns:repeat(2,1fr)}.metastrip div{border-bottom:1px solid var(--border)}.metastrip div:nth-child(3n){border-right:1px solid var(--border)}.metastrip div:nth-child(2n){border-right:none}.metastrip div:nth-child(n+5){border-bottom:none}}
+
+  /* ---- table of contents ---- */
+  .toc{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:24px 26px 14px;margin:34px 0 8px}
+  .toc-h{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  .toc ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+  @media(max-width:760px){.toc ol{grid-template-columns:1fr}}
+  .toc a{display:block;padding:10px 10px;border-radius:9px;border:1px solid transparent}
+  .toc a:hover{background:var(--accent-glow);border-color:var(--border);text-decoration:none}
+  .toc .trow{display:flex;align-items:baseline;gap:11px}
+  .toc .tnum{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent)}
+  .toc .tt{font-family:var(--disp);font-weight:700;font-size:16px;color:var(--text);letter-spacing:-.005em}
+  .toc .td{display:block;font-size:12.5px;color:var(--muted);margin:3px 0 0 23px;line-height:1.42}
+
+  /* ---- sections ---- */
+  section{padding:96px 0 24px;border-top:1px solid var(--border);scroll-margin-top:60px}
+  section:first-of-type{border-top:none}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+  .sec-num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600;letter-spacing:.05em}
+  h2{font-family:var(--disp);font-style:italic;font-weight:600;letter-spacing:-.012em;font-size:clamp(30px,4vw,44px);line-height:1.1}
+  h3{font-family:var(--disp);font-weight:600;font-size:23px;margin:32px 0 10px;letter-spacing:-.008em}
+  .sub{color:var(--muted);font-size:19.5px;max-width:74ch;margin:16px 0 8px;line-height:1.6}
+  p{margin:15px 0;color:var(--text);opacity:.93;max-width:82ch}
+  strong{color:var(--text);font-weight:600}
+  .lead-rule{height:2px;width:64px;background:linear-gradient(90deg,var(--accent-dim),transparent);margin:18px 0 6px;border-radius:2px}
+
+  figure{margin:38px 0}
+  figure img{width:100%;display:block;border:1px solid var(--border-bright);border-radius:14px;
+    box-shadow:0 16px 40px -22px rgba(28,34,43,.4)}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--faint);text-align:center;margin-top:11px;letter-spacing:.04em}
+
+  .subpoints{list-style:none;margin:18px 0 8px;padding:0;max-width:78ch}
+  .subpoints li{position:relative;padding-left:26px;margin:13px 0;color:var(--muted);font-size:17px;line-height:1.58}
+  .subpoints li::before{content:"";position:absolute;left:3px;top:9px;width:7px;height:7px;border-radius:2px;
+    background:var(--accent-dim);transform:rotate(45deg)}
+  .subpoints li b,.subpoints li strong{color:var(--text);font-weight:600}
+  .subpoints li code{font-size:.86em}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:24px 0}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;min-width:0}
+  .card h4{font-family:var(--disp);font-size:18px;font-weight:700;margin-bottom:7px;color:var(--text)}
+  .card p{font-size:15.5px;margin:7px 0 0;color:var(--muted);opacity:1;line-height:1.55}
+  .card .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
+  .card .meta{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:2px}
+  .card .inst{display:flex;align-items:center;gap:10px;margin-top:14px;min-width:0}
+  .card .inst code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;font-size:12px;padding:6px 10px}
+
+  /* ---- gotcha flip cards (problem -> fix) ---- */
+  .flow{display:grid;gap:18px;margin:32px 0 10px}
+  .flow-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .15s}
+  .flow-item:hover{border-color:var(--border-bright)}
+  .flip{perspective:1200px}
+  .flip-inner{display:grid;transition:transform .55s cubic-bezier(.2,.75,.25,1);transform-style:preserve-3d}
+  .flow-item.flipped .flip-inner{transform:rotateY(180deg)}
+  .flip-front,.flip-back{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:24px 26px}
+  .flip-front{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px;
+    min-height:150px;width:100%;border:0;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .flip-q{font-family:var(--disp);font-weight:600;font-size:21px;color:var(--accent-2);letter-spacing:-.01em;line-height:1.25}
+  .flip-front:hover .flip-q{color:var(--text)}
+  .flip-cta{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);
+    background:var(--accent-2-dim);border:1px solid rgba(143,50,34,.35);padding:8px 15px;border-radius:999px;transition:all .15s ease}
+  .flip-front:hover .flip-cta{background:var(--accent-2);color:var(--bg);border-color:var(--accent-2)}
+  .flip-back{transform:rotateY(180deg);position:relative;background:linear-gradient(180deg,rgba(46,125,79,.08),transparent 70%)}
+  .flip-back .flow-k{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ok);margin-bottom:10px}
+  .flip-back .flow-h{font-family:var(--disp);font-size:19px;font-weight:600;color:var(--ok);line-height:1.25;margin-bottom:7px}
+  .flip-back p{font-size:15.5px;color:var(--muted);margin:6px 0;max-width:none}
+  .flip-back code{font-size:.85em}
+  .flip-reset{position:absolute;top:12px;right:14px;font-family:var(--mono);font-size:13px;line-height:1;color:var(--faint);
+    background:transparent;border:1px solid var(--border);border-radius:7px;padding:5px 9px;cursor:pointer;transition:all .15s ease}
+  .flip-reset:hover{color:var(--accent);border-color:var(--accent)}
+
+  /* ---- callout & pull-quote ---- */
+  .callout{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;padding:18px 22px;margin:34px 0 22px}
+  .callout.alt{border-left-color:var(--accent-2)}
+  .callout.bad{border-left-color:var(--bad)}
+  .callout .ct{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
+  .callout.alt .ct{color:var(--accent-2)}
+  .callout.bad .ct{color:var(--bad)}
+  .callout p{margin:5px 0;font-size:16.5px;max-width:none}
+  .pquote{font-family:var(--disp);font-style:italic;font-weight:500;font-size:clamp(20px,2.8vw,27px);line-height:1.34;
+    color:var(--text);border-left:3px solid var(--accent-dim);padding:6px 0 6px 22px;margin:30px 0;letter-spacing:-.008em}
+  .pquote .src{display:block;font-family:var(--mono);font-style:normal;font-size:12px;color:var(--faint);font-weight:400;margin-top:12px;letter-spacing:.05em}
+
+  /* ---- tables ---- */
+  .tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:620px}
+  th,td{text-align:left;padding:11px 16px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--bg-soft)}
+  tr:last-child td{border-bottom:none}
+  td b{color:var(--text)}
+  td .mono{font-family:var(--mono);color:var(--accent);font-size:13px}
+  tbody tr:hover{background:var(--accent-glow)}
+  .matrix td:first-child,.matrix th:first-child{color:var(--text);font-weight:600}
+  .matrix .hd{background:rgba(106,159,204,.10);border-left:1px solid var(--accent-dim);border-right:1px solid var(--accent-dim)}
+  .matrix thead .hd{color:var(--accent);background:rgba(106,159,204,.18)}
+  .matrix td small{display:block;color:var(--muted);font-size:11.5px;line-height:1.4;margin-top:1px}
+  .cap-note{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.03em;margin:10px 0 0}
+  .cap-note a{color:var(--faint);text-decoration:underline}
+  .cap-note a:hover{color:var(--accent)}
+
+  /* ---- code blocks: dark terminals sitting on the paper ---- */
+  .code{background:var(--ink);border:1px solid var(--border-bright);border-radius:12px;margin:22px 0;overflow:hidden;
+    box-shadow:0 14px 34px -20px rgba(28,34,43,.5)}
+  .code .cbar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(232,236,242,.12);background:rgba(232,236,242,.05)}
+  .code .cbar .dot{width:9px;height:9px;border-radius:50%;background:rgba(232,236,242,.22)}
+  .code .cbar .cl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(232,236,242,.5);margin-left:6px;flex:1}
+  .code pre{margin:0;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:#E8ECF2;tab-size:2}
+  .code pre .c{color:#8FB8DE}   /* command / accent */
+  .code pre .m{color:#7F8A99}   /* muted / comment */
+  .code pre .s{color:#E0B357}   /* string / value */
+  .code pre .g{color:#7FBF8E}   /* green / prompt-ok */
+  code{font-family:var(--mono);font-size:.86em;color:#24466E;background:var(--accent-glow);
+    border:1px solid rgba(106,159,204,.35);padding:1px 6px;border-radius:5px;
+    overflow-wrap:anywhere;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  kbd{font-family:var(--mono);font-size:.82em;color:var(--text);background:var(--surface-2);border:1px solid var(--border-bright);
+    border-bottom-width:2px;padding:1px 7px;border-radius:5px;white-space:nowrap}
+
+  /* ---- config tree ---- */
+  .tree-pre{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:22px 0;
+    overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:var(--text)}
+  .tree-pre .d{color:var(--accent);font-weight:600}
+  .tree-pre .m{color:var(--faint)}
+
+  /* ---- key grid ---- */
+  .keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin:22px 0}
+  .key{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:11px 14px;font-size:14.5px;color:var(--muted)}
+  .key kbd{flex:none}
+
+  /* ---- prompt/command rows (cheat sheet) ---- */
+  .prompt-list{display:grid;gap:10px;margin:18px 0 6px}
+  .prow{display:flex;align-items:flex-start;gap:16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:15px 18px;min-width:0;transition:border-color .15s ease,background .15s ease}
+  .prow:hover{border-color:var(--border-bright);background:var(--surface-2)}
+  .prow-main{flex:1;min-width:0;overflow-wrap:anywhere}
+  .prow-id{display:flex;align-items:baseline;gap:11px}
+  .prow-id .pnum{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--accent);flex:none}
+  .prow-id .ptitle{font-family:var(--disp);font-weight:700;font-size:18px;color:var(--text);letter-spacing:-.005em}
+  .pdesc{font-size:15px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .pdesc code{font-size:.84em}
+  .ptext{margin-top:12px;padding:13px 16px;background:var(--ink);border:1px solid var(--border-bright);
+    border-left:2px solid var(--accent-dim);border-radius:0 9px 9px 0;font-family:var(--mono);font-size:13px;line-height:1.62;
+    color:#E8ECF2;overflow-x:auto;white-space:pre-wrap}
+  .ptext .pq{color:#8FB8DE;opacity:.75;margin-right:6px}
+  .ptext code{background:none;border:none;color:#E0B357;padding:0;font-size:1em}
+  .ptext strong{color:#fff;font-weight:600}
+  .ptext em{color:#B9C2CE;font-style:italic}
+  .copy-btn{flex:none;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-glow);border:1px solid rgba(61,110,158,.4);
+    padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .15s ease}
+  .copy-btn:hover,.copy-btn.copied{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  .code .copy-btn{color:#AFCBE6;background:rgba(232,236,242,.08);border-color:rgba(232,236,242,.25);padding:5px 11px}
+  .code .copy-btn:hover,.code .copy-btn.copied{background:var(--accent-dim);color:var(--ink);border-color:var(--accent-dim)}
+  @media(max-width:620px){.prow{flex-direction:column;align-items:stretch;gap:12px}.copy-btn{align-self:flex-start}}
+
+  /* ---- questionables ---- */
+  .qa details{border:1px solid var(--border);border-radius:11px;background:var(--surface);margin:12px 0}
+  .qa summary{cursor:pointer;padding:14px 18px;font-family:var(--disp);font-weight:600;font-size:16.5px}
+  .qa summary::marker{color:var(--accent)}
+  .qa .qa-a{padding:2px 20px 16px;font-size:15px;color:var(--muted);line-height:1.6}
+
+  /* ---- to top ---- */
+  .to-top{position:fixed;right:22px;bottom:22px;z-index:60;width:42px;height:42px;display:grid;place-items:center;
+    border-radius:50%;cursor:pointer;background:var(--surface);border:1px solid var(--border-bright);color:var(--accent);
+    font-size:17px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+  .to-top.on{opacity:1;pointer-events:auto}
+  .to-top:hover{transform:translateY(-2px)}
+
+  footer{margin-top:70px;border-top:1px solid var(--border);padding:46px 0 70px;text-align:center}
+  footer .fq{font-family:var(--disp);font-style:italic;font-size:24px;font-weight:600;color:var(--text)}
+  footer .fm{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:14px;letter-spacing:.05em;line-height:1.9}
+
+  @media(max-width:640px){
+    body{font-size:16.5px}
+    section{padding:64px 0 18px}
+    .hero{padding:44px 0 48px}
+  }
+  @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+    html,body{background:var(--bg) !important}
+    .topbar,.to-top,.copy-btn{display:none !important}
+    section{break-before:page;padding:40px 0 10px}
+    figure,.callout,.pquote,.metastrip,.toc,.tbl-wrap,.code,.card,.prow,.flow-item,.tree-pre{break-inside:avoid}
+    h2,h3{break-after:avoid}
+    .flip-inner{transform:none !important}
+    .flip-front{display:none !important}
+    .flip-back{transform:none !important;position:static !important;backface-visibility:visible !important;-webkit-backface-visibility:visible !important}
+    .flip-reset{display:none !important}
+  }
+</style>
+</head>
+<body>
+
+<nav class="topbar" aria-label="Section navigation">
+  <div class="topbar-in">
+    <a class="brand" href="#top">π · PI.DEV</a>
+    <ul class="bar-toc">
+      <li><a href="#s0">00 What</a></li>
+      <li><a href="#s1">01 Quickstart</a></li>
+      <li><a href="#s2">02 Setup</a></li>
+      <li><a href="#s3">03 Driving</a></li>
+      <li><a href="#s4">04 Packages</a></li>
+      <li><a href="#s5">05 Extensions</a></li>
+      <li><a href="#s6">06 Publish</a></li>
+      <li><a href="#s7">07 Editor</a></li>
+      <li><a href="#s8">08 IndyDevDan</a></li>
+      <li><a href="#s9">09 vs CC</a></li>
+      <li><a href="#s10">10 Questions</a></li>
+      <li><a href="#s11">11 Cheat sheet</a></li>
+      <li><a href="#s12">12 Sources</a></li>
+    </ul>
+  </div>
+  <div class="progress" id="progress"></div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero" id="top">
+  <div class="wrap hero-copy">
+    <div class="eyebrow">pi · the coding harness</div>
+    <h1>There are many harnesses.<br><span class="gc">This one is yours.</span></h1>
+    <p class="lede"><a href="https://pi.dev/">Pi</a> is a <strong>minimal agent harness</strong> from <a href="https://github.com/earendil-works/pi">earendil-works</a>: a unified LLM API, an agent loop, a TUI, and a coding-agent CLI that ships with <strong>four write tools and a ~200-token system prompt</strong> — and lets you rebuild everything else, in TypeScript, while it runs. This guide takes you from <em>not installed</em> to <em>extended, in your editor, with the ecosystem's best packages</em>.</p>
+    <div class="install"><span class="ps">$</span><code>curl -fsSL https://pi.dev/install.sh | sh</code><button class="copy-btn" data-prompt="curl -fsSL https://pi.dev/install.sh | sh" type="button">Copy</button></div>
+    <svg class="hero-img" viewBox="0 0 1100 420" role="img" aria-label="A terminal with a pi prompt, steel-blue circuit traces radiating outward to plug-in modules">
+      <rect width="1100" height="420" fill="#FBFAF7"/>
+      <g stroke="rgba(28,34,43,.06)" stroke-width="1">
+        <path d="M0 60H1100M0 120H1100M0 180H1100M0 240H1100M0 300H1100M0 360H1100"/>
+        <path d="M100 0V420M200 0V420M300 0V420M400 0V420M500 0V420M600 0V420M700 0V420M800 0V420M900 0V420M1000 0V420"/>
+      </g>
+      <g fill="none" stroke="#6A9FCC" stroke-width="2.5">
+        <path d="M385 160 H 260 V 96 H 194"/>
+        <path d="M385 260 H 260 V 324 H 194"/>
+        <path d="M715 160 H 840 V 96 H 906"/>
+        <path d="M715 260 H 840 V 324 H 906"/>
+        <path d="M550 118 V 74"/>
+        <path d="M550 302 V 346"/>
+      </g>
+      <g fill="#6A9FCC">
+        <circle cx="260" cy="160" r="4"/><circle cx="260" cy="260" r="4"/>
+        <circle cx="840" cy="160" r="4"/><circle cx="840" cy="260" r="4"/>
+      </g>
+      <g transform="translate(385,118)">
+        <rect width="330" height="184" rx="14" fill="#1C222B" stroke="#C2BBAC"/>
+        <circle cx="24" cy="24" r="5" fill="rgba(232,236,242,.25)"/>
+        <circle cx="42" cy="24" r="5" fill="rgba(232,236,242,.25)"/>
+        <circle cx="60" cy="24" r="5" fill="rgba(232,236,242,.25)"/>
+        <text x="28" y="86" font-family="Source Serif 4,Georgia,serif" font-style="italic" font-size="40" fill="#8FB8DE">π</text>
+        <text x="62" y="86" font-family="IBM Plex Mono,monospace" font-size="22" fill="#E8ECF2">&gt; _</text>
+        <rect x="28" y="118" width="180" height="9" rx="4.5" fill="rgba(232,236,242,.2)"/>
+        <rect x="28" y="140" width="132" height="9" rx="4.5" fill="rgba(232,236,242,.12)"/>
+      </g>
+      <g font-family="IBM Plex Mono,monospace" font-size="13" text-anchor="middle">
+        <rect x="80" y="70" width="114" height="52" rx="9" fill="#F4F2ED" stroke="#1C222B" stroke-width="2"/><text x="137" y="101" fill="#1C222B">tools</text>
+        <rect x="80" y="298" width="114" height="52" rx="9" fill="#F4F2ED" stroke="#1C222B" stroke-width="2"/><text x="137" y="329" fill="#1C222B">themes</text>
+        <rect x="906" y="70" width="114" height="52" rx="9" fill="#F4F2ED" stroke="#1C222B" stroke-width="2"/><text x="963" y="101" fill="#1C222B">events</text>
+        <rect x="906" y="298" width="114" height="52" rx="9" fill="#F4F2ED" stroke="#8F3222" stroke-width="2"/><text x="963" y="329" fill="#8F3222">skills</text>
+        <rect x="493" y="30" width="114" height="44" rx="9" fill="#F4F2ED" stroke="#1C222B" stroke-width="2"/><text x="550" y="57" fill="#1C222B">models</text>
+        <rect x="493" y="346" width="114" height="44" rx="9" fill="#F4F2ED" stroke="#1C222B" stroke-width="2"/><text x="550" y="373" fill="#1C222B">commands</text>
+      </g>
+    </svg>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="metastrip" role="list" aria-label="Pi at a glance">
+    <div role="listitem"><div class="k">version</div><div class="v cy">0.84.3</div></div>
+    <div role="listitem"><div class="k">license</div><div class="v">MIT</div></div>
+    <div role="listitem"><div class="k">github</div><div class="v">~98K ★</div></div>
+    <div role="listitem"><div class="k">node</div><div class="v">≥ 22.19</div></div>
+    <div role="listitem"><div class="k">providers</div><div class="v">15+</div></div>
+    <div role="listitem"><div class="k">packages</div><div class="v cy">5,467</div></div>
+  </div>
+
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-h">Contents — a three-rung setup ladder</div>
+    <ol>
+      <li><a href="#s0"><span class="trow"><span class="tnum">00</span><span class="tt">What Pi is</span></span><span class="td">Minimal core, maximal programmability — the monorepo, the four modes, the thesis.</span></a></li>
+      <li><a href="#s1"><span class="trow"><span class="tnum">01</span><span class="tt">Quickstart</span></span><span class="td">Install → authenticate → first session, in about five minutes.</span></a></li>
+      <li><a href="#s2"><span class="trow"><span class="tnum">02</span><span class="tt">Recommended setup</span></span><span class="td">Node, terminal + tmux, settings.json, AGENTS.md, the trust model, key hygiene.</span></a></li>
+      <li><a href="#s3"><span class="trow"><span class="tnum">03</span><span class="tt">Daily driving</span></span><span class="td">Slash commands, keybindings, the session tree, compaction.</span></a></li>
+      <li><a href="#s4"><span class="trow"><span class="tnum">04</span><span class="tt">The package ecosystem</span></span><span class="td">pi install, the security model, 12 packages profiled, a starter stack.</span></a></li>
+      <li><a href="#s5"><span class="trow"><span class="tnum">05</span><span class="tt">Advanced: extensions</span></span><span class="td">The ExtensionAPI contract, the event catalog, two worked examples.</span></a></li>
+      <li><a href="#s6"><span class="trow"><span class="tnum">06</span><span class="tt">Advanced: publish &amp; embed</span></span><span class="td">Packages, skills, themes, custom models, the SDK and RPC modes.</span></a></li>
+      <li><a href="#s7"><span class="trow"><span class="tnum">07</span><span class="tt">VS Code &amp; Cursor</span></span><span class="td">Make extension TypeScript resolve cleanly — package.json, tsconfig, .vscode.</span></a></li>
+      <li><a href="#s8"><span class="trow"><span class="tnum">08</span><span class="tt">IndyDevDan on Pi</span></span><span class="td">Six repos, 18+ extensions, the observability stack, the doctrine.</span></a></li>
+      <li><a href="#s9"><span class="trow"><span class="tnum">09</span><span class="tt">Pi vs Claude Code</span></span><span class="td">One orientation table, attributed and dated.</span></a></li>
+      <li><a href="#s10"><span class="trow"><span class="tnum">10</span><span class="tt">Open questions</span></span><span class="td">Nine yes/no decisions this guide took — and how to flip them.</span></a></li>
+      <li><a href="#s11"><span class="trow"><span class="tnum">11</span><span class="tt">Copy-pair cheat sheet</span></span><span class="td">Ten copyable blocks: install to first extension.</span></a></li>
+      <li><a href="#s12"><span class="trow"><span class="tnum">12</span><span class="tt">Sources</span></span><span class="td">Every doc page, repo, and video this guide is built on.</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ===== 00 WHAT PI IS ===== -->
+  <section id="s0" aria-labelledby="h-s0">
+    <div class="sec-head"><span class="sec-num">00</span><h2 id="h-s0">What Pi is</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Most coding agents are products you configure. Pi is a <strong>harness you program</strong> — a deliberately small core that treats everything else as a TypeScript extension you can write, install, or replace while it runs.</p>
+
+    <blockquote class="pquote">“There are many agent harnesses but this one is yours. Adapt Pi to your workflows, not the other way around.”
+      <span class="src">— pi.dev, front page</span></blockquote>
+
+    <p>Pi is built by <a href="https://github.com/earendil-works/pi">Earendil Inc. &amp; contributors</a> (MIT, ~98K stars, created August 2025, commits landing daily) as an <strong>AI agent toolkit</strong>: a unified LLM API, an agent loop, a TUI library, and the coding-agent CLI this guide is about. The monorepo splits cleanly:</p>
+
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Package</th><th>Directory</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono">@earendil-works/pi-coding-agent</span></td><td><span class="mono">coding-agent/</span></td><td><b>The CLI you install.</b> Interactive TUI, sessions, extensions, skills, themes.</td></tr>
+        <tr><td><span class="mono">@earendil-works/pi-ai</span></td><td><span class="mono">ai/</span></td><td>Unified multi-provider LLM API — one interface over 15+ providers.</td></tr>
+        <tr><td><span class="mono">@earendil-works/pi-agent-core</span></td><td><span class="mono">agent/</span></td><td>The agent runtime: tool calling and state management.</td></tr>
+        <tr><td><span class="mono">@earendil-works/pi-tui</span></td><td><span class="mono">tui/</span></td><td>Terminal UI library with differential rendering.</td></tr>
+        <tr><td><span class="mono">@earendil-works/pi-telemetry</span></td><td>—</td><td>Vendor-neutral telemetry contracts and schemas.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>The minimal-core thesis</h3>
+    <p>Out of the box the agent has <strong>four write-capable tools</strong> — <code>read</code>, <code>write</code>, <code>edit</code>, <code>bash</code> (plus <code>powershell</code> on Windows) — and three read-only helpers (<code>grep</code>, <code>find</code>, <code>ls</code>), driven by a system prompt around two hundred tokens. There is no built-in MCP client, no built-in subagents, no built-in background tasks: <strong>each of those arrives as a package</strong> (<a href="#s4">§04</a>), which is precisely the point. The core stays legible; the surface area is yours to choose.</p>
+
+    <figure>
+      <svg viewBox="0 0 1100 460" role="img" aria-label="A small core ring holding four tools, surrounded by an orbit of sockets — three filled by packages, others empty" style="width:100%;height:auto;display:block;background:#FBFAF7;border:1px solid #C2BBAC;border-radius:14px">
+        <g fill="none">
+          <circle cx="550" cy="222" r="170" stroke="#6A9FCC" stroke-width="2" stroke-dasharray="4 7"/>
+          <circle cx="550" cy="222" r="92" stroke="#1C222B" stroke-width="3" fill="#F4F2ED"/>
+        </g>
+        <g font-family="IBM Plex Mono,monospace" font-size="15" fill="#1C222B" text-anchor="middle">
+          <text x="550" y="196">read · write</text>
+          <text x="550" y="222">edit · bash</text>
+          <text x="550" y="252" font-size="12" fill="#7A8290">grep find ls (ro)</text>
+        </g>
+        <text x="550" y="132" text-anchor="middle" font-family="Source Serif 4,Georgia,serif" font-style="italic" font-size="17" fill="#3D6E9E">~200-token prompt</text>
+        <g font-family="IBM Plex Mono,monospace" font-size="13" text-anchor="middle">
+          <rect x="315" y="70" width="150" height="46" rx="9" fill="#F4F2ED" stroke="#3D6E9E" stroke-width="2.5"/><text x="390" y="98" fill="#3D6E9E">mcp-adapter</text>
+          <rect x="640" y="70" width="150" height="46" rx="9" fill="#F4F2ED" stroke="#3D6E9E" stroke-width="2.5"/><text x="715" y="98" fill="#3D6E9E">subagents</text>
+          <rect x="252" y="330" width="170" height="46" rx="9" fill="#F4F2ED" stroke="#3D6E9E" stroke-width="2.5"/><text x="337" y="358" fill="#3D6E9E">web-access</text>
+          <g stroke="#C2BBAC" stroke-width="2" fill="#FBFAF7" stroke-dasharray="5 4">
+            <rect x="680" y="330" width="150" height="46" rx="9"/>
+            <rect x="880" y="200" width="130" height="46" rx="9"/>
+            <rect x="90" y="200" width="130" height="46" rx="9"/>
+          </g>
+          <text x="755" y="358" fill="#7A8290">memory?</text>
+          <text x="945" y="228" fill="#7A8290">yours?</text>
+          <text x="155" y="228" fill="#7A8290">lens?</text>
+        </g>
+        <g stroke="#6A9FCC" stroke-width="2" fill="none">
+          <path d="M420 116 L 476 160"/><path d="M690 116 L 630 160"/><path d="M400 330 L 472 282"/>
+        </g>
+        <text x="550" y="432" text-anchor="middle" font-family="Source Serif 4,Georgia,serif" font-style="italic" font-size="20" fill="#1C222B">Minimal core. Everything else plugs in.</text>
+      </svg>
+      <figcaption>Fig. 1 · Four tools in the core; MCP, subagents, background tasks, memory — all plug-ins.</figcaption>
+    </figure>
+
+    <h3>Four ways to run it</h3>
+    <div class="grid-2">
+      <div class="card"><span class="tag">default</span><h4>Interactive TUI</h4><p><code>pi</code> in a project directory. Differential rendering, image paste, fuzzy file refs, a session tree.</p></div>
+      <div class="card"><span class="tag">one-shot</span><h4>Print mode</h4><p><code>pi -p "…"</code> runs a single prompt and exits — pipeable in and out. The scripting workhorse.</p></div>
+      <div class="card"><span class="tag">streams</span><h4>JSON event mode</h4><p><code>pi --mode json</code> emits the event stream for programmatic consumers. See <a href="https://pi.dev/docs/latest/json">docs/json</a>.</p></div>
+      <div class="card"><span class="tag">embed</span><h4>RPC mode &amp; SDK</h4><p><code>pi --mode rpc</code> speaks JSON over stdin/stdout; the <a href="https://pi.dev/docs/latest/sdk">SDK</a> embeds the whole session in your own app.</p></div>
+    </div>
+
+    <div class="callout">
+      <div class="ct">Design point worth internalizing</div>
+      <p>MCP support is <strong>not in core</strong> — it ships as the ecosystem’s #1 package, <a href="https://pi.dev/packages/pi-mcp-adapter">pi-mcp-adapter</a>, which exposes every MCP server through a single ~200-token proxy tool instead of ~10K tokens of upfront definitions, and reads your existing <code>.mcp.json</code>. Minimalism here is a context-budget strategy, not a missing feature.</p>
+    </div>
+  </section>
+
+  <!-- ===== 01 QUICKSTART ===== -->
+  <section id="s1" aria-labelledby="h-s1">
+    <div class="sec-head"><span class="sec-num">01</span><h2 id="h-s1">Quickstart — zero to first session</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Three steps: check Node, install, authenticate. Then point it at a repo. Full reference: <a href="https://pi.dev/docs/latest/quickstart">docs/quickstart</a>.</p>
+
+    <div class="callout alt">
+      <div class="ct">Prerequisite — Node ≥ 22.19.0</div>
+      <p>The npm package declares <code>engines.node &gt;= 22.19.0</code>. Check with <code>node --version</code>; see <a href="#s2">§02</a> for the recommended way to get there. Stuck on Node 20? A <code>legacy-node20</code> dist-tag exists (v0.74.2) — older, but it runs: <code>npm install -g --ignore-scripts @earendil-works/pi-coding-agent@legacy-node20</code>.</p>
+    </div>
+
+    <h3>Install (pick one)</h3>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">macOS / Linux — the official installer</span><button class="copy-btn" data-prompt="curl -fsSL https://pi.dev/install.sh | sh" type="button">Copy</button></div>
+<pre><span class="m"># pi.dev's first-listed method — no Node/npm state assumed</span>
+<span class="c">curl -fsSL https://pi.dev/install.sh | sh</span></pre></div>
+
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">any platform — via npm</span><button class="copy-btn" data-prompt="npm install -g --ignore-scripts @earendil-works/pi-coding-agent" type="button">Copy</button></div>
+<pre><span class="m"># --ignore-scripts: pi needs no lifecycle scripts; skipping them
+# shrinks your supply-chain surface. pnpm add -g / bun add -g also work.</span>
+<span class="c">npm install -g --ignore-scripts @earendil-works/pi-coding-agent</span></pre></div>
+
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">windows — powershell</span><button class="copy-btn" data-prompt="powershell -c &quot;irm https://pi.dev/install.ps1 | iex&quot;" type="button">Copy</button></div>
+<pre><span class="c">powershell -c <span class="s">"irm https://pi.dev/install.ps1 | iex"</span></span></pre></div>
+
+    <h3>Authenticate (two ways)</h3>
+    <p><strong>Subscription OAuth</strong> — inside pi, run <code>/login</code> and pick a provider: ChatGPT&nbsp;Plus/Pro (Codex — “officially endorsed by OpenAI”), Claude&nbsp;Pro/Max, GitHub&nbsp;Copilot (incl. GHE Server), xAI, OpenRouter, or Radius. Tokens auto-refresh in <code>~/.pi/agent/auth.json</code>; <code>/logout</code> clears them. <strong>API keys</strong> — export the provider’s env var before launching:</p>
+
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Provider</th><th>Env var</th><th>Provider</th><th>Env var</th></tr></thead>
+      <tbody>
+        <tr><td>Anthropic</td><td><span class="mono">ANTHROPIC_API_KEY</span></td><td>Groq</td><td><span class="mono">GROQ_API_KEY</span></td></tr>
+        <tr><td>OpenAI</td><td><span class="mono">OPENAI_API_KEY</span></td><td>xAI</td><td><span class="mono">XAI_API_KEY</span></td></tr>
+        <tr><td>Google Gemini</td><td><span class="mono">GEMINI_API_KEY</span> <b>(not GOOGLE_GENERATIVE_AI_API_KEY)</b></td><td>OpenRouter</td><td><span class="mono">OPENROUTER_API_KEY</span></td></tr>
+        <tr><td>DeepSeek</td><td><span class="mono">DEEPSEEK_API_KEY</span></td><td>Bedrock</td><td><span class="mono">AWS_BEARER_TOKEN_BEDROCK</span></td></tr>
+        <tr><td>Mistral</td><td><span class="mono">MISTRAL_API_KEY</span></td><td>Azure OpenAI</td><td><span class="mono">AZURE_OPENAI_API_KEY</span></td></tr>
+        <tr><td>Cerebras</td><td><span class="mono">CEREBRAS_API_KEY</span></td><td>Hugging Face</td><td><span class="mono">HF_TOKEN</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap-note">Also: Fireworks, Together, NVIDIA, Cloudflare, MiniMax, Xiaomi, Qwen; Vertex AI via gcloud ADC. Resolution order: <code>--api-key</code> flag → auth.json → env var → models.json. Full matrix: <a href="https://pi.dev/docs/latest/providers">docs/providers</a>.</p>
+
+    <h3>First session</h3>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">five minutes in a real repo</span><button class="copy-btn" data-prompt="cd your-project &amp;&amp; pi" type="button">Copy</button></div>
+<pre><span class="c">cd your-project &amp;&amp; pi</span>          <span class="m"># interactive session, cwd-scoped</span>
+<span class="g">&gt;</span> Summarize this codebase          <span class="m"># plain prompt</span>
+<span class="g">&gt;</span> @src/main.ts what does this do?  <span class="m"># @ = fuzzy file reference</span>
+<span class="g">&gt;</span> !git log --oneline -5            <span class="m"># ! runs shell, output joins context</span>
+
+<span class="m"># one-shot / scripting</span>
+<span class="c">pi -p <span class="s">"Summarize this codebase"</span></span>
+<span class="c">cat error.log | pi -p <span class="s">"What is failing?"</span></span>
+<span class="c">pi @README.md <span class="s">"Turn this into a tweet thread"</span></span></pre></div>
+
+    <ul class="subpoints">
+      <li><b>Steer mid-run:</b> just type and press <kbd>Enter</kbd> — your message interrupts the agent’s current turn. <kbd>Alt+Enter</kbd> queues a follow-up instead; <kbd>Escape</kbd> aborts.</li>
+      <li><b>Editor niceties:</b> <kbd>Shift+Enter</kbd> newline, <kbd>Tab</kbd> path completion, <kbd>Ctrl+V</kbd> paste an image, <kbd>Ctrl+G</kbd> open your $EDITOR, <code>!!cmd</code> runs shell silently.</li>
+      <li><b>Trying it is safe:</b> uninstalling (<code>npm uninstall -g @earendil-works/pi-coding-agent</code>) preserves <code>~/.pi/agent/</code> — settings, credentials, and every session survive a reinstall.</li>
+    </ul>
+  </section>
+
+  <!-- ===== 02 RECOMMENDED SETUP ===== -->
+  <section id="s2" aria-labelledby="h-s2">
+    <div class="sec-head"><span class="sec-num">02</span><h2 id="h-s2">Recommended setup</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">The second rung: an hour of configuration that makes Pi feel <em>yours</em>. Node done right, a terminal that passes the keys through, a starter settings file, project context, and the trust model understood.</p>
+
+    <figure>
+      <svg viewBox="0 0 1100 400" role="img" aria-label="Three ascending steps from a bare terminal to a fully wired one — quickstart, recommended, advanced" style="width:100%;height:auto;display:block;background:#FBFAF7;border:1px solid #C2BBAC;border-radius:14px">
+        <g stroke="#1C222B" stroke-width="3" fill="none">
+          <path d="M80 320 H 380 V 230 H 680 V 140 H 980"/>
+        </g>
+        <g font-family="IBM Plex Mono,monospace" font-size="15" fill="#3D6E9E">
+          <text x="230" y="352" text-anchor="middle">01 QUICKSTART</text>
+          <text x="530" y="262" text-anchor="middle">02 RECOMMENDED</text>
+          <text x="830" y="172" text-anchor="middle">05–07 ADVANCED</text>
+        </g>
+        <g font-family="Source Serif 4,Georgia,serif" font-style="italic" font-size="15" fill="#4A5361" text-anchor="middle">
+          <text x="230" y="378">it runs</text>
+          <text x="530" y="288">it’s comfortable</text>
+          <text x="830" y="198">it’s yours</text>
+        </g>
+        <g transform="translate(175,220)">
+          <rect width="110" height="72" rx="9" fill="#1C222B"/>
+          <text x="18" y="44" font-family="IBM Plex Mono,monospace" font-size="17" fill="#8FB8DE">π &gt;_</text>
+        </g>
+        <g transform="translate(475,130)">
+          <rect width="110" height="72" rx="9" fill="#1C222B"/>
+          <text x="18" y="32" font-family="IBM Plex Mono,monospace" font-size="15" fill="#8FB8DE">π &gt;_</text>
+          <rect x="16" y="46" width="76" height="7" rx="3.5" fill="rgba(232,236,242,.25)"/>
+        </g>
+        <g transform="translate(775,40)">
+          <rect width="110" height="72" rx="9" fill="#1C222B"/>
+          <text x="18" y="32" font-family="IBM Plex Mono,monospace" font-size="15" fill="#8FB8DE">π &gt;_</text>
+          <rect x="16" y="46" width="76" height="7" rx="3.5" fill="rgba(232,236,242,.25)"/>
+          <g stroke="#6A9FCC" stroke-width="2"><path d="M110 22 h 26"/><path d="M110 50 h 26"/><path d="M-26 36 h 26"/></g>
+          <rect x="136" y="12" width="20" height="20" rx="4" fill="#F4F2ED" stroke="#3D6E9E" stroke-width="2"/>
+          <rect x="136" y="40" width="20" height="20" rx="4" fill="#F4F2ED" stroke="#3D6E9E" stroke-width="2"/>
+          <rect x="-46" y="26" width="20" height="20" rx="4" fill="#F4F2ED" stroke="#8F3222" stroke-width="2"/>
+        </g>
+      </svg>
+      <figcaption>Fig. 2 · Each rung ends in a verifiable state: it runs → it’s comfortable → it’s yours.</figcaption>
+    </figure>
+
+    <h3>Node, pinned properly</h3>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">mise (recommended) — or nvm / fnm</span><button class="copy-btn" data-prompt="mise use -g node@22" type="button">Copy</button></div>
+<pre><span class="m"># mise — one tool for node/python/etc., respects .tool-versions</span>
+<span class="c">mise use -g node@22</span>
+<span class="m"># equivalents:</span>
+<span class="c">nvm install 22 &amp;&amp; nvm alias default 22</span>
+<span class="c">fnm install 22 &amp;&amp; fnm default 22</span>
+<span class="m"># then verify the floor pi needs:</span>
+<span class="c">node --version</span>   <span class="m"># must print ≥ v22.19.0</span></pre></div>
+
+    <h3>Terminal &amp; tmux — let the modifiers through</h3>
+    <p>Pi’s editor distinguishes <kbd>Shift+Enter</kbd> and <kbd>Ctrl+Enter</kbd> from plain <kbd>Enter</kbd> — but tmux strips that modifier information by default. Two lines fix it (<a href="https://pi.dev/docs/latest/tmux">docs/tmux</a>); see also <a href="https://pi.dev/docs/latest/terminal-setup">terminal-setup</a> for your emulator:</p>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">~/.tmux.conf — then restart tmux fully</span><button class="copy-btn" data-prompt="set -g extended-keys on&#10;set -g extended-keys-format csi-u" type="button">Copy</button></div>
+<pre><span class="c">set -g extended-keys on</span>
+<span class="c">set -g extended-keys-format csi-u</span></pre></div>
+
+    <h3>A starter settings.json</h3>
+    <p>Global settings live at <code>~/.pi/agent/settings.json</code>; a project’s <code>.pi/settings.json</code> overrides it key-by-key (nested objects merge). A sane starting point (<a href="https://pi.dev/docs/latest/settings">full schema</a>):</p>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">~/.pi/agent/settings.json</span><button class="copy-btn" data-prompt="{&#10;  &quot;theme&quot;: &quot;dark&quot;,&#10;  &quot;defaultProjectTrust&quot;: &quot;ask&quot;,&#10;  &quot;compaction&quot;: {&#10;    &quot;enabled&quot;: true,&#10;    &quot;reserveTokens&quot;: 16384,&#10;    &quot;keepRecentTokens&quot;: 20000&#10;  }&#10;}" type="button">Copy</button></div>
+<pre>{
+  <span class="c">"theme"</span>: <span class="s">"dark"</span>,                  <span class="m">// or "light"; auto-detects from terminal bg</span>
+  <span class="c">"defaultProjectTrust"</span>: <span class="s">"ask"</span>,     <span class="m">// ask | always | never — see trust below</span>
+  <span class="c">"compaction"</span>: {
+    <span class="c">"enabled"</span>: <span class="s">true</span>,                <span class="m">// defaults shown; tune per model window</span>
+    <span class="c">"reserveTokens"</span>: <span class="s">16384</span>,
+    <span class="c">"keepRecentTokens"</span>: <span class="s">20000</span>
+  }
+}</pre></div>
+    <p class="cap-note">The copy button gives you strict JSON (no comments). Other useful keys: <code>extensions</code> / <code>skills</code> / <code>prompts</code> / <code>themes</code> / <code>packages</code> resource arrays, tool filters, retry/backoff, Ctrl+P model-cycling patterns.</p>
+
+    <h3>Where everything lives</h3>
+    <div class="tree-pre"><span class="d">~/.pi/agent/</span>                <span class="m"># global — survives uninstalls</span>
+├── settings.json
+├── auth.json               <span class="m"># OAuth tokens + keys; values may be "$ENV" or "!cmd"</span>
+├── keybindings.json        <span class="m"># § 03</span>
+├── trust.json              <span class="m"># which projects may load local extensions</span>
+├── AGENTS.md               <span class="m"># global context, prepended everywhere</span>
+├── sessions/               <span class="m"># JSONL session trees, organized by cwd</span>
+├── extensions/  skills/  themes/
+└── npm/  git/              <span class="m"># where `pi install` puts packages</span>
+
+<span class="d">your-project/.pi/</span>           <span class="m"># project — loads only after /trust</span>
+├── settings.json           <span class="m"># overrides global, key-by-key</span>
+├── SYSTEM.md               <span class="m"># REPLACES the system prompt entirely</span>
+├── extensions/  skills/  themes/  npm/  git/
+<span class="d">your-project/AGENTS.md</span>      <span class="m"># project context (CLAUDE.md read too;</span>
+                            <span class="m">#  AGENTS.override.md wins; walked up from parents)</span></div>
+    <p>Edit any of these mid-session and <code>/reload</code> applies them live. Context files: <a href="https://pi.dev/docs/latest/settings">docs/settings</a> · sessions: <a href="https://pi.dev/docs/latest/sessions">docs/sessions</a>.</p>
+
+    <h3>The trust model — read this before <code>.pi/</code> surprises you</h3>
+    <div class="callout bad">
+      <div class="ct">Security — project-local code is real code</div>
+      <p>Extensions run <strong>with your user’s full permissions, in-process</strong>. So Pi refuses to load a project’s <code>.pi/extensions/</code>, settings, or packages until you approve it once via <code>/trust</code> (recorded in <code>trust.json</code>; the <code>defaultProjectTrust</code> setting governs the prompt). Cloning a stranger’s repo does not hand them your shell — keep it that way: review <code>.pi/</code> before trusting, and prefer <code>defaultProjectTrust: "ask"</code>. Sandboxing options: <a href="https://pi.dev/docs/latest/security">docs/security</a> · <a href="https://pi.dev/docs/latest/containerization">docs/containerization</a>.</p>
+    </div>
+
+    <h3>Four gotchas, flipped</h3>
+    <p>Every one of these bit a real user (three are from IndyDevDan’s READMEs, <a href="#s8">§08</a>). Click each card for the fix.</p>
+    <div class="flow">
+      <div class="flow-item"><div class="flip"><div class="flip-inner">
+        <button class="flip-front" type="button" aria-expanded="false"><span class="flip-q">Shift+Enter does nothing. Ctrl+Enter does nothing. Why?</span><span class="flip-cta">Show the fix</span></button>
+        <div class="flip-back"><button class="flip-reset" type="button" aria-label="Flip back">×</button><div class="flow-k">Fix</div><div class="flow-h">tmux is eating your modifiers</div><p>Without <code>extended-keys</code> + <code>csi-u</code>, tmux makes both indistinguishable from <kbd>Enter</kbd>. Add the two lines above to <code>~/.tmux.conf</code> and <strong>restart tmux fully</strong> (not just the pane).</p></div>
+      </div></div></div>
+      <div class="flow-item"><div class="flip"><div class="flip-inner">
+        <button class="flip-front" type="button" aria-expanded="false"><span class="flip-q">My API key is in .env, but Pi says no credentials found.</span><span class="flip-cta">Show the fix</span></button>
+        <div class="flip-back"><button class="flip-reset" type="button" aria-label="Flip back">×</button><div class="flow-k">Fix</div><div class="flow-h">Pi does not auto-load .env</div><p>Export keys into the environment before launch (<code>export ANTHROPIC_API_KEY=…</code>, or <code>set -a; source .env; set +a</code>) — or point <code>auth.json</code> at them with <code>"$ENV_VAR"</code> / <code>"!command"</code> values.</p></div>
+      </div></div></div>
+      <div class="flow-item"><div class="flip"><div class="flip-inner">
+        <button class="flip-front" type="button" aria-expanded="false"><span class="flip-q">Gemini won’t authenticate, but my Google key is exported.</span><span class="flip-cta">Show the fix</span></button>
+        <div class="flip-back"><button class="flip-reset" type="button" aria-label="Flip back">×</button><div class="flow-k">Fix</div><div class="flow-h">Wrong variable name</div><p>Pi reads <code>GEMINI_API_KEY</code> — not <code>GOOGLE_GENERATIVE_AI_API_KEY</code> (the name other SDKs use). Re-export under the name Pi expects.</p></div>
+      </div></div></div>
+      <div class="flow-item"><div class="flip"><div class="flip-inner">
+        <button class="flip-front" type="button" aria-expanded="false"><span class="flip-q">My project’s .pi/extensions/ never load.</span><span class="flip-cta">Show the fix</span></button>
+        <div class="flip-back"><button class="flip-reset" type="button" aria-label="Flip back">×</button><div class="flow-k">Fix</div><div class="flow-h">The project isn’t trusted yet</div><p>Run <code>/trust</code> in that project once. Project-local extensions, settings, and packages stay inert until then — by design.</p></div>
+      </div></div></div>
+    </div>
+  </section>
+
+  <!-- ===== 03 DAILY DRIVING ===== -->
+  <section id="s3" aria-labelledby="h-s3">
+    <div class="sec-head"><span class="sec-num">03</span><h2 id="h-s3">Daily driving</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">The muscle memory: every slash command, the keybindings worth learning first, and the thing that makes Pi sessions different — <strong>they’re trees, not logs</strong>.</p>
+
+    <h3>Slash commands</h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Command</th><th>Does</th><th>Command</th><th>Does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono">/login · /logout</span></td><td>Subscription OAuth in / out</td><td><span class="mono">/resume</span></td><td>Browse &amp; reopen past sessions</td></tr>
+        <tr><td><span class="mono">/model</span></td><td>Pick model (also <kbd>Ctrl+L</kbd>)</td><td><span class="mono">/new · /name</span></td><td>Fresh session · name this one</td></tr>
+        <tr><td><span class="mono">/thinking</span></td><td>Set thinking level (also <kbd>Shift+Tab</kbd>)</td><td><span class="mono">/session · /tree</span></td><td>Session info · navigate the tree</td></tr>
+        <tr><td><span class="mono">/scoped-models</span></td><td>Per-scope model routing</td><td><span class="mono">/fork · /clone</span></td><td>Branch here · duplicate session</td></tr>
+        <tr><td><span class="mono">/settings</span></td><td>Live settings editor</td><td><span class="mono">/compact [prompt]</span></td><td>Summarize older context now</td></tr>
+        <tr><td><span class="mono">/trust</span></td><td>Trust this project’s <span class="mono">.pi/</span></td><td><span class="mono">/export · /import</span></td><td>Session → HTML/JSONL · back in</td></tr>
+        <tr><td><span class="mono">/reload</span></td><td>Re-read settings/extensions/context</td><td><span class="mono">/share · /copy</span></td><td>GitHub-gist the session · copy msg</td></tr>
+        <tr><td><span class="mono">/hotkeys</span></td><td>Show current keybindings</td><td><span class="mono">/llama</span></td><td>Quick local-model setup</td></tr>
+        <tr><td><span class="mono">/skill:name</span></td><td>Run an installed skill</td><td><span class="mono">/changelog · /quit</span></td><td>What’s new · leave</td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap-note">Extensions add their own — e.g. <code>/mcp</code>, <code>/fh</code>, <code>/bg</code> arrive with the packages in <a href="#s4">§04</a>. Reference: <a href="https://pi.dev/docs/latest/usage">docs/usage</a>.</p>
+
+    <h3>Keys worth learning first</h3>
+    <div class="keys">
+      <div class="key"><span>Model selector</span><kbd>Ctrl+L</kbd></div>
+      <div class="key"><span>Cycle favorite models</span><kbd>Ctrl+P</kbd></div>
+      <div class="key"><span>Cycle thinking level</span><kbd>Shift+Tab</kbd></div>
+      <div class="key"><span>Expand tool output</span><kbd>Ctrl+O</kbd></div>
+      <div class="key"><span>Collapse thinking blocks</span><kbd>Ctrl+T</kbd></div>
+      <div class="key"><span>External $EDITOR</span><kbd>Ctrl+G</kbd></div>
+      <div class="key"><span>Queue a follow-up</span><kbd>Alt+Enter</kbd></div>
+      <div class="key"><span>Search the transcript</span><kbd>Ctrl+Shift+F</kbd></div>
+      <div class="key"><span>Abort the turn</span><kbd>Escape</kbd></div>
+      <div class="key"><span>Paste an image</span><kbd>Ctrl+V</kbd></div>
+    </div>
+    <p>Everything is rebindable in <code>~/.pi/agent/keybindings.json</code> — namespaced ids (<code>tui.editor.*</code>, <code>app.*</code>), arrays for multiple bindings, and documented Emacs/Vim preset configs: <a href="https://pi.dev/docs/latest/keybindings">docs/keybindings</a>.</p>
+
+    <h3>Sessions are trees</h3>
+    <figure>
+      <svg viewBox="0 0 1100 380" role="img" aria-label="A session tree: a trunk of conversation nodes, two branches, one branch folded into a summary card" style="width:100%;height:auto;display:block;background:#FBFAF7;border:1px solid #C2BBAC;border-radius:14px">
+        <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6A9FCC"/></marker></defs>
+        <g stroke="#1C222B" stroke-width="2" fill="none">
+          <path d="M120 190 H 460"/><path d="M540 190 H 700"/><path d="M780 190 H 980"/>
+          <path d="M300 190 C 340 190 340 100 380 100 H 560" stroke="#6A9FCC"/>
+          <path d="M620 190 C 660 190 660 290 700 290 H 760" stroke="#6A9FCC" stroke-dasharray="6 5"/>
+        </g>
+        <g>
+          <circle cx="120" cy="190" r="14" fill="#1C222B"/>
+          <circle cx="220" cy="190" r="11" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/>
+          <circle cx="300" cy="190" r="11" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/>
+          <circle cx="500" cy="190" r="14" fill="#3D6E9E"/>
+          <circle cx="620" cy="190" r="11" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/>
+          <circle cx="740" cy="190" r="11" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/>
+          <circle cx="980" cy="190" r="14" fill="#1C222B"/>
+          <circle cx="460" cy="100" r="10" fill="#F4F2ED" stroke="#6A9FCC" stroke-width="2.5"/>
+          <circle cx="560" cy="100" r="10" fill="#F4F2ED" stroke="#6A9FCC" stroke-width="2.5"/>
+        </g>
+        <g font-family="IBM Plex Mono,monospace" font-size="15" fill="#4A5361">
+          <text x="120" y="235" text-anchor="middle">start</text>
+          <text x="500" y="235" text-anchor="middle" fill="#3D6E9E">/fork</text>
+          <text x="980" y="235" text-anchor="middle">now</text>
+          <text x="510" y="72" text-anchor="middle" fill="#3D6E9E">abandoned branch</text>
+        </g>
+        <g transform="translate(790,255)">
+          <rect width="200" height="72" rx="10" fill="#F4F2ED" stroke="#8F3222" stroke-width="2"/>
+          <text x="100" y="30" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="13" fill="#8F3222">BranchSummaryEntry</text>
+          <text x="100" y="52" text-anchor="middle" font-family="Source Serif 4,Georgia,serif" font-style="italic" font-size="15" fill="#1C222B">what that limb learned</text>
+        </g>
+        <path d="M660 240 C 680 260 720 275 780 285" stroke="#8F3222" stroke-width="2" fill="none" marker-end="url(#arr)" stroke-dasharray="5 5"/>
+        <text x="550" y="345" text-anchor="middle" font-family="Source Serif 4,Georgia,serif" font-style="italic" font-size="20" fill="#1C222B">Sessions are trees — branch freely, keep what the branch learned.</text>
+      </svg>
+      <figcaption>Fig. 3 · Branch with /fork or /tree; abandoned limbs can be summarized back into the trunk.</figcaption>
+    </figure>
+    <ul class="subpoints">
+      <li>Every session auto-saves as JSONL under <code>~/.pi/agent/sessions/</code>, organized by cwd. <code>pi -c</code> continues the latest; <code>pi -r</code> opens the browser; <code>pi --fork</code> branches an old one; <code>pi --no-session</code> for throwaways.</li>
+      <li><code>/tree</code> navigates branches in place. When you navigate away from a branch, Pi offers to <strong>summarize the abandoned work</strong> into a BranchSummaryEntry at the common ancestor — exploration is never wasted context.</li>
+      <li><code>/export</code> writes standalone HTML or JSONL; <code>/share</code> publishes a GitHub gist. Format spec: <a href="https://pi.dev/docs/latest/session-format">docs/session-format</a>.</li>
+      <li><strong>Compaction</strong>: when context crosses <em>window − reserveTokens</em>, older turns are LLM-summarized while the newest ~20K tokens stay verbatim; <code>/compact [instructions]</code> triggers it manually with your steer. Details: <a href="https://pi.dev/docs/latest/compaction">docs/compaction</a>.</li>
+    </ul>
+  </section>
+
+  <!-- ===== 04 PACKAGES ===== -->
+  <section id="s4" aria-labelledby="h-s4">
+    <div class="sec-head"><span class="sec-num">04</span><h2 id="h-s4">The package ecosystem</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">5,467 packages and counting on <a href="https://pi.dev/packages">pi.dev/packages</a>. Here’s how installs work, the security model in one paragraph, and the twelve packages worth knowing — profiled, ranked by downloads.</p>
+
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">install · trial · manage</span><button class="copy-btn" data-prompt="pi install npm:pi-web-access" type="button">Copy</button></div>
+<pre><span class="c">pi install npm:pi-web-access</span>            <span class="m"># from npm  → ~/.pi/agent/npm/</span>
+<span class="c">pi install git:github.com/user/repo@v1</span>  <span class="m"># from git  → ~/.pi/agent/git/…</span>
+<span class="c">pi install /abs/path</span>                    <span class="m"># local dir</span>
+<span class="c">pi -e npm:pi-web-access</span>                 <span class="m"># TRIAL — one session, no install</span>
+<span class="c">pi list</span>  ·  <span class="c">pi update --all</span>  ·  <span class="c">pi remove npm:pi-web-access</span></pre></div>
+
+    <div class="callout bad">
+      <div class="ct">The docs say it plainly — believe them</div>
+      <p>“Pi packages run with full system access. Extensions execute arbitrary code, and skills can instruct the model to perform any action including running executables.” (<a href="https://pi.dev/docs/latest/packages">docs/packages</a>.) Treat <code>pi install</code> like <code>npm install</code> of something that will also drive your shell: read the source, prefer version-pinned specs, lean on <code>pi -e</code> trials.</p>
+    </div>
+
+    <h3>Twelve packages, profiled</h3>
+    <div class="grid-2">
+      <div class="card"><span class="tag">mcp · #1 by downloads</span><h4><a href="https://pi.dev/packages/pi-mcp-adapter">pi-mcp-adapter</a></h4><div class="meta">nicopreme · v2.29.0 · 628.2K/mo · MIT</div><p>MCP servers through one ~200-token <code>mcp()</code> proxy tool (search/describe/call/auth) instead of ~10K tokens of upfront definitions. Lazy connect, idle disconnect, OAuth, approval gates; reads your existing <code>.mcp.json</code>. <code>/mcp setup</code> to start.</p><div class="inst"><code>pi install npm:pi-mcp-adapter</code><button class="copy-btn" data-prompt="pi install npm:pi-mcp-adapter" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">web</span><h4><a href="https://pi.dev/packages/pi-web-access">pi-web-access</a></h4><div class="meta">nicopreme · v0.25.0 · 384K/mo · MIT</div><p>Web search across providers (Brave, Exa, Tavily, Firecrawl, Jina…), URL→markdown fetching, repo cloning, PDF extraction, video analysis, fact-checking with citations. Tools: <code>web_search</code>, <code>fetch_content</code>, <code>source_check</code>.</p><div class="inst"><code>pi install npm:pi-web-access</code><button class="copy-btn" data-prompt="pi install npm:pi-web-access" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">orchestration</span><h4><a href="https://pi.dev/packages/pi-subagents">pi-subagents</a></h4><div class="meta">nicopreme · v0.58.0 · 340.9K/mo · MIT</div><p>Delegation and scripted multi-agent workflows: six built-in agents (scout, researcher, worker, reviewer, oracle, delegate), <code>/council</code> model debates, <code>/parallel-review</code>, <code>/review-loop</code>, a live <code>/subagents-fleet</code> inspector.</p><div class="inst"><code>pi install npm:pi-subagents</code><button class="copy-btn" data-prompt="pi install npm:pi-subagents" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">app-on-pi</span><h4><a href="https://github.com/companion-inc/feynman">@companion-ai/feynman</a></h4><div class="meta">Companion · v0.3.47 · 252.8K/mo · MIT · <a href="https://pi.dev/packages">registry</a></div><p>“Research-first CLI agent built on Pi and alphaXiv” — proof that Pi is a platform: a whole research product (<a href="https://feynman.is">feynman.is</a>) with cited briefs and a multi-agent <code>deepresearch</code> mode, shipped as a Pi package. (Its pi.dev detail page was erroring at harvest — the card links its repo.)</p><div class="inst"><code>pi install npm:@companion-ai/feynman</code><button class="copy-btn" data-prompt="pi install npm:@companion-ai/feynman" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">background</span><h4><a href="https://pi.dev/packages/pi-background-tasks">pi-background-tasks</a></h4><div class="meta">ismailsaleekh · v2.4.2 · 107.1K/mo · ISC</div><p>Durable background shell tasks, read-only delegated child-Pi agents, attested local runs, and multi-model “Fusion” workflows. Eleven commands (<code>/bg</code>, <code>/jobs</code>, <code>/logs</code>, <code>/fusion</code>…), eleven tools.</p><div class="inst"><code>pi install npm:pi-background-tasks</code><button class="copy-btn" data-prompt="pi install npm:pi-background-tasks" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">context</span><h4><a href="https://pi.dev/packages/context-mode">context-mode</a></h4><div class="meta">mksglu · v1.0.169 · 81.7K/mo · Elastic 2.0</div><p>“Saves 98% of your context window”: sandboxed code execution in 12 languages, FTS5 full-text indexing, retrieval instead of raw tool output. Cross-agent — the same package serves Claude Code, Codex, Gemini CLI and friends.</p><div class="inst"><code>pi install npm:context-mode</code><button class="copy-btn" data-prompt="pi install npm:context-mode" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">diagnostics</span><h4><a href="https://pi.dev/packages/pi-lens">pi-lens</a></h4><div class="meta">apmantza · v4.1.2 · 58K/mo · MIT</div><p>Fast language-aware feedback while the agent edits: LSP diagnostics with impact-cascade across related files, per-edit lint/type-check, safe autofix, AST structural rules, dependency scanning, <code>/lens-map</code>, <code>/lens-health</code>.</p><div class="inst"><code>pi install npm:pi-lens</code><button class="copy-btn" data-prompt="pi install npm:pi-lens" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">planning</span><h4><a href="https://pi.dev/packages/@plannotator/pi-extension">@plannotator/pi-extension</a></h4><div class="meta">backnotprop · v0.27.8 · 50.9K/mo · MIT/Apache-2.0</div><p>File-based plan mode with a visual browser UI to review, annotate and approve plans; exploration stays read-only while planning (writes limited to the plan file); plus a code-review UI for VCS changes. <kbd>Ctrl+Alt+P</kbd>.</p><div class="inst"><code>pi install npm:@plannotator/pi-extension</code><button class="copy-btn" data-prompt="pi install npm:@plannotator/pi-extension" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">discipline</span><h4><a href="https://pi.dev/packages/@dietrichgebert/ponytail">@dietrichgebert/ponytail</a></h4><div class="meta">dietrichgebert · v4.9.0 · 49.2K/mo · MIT</div><p>“Lazy senior dev mode. The best code is the code you never wrote.” A decision-ladder anti-over-engineering skill — prefer native/stdlib/existing deps, never compromise security or a11y. <code>/ponytail [lite|full|ultra|off]</code>, <code>/ponytail-audit</code>.</p><div class="inst"><code>pi install npm:@dietrichgebert/ponytail</code><button class="copy-btn" data-prompt="pi install npm:@dietrichgebert/ponytail" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">memory</span><h4><a href="https://pi.dev/packages/pi-memory">pi-memory</a></h4><div class="meta">jayzeng · v0.4.2 · 35.7K/mo · MIT</div><p>Persistence across sessions in three layers — curated long-term memory, append-only daily logs, a scratchpad checklist — with keyword/semantic/hybrid search. Tools: <code>memory_write/read/search/forget</code>, <code>scratchpad</code>.</p><div class="inst"><code>pi install npm:pi-memory</code><button class="copy-btn" data-prompt="pi install npm:pi-memory" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">toolkit</span><h4><a href="https://pi.dev/packages/@ersintarhan/pi-toolkit">@ersintarhan/pi-toolkit</a></h4><div class="meta">ersintarhan · v0.11.0 · 1.8K/mo · MIT</div><p>Six independently toggleable features: Claude-OAuth model compatibility, native web search + <code>/search</code>, a <code>context</code> anchor/recall tool with prompt-cache integration, <code>/context</code> window reporting, <code>/usage</code> quota tracking, a status footer.</p><div class="inst"><code>pi install npm:@ersintarhan/pi-toolkit</code><button class="copy-btn" data-prompt="pi install npm:@ersintarhan/pi-toolkit" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">github</span><h4><a href="https://pi.dev/packages/@gotgenes/pi-github-tools">@gotgenes/pi-github-tools</a></h4><div class="meta">gotgenes · v4.4.0 · 1.1K/mo · MIT · zero deps</div><p>Deterministic GitHub CI/release/issue tools that replace ad-hoc <code>gh</code> polling loops: <code>ci_find</code>/<code>ci_watch</code> with exponential backoff, release-please helpers (<code>release_pr_find/merge</code>, <code>release_watch</code>), <code>issue_close</code>.</p><div class="inst"><code>pi install npm:@gotgenes/pi-github-tools</code><button class="copy-btn" data-prompt="pi install npm:@gotgenes/pi-github-tools" type="button">Copy</button></div></div>
+    </div>
+
+    <div class="callout">
+      <div class="ct">If you install nothing else — the starter stack</div>
+      <p>Web access, MCP, delegation, and live diagnostics cover 90% of what newcomers miss from batteries-included harnesses:</p>
+    </div>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">day-one stack</span><button class="copy-btn" data-prompt="pi install npm:pi-web-access&#10;pi install npm:pi-mcp-adapter&#10;pi install npm:pi-subagents&#10;pi install npm:pi-lens" type="button">Copy</button></div>
+<pre><span class="c">pi install npm:pi-web-access</span>
+<span class="c">pi install npm:pi-mcp-adapter</span>
+<span class="c">pi install npm:pi-subagents</span>
+<span class="c">pi install npm:pi-lens</span></pre></div>
+  </section>
+
+  <!-- ===== 05 EXTENSIONS ===== -->
+  <section id="s5" aria-labelledby="h-s5">
+    <div class="sec-head"><span class="sec-num">05</span><h2 id="h-s5">Advanced setup: writing extensions</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">This is the reason to choose Pi. Extensions are <strong>plain TypeScript modules loaded in-process via jiti — no build step</strong> — with hooks into every event the agent emits. Full reference: <a href="https://pi.dev/docs/latest/extensions">docs/extensions</a>.</p>
+
+    <h3>The contract</h3>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">~/.pi/agent/extensions/hello.ts — or anywhere, via pi -e</span><button class="copy-btn" data-prompt="import type { ExtensionAPI } from &quot;@earendil-works/pi-coding-agent&quot;;&#10;&#10;export default function (pi: ExtensionAPI) {&#10;  pi.on(&quot;session_start&quot;, async (_event, ctx) =&gt; {&#10;    ctx.ui.notify(&quot;hello from your first extension&quot;);&#10;  });&#10;}" type="button">Copy</button></div>
+<pre><span class="c">import type</span> { ExtensionAPI } <span class="c">from</span> <span class="s">"@earendil-works/pi-coding-agent"</span>;
+
+<span class="c">export default function</span> (pi: ExtensionAPI) {
+  pi.on(<span class="s">"session_start"</span>, <span class="c">async</span> (_event, ctx) =&gt; {
+    ctx.ui.notify(<span class="s">"hello from your first extension"</span>);
+  });
+}</pre></div>
+    <ul class="subpoints">
+      <li><b>Discovery:</b> <code>~/.pi/agent/extensions/*.ts</code> (or <code>*/index.ts</code>) load globally; <code>.pi/extensions/</code> loads per-project after <code>/trust</code>; <code>pi -e ./file.ts</code> for one session; <code>/reload</code> hot-reloads after edits.</li>
+      <li><b>Full toolbox on <code>pi</code>:</b> <code>registerTool</code> (TypeBox parameter schemas, streaming <code>onUpdate</code>, custom render), <code>registerCommand</code>, <code>registerShortcut</code>, <code>registerFlag</code>, <code>sendUserMessage</code>, <code>setModel</code>/<code>setThinkingLevel</code>, <code>registerProvider</code>, an inter-extension event bus on <code>pi.events</code>.</li>
+      <li><b>Full context on <code>ctx</code>:</b> <code>ui</code> (select/confirm/input/notify/custom widgets), <code>getContextUsage()</code>, <code>sessionManager</code>, <code>model</code>, <code>compact()</code>, <code>isProjectTrusted()</code>; command handlers also get <code>fork</code>, <code>navigateTree</code>, <code>waitForIdle</code>, <code>reload</code>.</li>
+      <li><b>Convention</b> (from disler’s repos): register tools at the top level of the extension function, not inside event handlers.</li>
+    </ul>
+
+    <h3>The event catalog — every hook point</h3>
+    <figure>
+      <svg viewBox="0 0 1100 430" role="img" aria-label="The agent loop as a ring — prompt to model to tools and back — with extension hook sockets attached at each stage" style="width:100%;height:auto;display:block;background:#FBFAF7;border:1px solid #C2BBAC;border-radius:14px">
+        <defs><marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1C222B"/></marker></defs>
+        <g fill="none" stroke="#1C222B" stroke-width="2.5">
+          <path d="M340 100 H 700" marker-end="url(#arr2)"/>
+          <path d="M810 140 V 250" marker-end="url(#arr2)"/>
+          <path d="M700 300 H 380" marker-end="url(#arr2)"/>
+          <path d="M270 250 V 140" marker-end="url(#arr2)"/>
+        </g>
+        <g font-family="IBM Plex Mono,monospace" font-size="15" text-anchor="middle">
+          <rect x="170" y="70" width="200" height="60" rx="10" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/>
+          <text x="270" y="106" fill="#1C222B">user prompt</text>
+          <rect x="710" y="70" width="200" height="60" rx="10" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/>
+          <text x="810" y="106" fill="#1C222B">model turn</text>
+          <rect x="710" y="270" width="200" height="60" rx="10" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/>
+          <text x="810" y="306" fill="#1C222B">tool calls</text>
+          <rect x="170" y="270" width="200" height="60" rx="10" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/>
+          <text x="270" y="306" fill="#1C222B">results join</text>
+        </g>
+        <g font-family="IBM Plex Mono,monospace" font-size="13" fill="#3D6E9E">
+          <circle cx="520" cy="100" r="7" fill="#6A9FCC"/><text x="520" y="72" text-anchor="middle">input · before_agent_start</text>
+          <circle cx="810" cy="195" r="7" fill="#6A9FCC"/><text x="880" y="200" text-anchor="start">before_provider_request</text>
+          <circle cx="540" cy="300" r="7" fill="#6A9FCC"/><text x="540" y="345" text-anchor="middle">tool_call → block / mutate</text>
+          <circle cx="270" cy="195" r="7" fill="#6A9FCC"/><text x="205" y="200" text-anchor="end">tool_result → rewrite</text>
+        </g>
+        <text x="550" y="405" text-anchor="middle" font-family="Source Serif 4,Georgia,serif" font-style="italic" font-size="20" fill="#1C222B">Every stage of the loop exposes a socket. Extensions run in-process.</text>
+      </svg>
+      <figcaption>Fig. 4 · The loop with its hook points — interception is first-class, not an add-on.</figcaption>
+    </figure>
+
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Group</th><th>Events</th><th>You’d use it to…</th></tr></thead>
+      <tbody>
+        <tr><td><b>Lifecycle</b></td><td><span class="mono">project_trust · session_start (startup|reload|new|resume|fork) · session_shutdown · session_before_switch/fork/compact</span></td><td>Set up UI, connect sockets, persist state at the seams.</td></tr>
+        <tr><td><b>Agent flow</b></td><td><span class="mono">before_agent_start · agent_start/end/settled · turn_start/end · message_start/update/end · tool_execution_start/update/end</span></td><td>Inject context, watch progress, stream telemetry.</td></tr>
+        <tr><td><b>Interception</b></td><td><span class="mono">context · before_provider_headers · before_provider_request · after_provider_response</span></td><td>Rewrite what the model sees; add headers; audit responses.</td></tr>
+        <tr><td><b>Tool gates</b></td><td><span class="mono">tool_call · tool_result</span></td><td><b>Block or mutate any tool call before it runs</b>; rewrite results after.</td></tr>
+        <tr><td><b>Selection</b></td><td><span class="mono">input · model_select · thinking_level_select · resources_discover</span></td><td>Transform input, react to model switches, add resources.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Worked example 1 — a safety gate in 15 lines</h3>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">guard.ts — block rm -rf before it happens</span><button class="copy-btn" data-prompt="import type { ExtensionAPI } from &quot;@earendil-works/pi-coding-agent&quot;;&#10;&#10;const FORBIDDEN = [/rm\s+(-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r)/i, /git\s+push\s+--force/i];&#10;&#10;export default function (pi: ExtensionAPI) {&#10;  pi.on(&quot;tool_call&quot;, async (event) =&gt; {&#10;    if (event.toolName !== &quot;bash&quot;) return;&#10;    const cmd = String(event.params?.command ?? &quot;&quot;);&#10;    if (FORBIDDEN.some((re) =&gt; re.test(cmd))) {&#10;      return { block: true, reason: `blocked by guard.ts: ${cmd}` };&#10;    }&#10;  });&#10;}" type="button">Copy</button></div>
+<pre><span class="c">import type</span> { ExtensionAPI } <span class="c">from</span> <span class="s">"@earendil-works/pi-coding-agent"</span>;
+
+<span class="c">const</span> FORBIDDEN = [/rm\s+(-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r)/i, /git\s+push\s+--force/i];
+
+<span class="c">export default function</span> (pi: ExtensionAPI) {
+  pi.on(<span class="s">"tool_call"</span>, <span class="c">async</span> (event) =&gt; {
+    <span class="c">if</span> (event.toolName !== <span class="s">"bash"</span>) <span class="c">return</span>;
+    <span class="c">const</span> cmd = String(event.params?.command ?? <span class="s">""</span>);
+    <span class="c">if</span> (FORBIDDEN.some((re) =&gt; re.test(cmd))) {
+      <span class="c">return</span> { block: <span class="c">true</span>, reason: <span class="s">`blocked by guard.ts: ${cmd}`</span> };
+    }
+  });
+}</pre></div>
+    <p class="cap-note">Shape per <a href="https://pi.dev/docs/latest/extensions">docs/extensions</a> — <code>tool_call</code> handlers can block or mutate params. For the production-grade version of this idea, see disler’s damage-control extension in <a href="#s8">§08</a>.</p>
+
+    <h3>Worked example 2 — IndyDevDan’s minimal footer</h3>
+    <p>The canonical “smallest complete extension,” from <a href="https://github.com/disler/pi-vs-claude-code">disler/pi-vs-claude-code</a> (<code>extensions/minimal.ts</code>) — a custom footer showing the live model and a context meter:</p>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">extensions/minimal.ts — © disler, MIT (quoted with attribution)</span><button class="copy-btn" data-prompt="import type { ExtensionAPI } from &quot;@mariozechner/pi-coding-agent&quot;;&#10;export default function (pi: ExtensionAPI) {&#10;  pi.on(&quot;session_start&quot;, async (_event, ctx) =&gt; {&#10;    ctx.ui.setFooter((_tui, theme) =&gt; ({&#10;      render(width) {&#10;        const usage = ctx.getContextUsage();&#10;        const pct = usage?.percent ?? 0;&#10;        const bar = &quot;#&quot;.repeat(Math.round(pct / 10)).padEnd(10, &quot;-&quot;);&#10;        return [`${ctx.model?.id ?? &quot;no-model&quot;} [${bar}] ${Math.round(pct)}%`];&#10;      }, invalidate() {}, dispose() {},&#10;    }));&#10;  });&#10;}" type="button">Copy</button></div>
+<pre><span class="c">import type</span> { ExtensionAPI } <span class="c">from</span> <span class="s">"@mariozechner/pi-coding-agent"</span>;
+<span class="c">export default function</span> (pi: ExtensionAPI) {
+  pi.on(<span class="s">"session_start"</span>, <span class="c">async</span> (_event, ctx) =&gt; {
+    ctx.ui.setFooter((_tui, theme) =&gt; ({
+      render(width) {
+        <span class="c">const</span> usage = ctx.getContextUsage();
+        <span class="c">const</span> pct = usage?.percent ?? 0;
+        <span class="c">const</span> bar = <span class="s">"#"</span>.repeat(Math.round(pct / 10)).padEnd(10, <span class="s">"-"</span>);
+        <span class="c">return</span> [<span class="s">`${ctx.model?.id ?? "no-model"} [${bar}] ${Math.round(pct)}%`</span>];
+      }, invalidate() {}, dispose() {},
+    }));
+  });
+}</pre></div>
+    <p class="cap-note">Note the import: older disler repos use the original <code>@mariozechner/pi-coding-agent</code> package name; new code imports <code>@earendil-works/pi-coding-agent</code>. Try it: <code>pi -e extensions/minimal.ts</code>. Official examples live in the repo at <a href="https://github.com/earendil-works/pi/tree/main/packages/coding-agent">packages/coding-agent</a> → <code>examples/extensions/</code> (snake.ts, summarize.ts, input-transform.ts).</p>
+  </section>
+
+  <!-- ===== 06 PUBLISH & EMBED ===== -->
+  <section id="s6" aria-labelledby="h-s6">
+    <div class="sec-head"><span class="sec-num">06</span><h2 id="h-s6">Advanced setup: packages, skills, models, embedding</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Turning your extension into a package the whole registry can install; plus skills, themes, local models, and running Pi inside your own programs.</p>
+
+    <h3>Author &amp; publish a package</h3>
+    <p>A Pi package is just an npm package with the <code>pi-package</code> keyword and either convention directories (<code>extensions/</code>, <code>skills/</code>, <code>prompts/</code>, <code>themes/</code>) or an explicit <code>pi</code> field:</p>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">package.json — the manifest</span><button class="copy-btn" data-prompt="{&#10;  &quot;name&quot;: &quot;@you/pi-your-thing&quot;,&#10;  &quot;version&quot;: &quot;0.1.0&quot;,&#10;  &quot;keywords&quot;: [&quot;pi-package&quot;],&#10;  &quot;pi&quot;: {&#10;    &quot;extensions&quot;: [&quot;./extensions/*.ts&quot;],&#10;    &quot;skills&quot;: [&quot;./skills/**&quot;]&#10;  }&#10;}" type="button">Copy</button></div>
+<pre>{
+  <span class="c">"name"</span>: <span class="s">"@you/pi-your-thing"</span>,
+  <span class="c">"version"</span>: <span class="s">"0.1.0"</span>,
+  <span class="c">"keywords"</span>: [<span class="s">"pi-package"</span>],      <span class="m">// ← this is the whole registry submission</span>
+  <span class="c">"pi"</span>: {
+    <span class="c">"extensions"</span>: [<span class="s">"./extensions/*.ts"</span>],
+    <span class="c">"skills"</span>: [<span class="s">"./skills/**"</span>]       <span class="m">// globs; "!pattern" excludes</span>
+  }
+}</pre></div>
+    <p><code>npm publish</code> — that’s it. <a href="https://pi.dev/packages">pi.dev/packages</a> auto-discovers anything on npm carrying the keyword; there is no separate submission step. Users then <code>pi install npm:@you/pi-your-thing</code> or trial it with <code>pi -e</code>.</p>
+
+    <h3>Skills &amp; prompt templates</h3>
+    <ul class="subpoints">
+      <li><b>Skills</b> follow the cross-harness <a href="https://pi.dev/docs/latest/skills">Agent Skills standard</a>: a folder with <code>SKILL.md</code> (YAML frontmatter: <code>name</code> ≤64 chars, <code>description</code> ≤1024, optional <code>allowed-tools</code>, <code>disable-model-invocation</code>). Discovered from <code>~/.pi/agent/skills/</code>, <code>.pi/skills/</code>, and the shared <code>~/.agents/skills/</code> + <code>.agents/skills/</code> — the same directories other harnesses read, so <strong>one skill can serve Pi, Codex, and Claude Code at once</strong>. Invoke as <code>/skill:name</code>.</li>
+      <li><b>Prompt templates</b> (<a href="https://pi.dev/docs/latest/prompt-templates">docs/prompt-templates</a>) are lighter — reusable parameterized prompts surfaced as slash commands. Disler points Pi’s <code>prompts</code> setting at his existing <code>.claude/commands</code> directory and reuses everything (<a href="#s8">§08</a>).</li>
+      <li><b>Themes</b> (<a href="https://pi.dev/docs/latest/themes">docs/themes</a>): JSON with 51 required color tokens (UI, markdown, diffs, 9 syntax, 7 thinking-level borders); hot-reloads while you edit; <code>--use-theme light</code> or the <code>theme</code> setting to switch; an <code>export</code> section skins <code>/export</code> HTML.</li>
+    </ul>
+
+    <h3>Local &amp; custom models</h3>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">~/.pi/agent/models.json — Ollama example</span><button class="copy-btn" data-prompt="{&#10;  &quot;providers&quot;: {&#10;    &quot;ollama&quot;: {&#10;      &quot;baseUrl&quot;: &quot;http://localhost:11434/v1&quot;,&#10;      &quot;api&quot;: &quot;openai-completions&quot;,&#10;      &quot;models&quot;: [{ &quot;id&quot;: &quot;qwen3:30b&quot;, &quot;contextWindow&quot;: 262144 }]&#10;    }&#10;  }&#10;}" type="button">Copy</button></div>
+<pre>{
+  <span class="c">"providers"</span>: {
+    <span class="c">"ollama"</span>: {
+      <span class="c">"baseUrl"</span>: <span class="s">"http://localhost:11434/v1"</span>,
+      <span class="c">"api"</span>: <span class="s">"openai-completions"</span>,   <span class="m">// or anthropic-messages / google-genai</span>
+      <span class="c">"models"</span>: [{ <span class="c">"id"</span>: <span class="s">"qwen3:30b"</span>, <span class="c">"contextWindow"</span>: <span class="s">262144</span> }]
+    }
+  }
+}</pre></div>
+    <p class="cap-note">Works for LM Studio, vLLM, and any OpenAI-/Anthropic-/Google-compatible endpoint (<a href="https://pi.dev/docs/latest/custom-provider">docs/custom-provider</a>, <a href="https://pi.dev/docs/latest/models">docs/models</a>); <code>/llama</code> is the quick path. Extensions can also <code>pi.registerProvider</code> at runtime.</p>
+
+    <h3>Embed Pi in your own program</h3>
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">the SDK in eight lines</span><button class="copy-btn" data-prompt="import { createAgentSession, SessionManager, ModelRuntime } from &quot;@earendil-works/pi-coding-agent&quot;;&#10;&#10;const session = await createAgentSession({&#10;  sessionManager: SessionManager.inMemory(),&#10;  modelRuntime: await ModelRuntime.create(),&#10;});&#10;session.subscribe((event) =&gt; console.log(event.type));&#10;await session.prompt(&quot;Summarize this repository&quot;);" type="button">Copy</button></div>
+<pre><span class="c">import</span> { createAgentSession, SessionManager, ModelRuntime } <span class="c">from</span> <span class="s">"@earendil-works/pi-coding-agent"</span>;
+
+<span class="c">const</span> session = <span class="c">await</span> createAgentSession({
+  sessionManager: SessionManager.inMemory(),
+  modelRuntime: <span class="c">await</span> ModelRuntime.create(),
+});
+session.subscribe((event) =&gt; console.log(event.type));
+<span class="c">await</span> session.prompt(<span class="s">"Summarize this repository"</span>);</pre></div>
+    <p class="cap-note">Shape per <a href="https://pi.dev/docs/latest/sdk">docs/sdk</a> — which also covers <code>defineTool()</code>, <code>createCodingTools</code>, steering and follow-ups. For process-level integration instead, <code>--mode rpc</code> (<a href="https://pi.dev/docs/latest/rpc">docs/rpc</a>) speaks JSON over stdin/stdout and <code>--mode json</code> (<a href="https://pi.dev/docs/latest/json">docs/json</a>) streams events — that’s the seam IndyDevDan’s observability stack taps.</p>
+  </section>
+
+  <!-- ===== 07 VSCODE / CURSOR ===== -->
+  <section id="s7" aria-labelledby="h-s7">
+    <div class="sec-head"><span class="sec-num">07</span><h2 id="h-s7">VS Code &amp; Cursor setup for extension authors</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Pi executes your TypeScript directly through jiti — <strong>tsc never runs</strong>. The editor setup below exists purely so imports resolve, types flow, and squiggles are honest. Cursor inherits all of it unchanged.</p>
+
+    <h3>The extension-project recipe</h3>
+    <div class="tree-pre"><span class="d">my-pi-extension/</span>
+├── package.json          <span class="m"># devDeps give the editor types; pi never builds this</span>
+├── tsconfig.json         <span class="m"># diagnostics only — noEmit</span>
+├── .vscode/
+│   ├── settings.json     <span class="m"># use the workspace TS version</span>
+│   └── extensions.json   <span class="m"># recommend the essentials</span>
+├── node_modules/         <span class="m"># npm install --ignore-scripts; pi picks it up automatically</span>
+└── index.ts              <span class="m"># export default function (pi: ExtensionAPI) { … }</span></div>
+
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">package.json</span><button class="copy-btn" data-prompt="{&#10;  &quot;name&quot;: &quot;my-pi-extension&quot;,&#10;  &quot;private&quot;: true,&#10;  &quot;devDependencies&quot;: {&#10;    &quot;@earendil-works/pi-coding-agent&quot;: &quot;^0.84.0&quot;,&#10;    &quot;typebox&quot;: &quot;^1.0.0&quot;,&#10;    &quot;@types/node&quot;: &quot;^22.0.0&quot;,&#10;    &quot;typescript&quot;: &quot;^5.6.0&quot;&#10;  }&#10;}" type="button">Copy</button></div>
+<pre>{
+  <span class="c">"name"</span>: <span class="s">"my-pi-extension"</span>,
+  <span class="c">"private"</span>: <span class="s">true</span>,
+  <span class="c">"devDependencies"</span>: {
+    <span class="c">"@earendil-works/pi-coding-agent"</span>: <span class="s">"^0.84.0"</span>,  <span class="m">// ExtensionAPI, ExtensionContext</span>
+    <span class="c">"typebox"</span>: <span class="s">"^1.0.0"</span>,                           <span class="m">// tool parameter schemas</span>
+    <span class="c">"@types/node"</span>: <span class="s">"^22.0.0"</span>,
+    <span class="c">"typescript"</span>: <span class="s">"^5.6.0"</span>
+  }
+}</pre></div>
+    <p class="cap-note">Then <code>npm install --ignore-scripts</code>. Real runtime deps (an npm lib your extension imports) go in <code>dependencies</code> — Pi resolves them from the extension folder’s <code>node_modules/</code> (it walks parents too). Add <code>@earendil-works/pi-tui</code> if you render custom widgets, <code>@earendil-works/pi-ai</code> for <code>StringEnum</code>.</p>
+
+    <div class="code"><div class="cbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cl">tsconfig.json — diagnostics only</span><button class="copy-btn" data-prompt="{&#10;  &quot;compilerOptions&quot;: {&#10;    &quot;target&quot;: &quot;ES2022&quot;,&#10;    &quot;module&quot;: &quot;preserve&quot;,&#10;    &quot;moduleResolution&quot;: &quot;bundler&quot;,&#10;    &quot;strict&quot;: true,&#10;    &quot;noEmit&quot;: true,&#10;    &quot;skipLibCheck&quot;: true,&#10;    &quot;types&quot;: [&quot;node&quot;]&#10;  },&#10;  &quot;include&quot;: [&quot;**/*.ts&quot;]&#10;}" type="button">Copy</button></div>
+<pre>{
+  <span class="c">"compilerOptions"</span>: {
+    <span class="c">"target"</span>: <span class="s">"ES2022"</span>,
+    <span class="c">"module"</span>: <span class="s">"preserve"</span>,          <span class="m">// match jiti's ESM/CJS-agnostic loading</span>
+    <span class="c">"moduleResolution"</span>: <span class="s">"bundler"</span>, <span class="m">// resolve package exports the modern way</span>
+    <span class="c">"strict"</span>: <span class="s">true</span>,
+    <span class="c">"noEmit"</span>: <span class="s">true</span>,                <span class="m">// jiti executes the .ts — tsc only diagnoses</span>
+    <span class="c">"skipLibCheck"</span>: <span class="s">true</span>,
+    <span class="c">"types"</span>: [<span class="s">"node"</span>]
+  },
+  <span class="c">"include"</span>: [<span class="s">"**/*.ts"</span>]
+}</pre></div>
+
+    <div class="grid-2">
+      <div class="card"><span class="tag">.vscode/settings.json</span><h4>Use the workspace TypeScript</h4><p>So the editor’s TS version matches your devDependency:</p><div class="inst"><code>{ "typescript.tsdk": "node_modules/typescript/lib" }</code><button class="copy-btn" data-prompt="{&#10;  &quot;typescript.tsdk&quot;: &quot;node_modules/typescript/lib&quot;&#10;}" type="button">Copy</button></div></div>
+      <div class="card"><span class="tag">.vscode/extensions.json</span><h4>Recommend the essentials</h4><p>Kept deliberately minimal — TypeScript ships with VS Code; add a formatter if your team uses one:</p><div class="inst"><code>{ "recommendations": ["dbaeumer.vscode-eslint"] }</code><button class="copy-btn" data-prompt="{&#10;  &quot;recommendations&quot;: [&quot;dbaeumer.vscode-eslint&quot;]&#10;}" type="button">Copy</button></div></div>
+    </div>
+
+    <div class="callout">
+      <div class="ct">The inner loop</div>
+      <p>Edit <code>index.ts</code> in VS Code/Cursor → in the running Pi session, <code>/reload</code> → behavior updates in place. For a scratch session against a work-in-progress file: <code>pi -e ./index.ts</code>. No watch task, no bundler, no dist folder — the <code>.ts</code> file <em>is</em> the artifact. Study the official <code>examples/extensions/</code> in the repo when stuck; contributing to Pi itself is documented at <a href="https://pi.dev/docs/latest/development">docs/development</a>.</p>
+    </div>
+  </section>
+
+  <!-- ===== 08 INDYDEVDAN ===== -->
+  <section id="s8" aria-labelledby="h-s8">
+    <div class="sec-head"><span class="sec-num">08</span><h2 id="h-s8">IndyDevDan on Pi</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub"><a href="https://www.youtube.com/@indydevdan">IndyDevDan</a> (<a href="https://github.com/disler">disler</a> on GitHub, <a href="https://agenticengineer.com">agenticengineer.com</a>) has built the deepest public body of Pi work outside the core repo — six repositories that read as a masterclass in what “the harness is yours” actually buys you.</p>
+
+    <blockquote class="pquote">Claude Code is batteries-included behind a ~10K-token guardrailed prompt. Pi is four tools behind a ~200-token prompt — and every battery is a TypeScript file you can read, fork, or replace.
+      <span class="src">— paraphrasing COMPARISON.md, disler/pi-vs-claude-code (Pi v0.52.10 snapshot, Feb 2026)</span></blockquote>
+
+    <div class="grid-2">
+      <div class="card"><span class="tag">the playground</span><h4><a href="https://github.com/disler/pi-vs-claude-code">pi-vs-claude-code</a></h4><div class="meta">18 extensions · Bun ≥ 1.3.2 · videos: <a href="https://youtu.be/f8cfH5XX-XU">Pi: The Only Claude Code Competitor</a> · <a href="https://youtu.be/PIdETjcXNIk">Pi to Pi</a></div><p>“Hedging against the leader in the agentic coding market.” Highlights: <code>damage-control.ts</code> (real-time bash/path safety auditing via <code>tool_call</code> + a YAML rulebook), <code>coms.ts</code>/<code>coms-net.ts</code> (Pi-to-Pi messaging over Unix sockets and an HTTP/SSE hub), <code>agent-team.ts</code> (dispatcher-only orchestrator with a grid dashboard), <code>cross-agent.ts</code> (registers your <code>.claude/</code>, <code>.gemini/</code>, <code>.codex/</code> commands <em>inside</em> Pi), 11 custom themes, and the <code>COMPARISON.md</code> / <code>PI_VS_OPEN_CODE.md</code> essays. Run any of them: <code>pi -e extensions/&lt;name&gt;.ts</code>.</p></div>
+      <div class="card"><span class="tag">observability</span><h4><a href="https://github.com/disler/pi-agent-observability">pi-agent-observability</a></h4><div class="meta">Bun + SQLite + SSE · video: <a href="https://youtu.be/o4KZH_KSqYQ">watch</a></div><p>A drop-in telemetry extension (<code>pi -e extension/pi-observability.ts</code>, ~800 lines) streams the full 16-event lifecycle — with batching, backpressure and retries — into a local Bun/SQLite server with three views: <strong>single, swimlane, race</strong>. Thesis: measure the <em>performance–speed–cost trifecta</em>. Its <code>package.json</code> demonstrates the <code>"pi": {"extensions": […]}</code> registration convention.</p></div>
+      <div class="card"><span class="tag">multi-model</span><h4><a href="https://github.com/disler/fusion-harness">fusion-harness</a></h4><div class="meta">videos: <a href="https://youtu.be/rqZHR-hRllI">V2</a> · <a href="https://youtu.be/AQl5Q-0l7FQ">V1</a></div><p>“Fuse 2–5 frontier models instead of racing them. <strong>AND, not OR.</strong>” One architect, one primary builder, up to three secondaries — opinions, fusion, debate, coordinated implementation — under a single-writer lease so only one model ever writes. Declarative YAML model stacks; clean-room child sessions via <code>--no-extensions</code>; <code>/fh-*</code> command family; 34 deterministic tests that cost zero API calls.</p></div>
+      <div class="card"><span class="tag">verification</span><h4><a href="https://github.com/disler/the-verifier-agent">the-verifier-agent</a></h4><div class="meta">video: <a href="https://youtu.be/EnXKysJNz_8">watch</a></div><p>A two-agent system: your interactive <strong>Builder</strong> Pi, plus an input-locked <strong>Verifier</strong> Pi in a sibling window that the builder doesn’t know exists. The verifier tails the builder’s session JSONL over a 0700 Unix socket, holds a read-only toolset, and owns exactly one write path — <code>verifier_prompt</code>, delivered as a follow-up. Fails three times → escalates to you. “Structurally un-promptable”: fix the persona, never the instance.</p></div>
+      <div class="card"><span class="tag">safety</span><h4><a href="https://github.com/disler/bash-damage-from-within">bash-damage-from-within</a></h4><div class="meta">Claude Code + Pi, side by side</div><p>“5 levels to stop your agent from destroying production” — the same defense-in-depth bash ladder implemented twice, <code>claude-code/level-1..5/</code> mirrored by <code>pi/level-1..5/</code>. The cleanest single artifact for comparing how the two harnesses express identical guardrails.</p></div>
+      <div class="card"><span class="tag">benchmarking</span><h4><a href="https://github.com/disler/live-bench">live-bench</a></h4><div class="meta">video: <a href="https://youtu.be/00Y-p62sk0s">watch</a></div><p>A LAN-only live dashboard racing local models (M5 Max vs M4 Max, Qwen 3.5 / Gemma 4, GGUF vs MLX) — with <strong>Pi as the driver of the agentic coding benchmark</strong>: 6 tasks × 3 models, measuring wall time, correctness, token efficiency, and tool calls.</p></div>
+    </div>
+
+    <h3>The doctrine, in five lines</h3>
+    <ul class="subpoints">
+      <li><b>Measure the trifecta</b> — performance, speed, cost. “If you don’t measure, you can’t improve.” (The observability stack exists to make this trivial.)</li>
+      <li><b>AND, not OR</b> — stack models instead of picking one; fusion, councils, and Pi-to-Pi coms are all this idea wearing different clothes.</li>
+      <li><b>Spend tokens to save time</b> — a verifier agent watching your builder costs tokens and repays them in caught failures.</li>
+      <li><b>Templated engineering</b> — “build the system that builds the system”: fix the prompt/persona/skill, never hand-patch the running instance.</li>
+      <li><b>Hedge the vendor</b> — pi-vs-claude-code’s stated purpose. A ~200-token, 4-tool, fully hookable harness is the hedge.</li>
+    </ul>
+
+    <div class="callout alt">
+      <div class="ct">Runtime note — Bun vs Node</div>
+      <p>Dan’s repos standardize on <strong>Bun</strong> (≥ 1.3.2 in pi-vs-claude-code) plus <code>just</code> as the task runner — while Pi itself requires <strong>Node ≥ 22.19.0</strong>. You need both worlds to run his stacks: Node for Pi, Bun for his servers and scripts. His READMEs are also the source of two gotchas already flipped in <a href="#s2">§02</a>: Pi doesn’t read <code>.env</code>, and Gemini wants <code>GEMINI_API_KEY</code>.</p>
+    </div>
+  </section>
+
+  <!-- ===== 09 PI VS CLAUDE CODE ===== -->
+  <section id="s9" aria-labelledby="h-s9">
+    <div class="sec-head"><span class="sec-num">09</span><h2 id="h-s9">Pi vs Claude Code, in one table</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Not a conversion guide (this library has those for Codex and Copilot) — just orientation, distilled from disler’s 38K-word <code>COMPARISON.md</code>.</p>
+    <div class="tbl-wrap"><table class="matrix">
+      <thead><tr><th>Dimension</th><th class="hd">Pi</th><th>Claude Code</th></tr></thead>
+      <tbody>
+        <tr><td>System prompt</td><td class="hd"><b>~200 tokens</b>, replaceable via <span class="mono">.pi/SYSTEM.md</span></td><td>~10K tokens, guardrailed</td></tr>
+        <tr><td>Core tools</td><td class="hd"><b>4 write + 3 read-only</b></td><td>Batteries included (15+)</td></tr>
+        <tr><td>Extension model</td><td class="hd">In-process TypeScript, 25+ hookable events, hot reload</td><td>Out-of-process hooks, plugins, MCP</td></tr>
+        <tr><td>Permission default</td><td class="hd">YOLO by default<small>guardrails are extensions you choose (see §08 damage-control)</small></td><td>Safe by default, permission prompts</td></tr>
+        <tr><td>Models</td><td class="hd">324 models / 20+ providers<small>incl. subscriptions via /login OAuth</small></td><td>Anthropic models (+ gateway routes)</td></tr>
+        <tr><td>MCP</td><td class="hd">Via <span class="mono">pi-mcp-adapter</span> (~200-token proxy)</td><td>Built in</td></tr>
+        <tr><td>Sessions</td><td class="hd">Tree with branching + branch summaries</td><td>Linear with resume/compact</td></tr>
+        <tr><td>Config</td><td class="hd"><span class="mono">~/.pi/agent/</span> + project <span class="mono">.pi/</span> (trust-gated)</td><td><span class="mono">~/.claude/</span> + <span class="mono">.claude/</span></td></tr>
+        <tr><td>Context files</td><td class="hd"><span class="mono">AGENTS.md</span> — <b>reads CLAUDE.md too</b></td><td><span class="mono">CLAUDE.md</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap-note">Source: <a href="https://github.com/disler/pi-vs-claude-code">disler/pi-vs-claude-code</a> COMPARISON.md — a <b>Pi v0.52.10 snapshot (Feb 2026)</b>. Pi is at 0.84.3 as of this guide; verify any load-bearing cell against current docs before deciding.</p>
+  </section>
+
+  <!-- ===== 10 OPEN QUESTIONS ===== -->
+  <section id="s10" aria-labelledby="h-s10">
+    <div class="sec-head"><span class="sec-num">10</span><h2 id="h-s10">Open questions this guide answered (yes/no)</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Nine decisions taken while building this page, each phrased yes/no with the working assumption. Disagree with one? The <a href="https://github.com/bossjones/oh-my-html-docs">repo</a>’s plan file (<code>specs/pi-harness-guide.html</code>) shows exactly what flipping it changes.</p>
+    <div class="qa">
+      <details><summary>Q1 — Echo pi.dev’s paper-and-ink identity instead of the library’s dark-guide theme?</summary><div class="qa-a"><strong>Yes.</strong> pi.dev is graph-paper light with serif-italic display; matching it makes this page read as “Pi” at a glance. The dark terminals-on-paper treatment keeps code legible.</div></details>
+      <details><summary>Q2 — Lead the quickstart with the curl installer rather than npm?</summary><div class="qa-a"><strong>Yes.</strong> It’s pi.dev’s own first-listed method and assumes nothing about your Node state. npm (with <code>--ignore-scripts</code>) and PowerShell follow immediately.</div></details>
+      <details><summary>Q3 — Recommend mise for Node version management?</summary><div class="qa-a"><strong>Yes, softly.</strong> One blessed copy-paste path; nvm/fnm one-liners included. The hard floor is Pi’s <code>engines.node >= 22.19.0</code> either way.</div></details>
+      <details><summary>Q4 — Ship diagrams as inline SVG rather than generated images?</summary><div class="qa-a"><strong>Yes.</strong> Inline SVG is self-contained, crisp at any zoom, printable, and palette-synced by construction — the page makes zero image requests beyond its favicon.</div></details>
+      <details><summary>Q5 — Profile all 12 packages AND bless a smaller starter stack?</summary><div class="qa-a"><strong>Yes.</strong> Twelve equal-format cards ordered by downloads for browsing; four packages blessed in §04 so day one isn’t a choice paralysis exercise.</div></details>
+      <details><summary>Q6 — Include the Pi-vs-Claude-Code table although its source snapshots Pi v0.52.10?</summary><div class="qa-a"><strong>Yes, clearly dated.</strong> It’s the sharpest articulation of why Pi’s minimalism matters. It’s presented as disler’s argument with a verify-before-relying caveat, not silently updated.</div></details>
+      <details><summary>Q7 — Plain links for IndyDevDan’s videos, no embeds?</summary><div class="qa-a"><strong>Yes.</strong> Iframes and remote thumbnails would break the self-contained rule and add tracking. Links keep the page offline-safe.</div></details>
+      <details><summary>Q8 — Ship the VS Code guidance as copyable snippets rather than committed .vscode files?</summary><div class="qa-a"><strong>Yes.</strong> The editor setup belongs to <em>your</em> extension repos, not to the docs site hosting this page. §07 gives complete files to paste.</div></details>
+      <details><summary>Q9 — Title this “Pi — The Coding Harness”?</summary><div class="qa-a"><strong>Yes.</strong> “Harness” is Pi’s own word for itself, and the framing the guide’s requester used. “Pi Coding Agent” remains in the metadata for search.</div></details>
+    </div>
+  </section>
+
+  <!-- ===== 11 CHEAT SHEET ===== -->
+  <section id="s11" aria-labelledby="h-s11">
+    <div class="sec-head"><span class="sec-num">11</span><h2 id="h-s11">Copy-pair cheat sheet</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">The whole guide as ten copyable blocks — install to first published extension.</p>
+    <div class="prompt-list">
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">01</span><span class="ptitle">Install Pi</span></div><div class="pdesc">The official installer; Node ≥ 22.19.0 required (§01).</div></div><button class="copy-btn" data-prompt="curl -fsSL https://pi.dev/install.sh | sh" type="button">Copy</button></div>
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">02</span><span class="ptitle">Node 22 via mise</span></div><div class="pdesc">Then verify with node --version (§02).</div></div><button class="copy-btn" data-prompt="mise use -g node@22 &amp;&amp; node --version" type="button">Copy</button></div>
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">03</span><span class="ptitle">tmux keys fix</span></div><div class="pdesc">Append to ~/.tmux.conf, restart tmux fully (§02).</div></div><button class="copy-btn" data-prompt="set -g extended-keys on&#10;set -g extended-keys-format csi-u" type="button">Copy</button></div>
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">04</span><span class="ptitle">Load keys from .env</span></div><div class="pdesc">Pi doesn’t read .env — export before launch (§02).</div></div><button class="copy-btn" data-prompt="set -a; source .env; set +a; pi" type="button">Copy</button></div>
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">05</span><span class="ptitle">Starter settings.json</span></div><div class="pdesc">Write to ~/.pi/agent/settings.json (§02).</div></div><button class="copy-btn" data-prompt="{&#10;  &quot;theme&quot;: &quot;dark&quot;,&#10;  &quot;defaultProjectTrust&quot;: &quot;ask&quot;,&#10;  &quot;compaction&quot;: { &quot;enabled&quot;: true, &quot;reserveTokens&quot;: 16384, &quot;keepRecentTokens&quot;: 20000 }&#10;}" type="button">Copy</button></div>
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">06</span><span class="ptitle">Starter package stack</span></div><div class="pdesc">Web + MCP + delegation + diagnostics (§04).</div></div><button class="copy-btn" data-prompt="pi install npm:pi-web-access&#10;pi install npm:pi-mcp-adapter&#10;pi install npm:pi-subagents&#10;pi install npm:pi-lens" type="button">Copy</button></div>
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">07</span><span class="ptitle">First extension</span></div><div class="pdesc">Save as hello.ts, then run the next row (§05).</div></div><button class="copy-btn" data-prompt="import type { ExtensionAPI } from &quot;@earendil-works/pi-coding-agent&quot;;&#10;&#10;export default function (pi: ExtensionAPI) {&#10;  pi.on(&quot;session_start&quot;, async (_event, ctx) =&gt; {&#10;    ctx.ui.notify(&quot;hello from your first extension&quot;);&#10;  });&#10;}" type="button">Copy</button></div>
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">08</span><span class="ptitle">Trial an extension</span></div><div class="pdesc">One session, nothing installed; /reload after edits (§05).</div></div><button class="copy-btn" data-prompt="pi -e ./hello.ts" type="button">Copy</button></div>
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">09</span><span class="ptitle">Extension-dev tsconfig</span></div><div class="pdesc">Diagnostics only — jiti executes the TS directly (§07).</div></div><button class="copy-btn" data-prompt="{&#10;  &quot;compilerOptions&quot;: {&#10;    &quot;target&quot;: &quot;ES2022&quot;, &quot;module&quot;: &quot;preserve&quot;, &quot;moduleResolution&quot;: &quot;bundler&quot;,&#10;    &quot;strict&quot;: true, &quot;noEmit&quot;: true, &quot;skipLibCheck&quot;: true, &quot;types&quot;: [&quot;node&quot;]&#10;  },&#10;  &quot;include&quot;: [&quot;**/*.ts&quot;]&#10;}" type="button">Copy</button></div>
+      <div class="prow"><div class="prow-main"><div class="prow-id"><span class="pnum">10</span><span class="ptitle">Package manifest stub</span></div><div class="pdesc">Add to package.json, npm publish — the registry finds it (§06).</div></div><button class="copy-btn" data-prompt="{&#10;  &quot;keywords&quot;: [&quot;pi-package&quot;],&#10;  &quot;pi&quot;: { &quot;extensions&quot;: [&quot;./extensions/*.ts&quot;], &quot;skills&quot;: [&quot;./skills/**&quot;] }&#10;}" type="button">Copy</button></div>
+    </div>
+  </section>
+
+  <!-- ===== 12 SOURCES ===== -->
+  <section id="s12" aria-labelledby="h-s12">
+    <div class="sec-head"><span class="sec-num">12</span><h2 id="h-s12">Sources &amp; going deeper</h2></div>
+    <div class="lead-rule"></div>
+    <p class="sub">Everything above is deep-linked from these; facts harvested <strong>2026-08-27</strong> (Pi v0.84.3). The docs have on-site search — <kbd>⌘K</kbd> on <a href="https://pi.dev/docs/latest">pi.dev/docs</a>.</p>
+
+    <figure>
+      <svg viewBox="0 0 1100 400" role="img" aria-label="Map: a central pi terminal island connected to four territories — docs, packages, Dan, editor" style="width:100%;height:auto;display:block;background:#FBFAF7;border:1px solid #C2BBAC;border-radius:14px">
+        <g fill="none" stroke="#6A9FCC" stroke-width="2" stroke-dasharray="7 6">
+          <path d="M470 200 C 380 180 320 150 250 120"/>
+          <path d="M630 200 C 720 180 780 150 850 120"/>
+          <path d="M470 220 C 380 250 320 280 250 305"/>
+          <path d="M630 220 C 720 250 780 280 850 305"/>
+        </g>
+        <g transform="translate(465,165)">
+          <rect width="170" height="80" rx="12" fill="#1C222B"/>
+          <text x="85" y="50" text-anchor="middle" font-family="Source Serif 4,Georgia,serif" font-style="italic" font-size="34" fill="#F4F2ED">π</text>
+        </g>
+        <g font-family="IBM Plex Mono,monospace" font-size="16" text-anchor="middle">
+          <rect x="130" y="70" width="200" height="56" rx="10" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/><text x="230" y="104" fill="#1C222B">DOCS</text>
+          <rect x="770" y="70" width="200" height="56" rx="10" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/><text x="870" y="104" fill="#1C222B">PACKAGES</text>
+          <rect x="130" y="278" width="200" height="56" rx="10" fill="#F4F2ED" stroke="#1C222B" stroke-width="2.5"/><text x="230" y="312" fill="#1C222B">DAN</text>
+          <rect x="770" y="278" width="200" height="56" rx="10" fill="#F4F2ED" stroke="#8F3222" stroke-width="2.5"/><text x="870" y="312" fill="#8F3222">EDITOR</text>
+        </g>
+        <text x="550" y="375" text-anchor="middle" font-family="Source Serif 4,Georgia,serif" font-style="italic" font-size="20" fill="#1C222B">One page, four territories.</text>
+      </svg>
+      <figcaption>Fig. 5 · The guide’s map: official docs, the registry, IndyDevDan’s repos, and your editor.</figcaption>
+    </figure>
+
+    <div class="grid-2">
+      <div class="card"><span class="tag">official docs</span><h4>pi.dev/docs/latest/…</h4><p><a href="https://pi.dev/docs/latest">index</a> · <a href="https://pi.dev/docs/latest/quickstart">quickstart</a> · <a href="https://pi.dev/docs/latest/usage">usage</a> · <a href="https://pi.dev/docs/latest/providers">providers</a> · <a href="https://pi.dev/docs/latest/settings">settings</a> · <a href="https://pi.dev/docs/latest/keybindings">keybindings</a> · <a href="https://pi.dev/docs/latest/sessions">sessions</a> · <a href="https://pi.dev/docs/latest/compaction">compaction</a> · <a href="https://pi.dev/docs/latest/extensions">extensions</a> · <a href="https://pi.dev/docs/latest/skills">skills</a> · <a href="https://pi.dev/docs/latest/prompt-templates">prompt-templates</a> · <a href="https://pi.dev/docs/latest/themes">themes</a> · <a href="https://pi.dev/docs/latest/packages">packages</a> · <a href="https://pi.dev/docs/latest/models">models</a> · <a href="https://pi.dev/docs/latest/custom-provider">custom-provider</a> · <a href="https://pi.dev/docs/latest/sdk">sdk</a> · <a href="https://pi.dev/docs/latest/rpc">rpc</a> · <a href="https://pi.dev/docs/latest/json">json</a> · <a href="https://pi.dev/docs/latest/security">security</a> · <a href="https://pi.dev/docs/latest/containerization">containerization</a> · <a href="https://pi.dev/docs/latest/session-format">session-format</a> · <a href="https://pi.dev/docs/latest/environment-variables">environment-variables</a> · <a href="https://pi.dev/docs/latest/windows">windows</a> · <a href="https://pi.dev/docs/latest/termux">termux</a> · <a href="https://pi.dev/docs/latest/tmux">tmux</a> · <a href="https://pi.dev/docs/latest/terminal-setup">terminal-setup</a> · <a href="https://pi.dev/docs/latest/shell-aliases">shell-aliases</a> · <a href="https://pi.dev/docs/latest/development">development</a></p></div>
+      <div class="card"><span class="tag">project</span><h4>Code &amp; community</h4><p><a href="https://github.com/earendil-works/pi">github.com/earendil-works/pi</a> (examples under <code>packages/coding-agent</code>) · <a href="https://www.npmjs.com/package/@earendil-works/pi-coding-agent">npm: @earendil-works/pi-coding-agent</a> · <a href="https://pi.dev/packages">package registry</a> · <a href="https://pi.dev/models">model catalog</a> · <a href="https://pi.dev/news">news</a> · <a href="https://discord.com/invite/3cU7Bz4UPx">Discord</a> · <a href="https://x.com/pidotdev">@pidotdev</a></p></div>
+      <div class="card"><span class="tag">indydevdan</span><h4>Repos &amp; channel</h4><p><a href="https://github.com/disler/pi-vs-claude-code">pi-vs-claude-code</a> · <a href="https://github.com/disler/pi-agent-observability">pi-agent-observability</a> · <a href="https://github.com/disler/fusion-harness">fusion-harness</a> · <a href="https://github.com/disler/the-verifier-agent">the-verifier-agent</a> · <a href="https://github.com/disler/bash-damage-from-within">bash-damage-from-within</a> · <a href="https://github.com/disler/live-bench">live-bench</a> · <a href="https://www.youtube.com/@indydevdan">YouTube</a> · <a href="https://agenticengineer.com">agenticengineer.com</a></p></div>
+      <div class="card"><span class="tag">the 12 packages</span><h4>Registry pages</h4><p><a href="https://pi.dev/packages/pi-mcp-adapter">pi-mcp-adapter</a> · <a href="https://pi.dev/packages/pi-web-access">pi-web-access</a> · <a href="https://pi.dev/packages/pi-subagents">pi-subagents</a> · <a href="https://github.com/companion-inc/feynman">@companion-ai/feynman</a> · <a href="https://pi.dev/packages/pi-background-tasks">pi-background-tasks</a> · <a href="https://pi.dev/packages/context-mode">context-mode</a> · <a href="https://pi.dev/packages/pi-lens">pi-lens</a> · <a href="https://pi.dev/packages/@plannotator/pi-extension">@plannotator/pi-extension</a> · <a href="https://pi.dev/packages/@dietrichgebert/ponytail">@dietrichgebert/ponytail</a> · <a href="https://pi.dev/packages/pi-memory">pi-memory</a> · <a href="https://pi.dev/packages/@ersintarhan/pi-toolkit">@ersintarhan/pi-toolkit</a> · <a href="https://pi.dev/packages/@gotgenes/pi-github-tools">@gotgenes/pi-github-tools</a></p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="fq">“Adapt Pi to your workflows, not the other way around.”</div>
+    <div class="fm">Independent field guide · not affiliated with Earendil Inc. or IndyDevDan · facts harvested 2026-08-27 from pi.dev, github.com/earendil-works/pi, npm, and disler’s repos · Pi v0.84.3<br>Part of <a href="https://github.com/bossjones/oh-my-html-docs">oh-my-html-docs</a> · sibling guides: cmux, Herdr, Codex CLI, Copilot CLI, Opus 5</div>
+  </div>
+</footer>
+
+<button class="to-top" id="toTop" type="button" aria-label="Back to top">↑</button>
+
+<script>
+(() => {
+  'use strict';
+
+  /* --- Copy buttons: copy data-prompt, restore exact previous label. --- */
+  function fallbackCopy(text){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.getAttribute('data-prompt') || '';
+      var prev = btn.textContent;
+      var done = function(){
+        btn.textContent = 'Copied ✓';
+        btn.classList.add('copied');
+        setTimeout(function(){ btn.textContent = prev; btn.classList.remove('copied'); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function(){ fallbackCopy(text); done(); });
+      } else { fallbackCopy(text); done(); }
+    });
+  });
+
+  /* --- Cheat-sheet rows: render the copyable text inside the card (light markdown + newlines). --- */
+  function renderPrompt(raw){
+    var s = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\n/g, '<br>');
+    return s;
+  }
+  document.querySelectorAll('.prow .copy-btn').forEach(function(btn){
+    var raw = btn.getAttribute('data-prompt') || '';
+    var main = btn.parentNode.querySelector('.prow-main');
+    if (main && !main.querySelector('.ptext')) {
+      var q = document.createElement('div');
+      q.className = 'ptext';
+      q.innerHTML = '<span class="pq">&#10095;</span>' + renderPrompt(raw);
+      main.appendChild(q);
+    }
+  });
+
+  /* --- Gotcha flip cards --- */
+  document.querySelectorAll('.flip-front').forEach(function(front){
+    front.addEventListener('click', function(){
+      var item = front.closest('.flow-item');
+      if (item){ item.classList.add('flipped'); front.setAttribute('aria-expanded','true'); }
+    });
+  });
+  document.querySelectorAll('.flip-reset').forEach(function(reset){
+    reset.addEventListener('click', function(){
+      var item = reset.closest('.flow-item');
+      if (item){
+        item.classList.remove('flipped');
+        var f = item.querySelector('.flip-front');
+        if (f) f.setAttribute('aria-expanded','false');
+      }
+    });
+  });
+
+  /* --- Scroll progress + to-top --- */
+  var bar = document.getElementById('progress');
+  var toTop = document.getElementById('toTop');
+  var ticking = false;
+  function onScroll(){
+    var max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (max > 0 ? (scrollY / max) * 100 : 0) + '%';
+    toTop.classList.toggle('on', scrollY > 1200);
+    ticking = false;
+  }
+  addEventListener('scroll', function(){
+    if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+  }, {passive: true});
+  onScroll();
+  toTop.addEventListener('click', function(){ scrollTo({top: 0, behavior: 'smooth'}); });
+
+  /* --- Scroll-spy for the topbar --- */
+  var links = new Map();
+  document.querySelectorAll('.bar-toc a').forEach(function(a){ links.set(a.hash.slice(1), a); });
+  var sections = [].slice.call(document.querySelectorAll('section[id]')).filter(function(s){ return links.has(s.id); });
+  var visible = new Set();
+  function setCurrent(id){ links.forEach(function(a, key){ a.setAttribute('aria-current', String(key === id)); }); }
+  var spy = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ e.isIntersecting ? visible.add(e.target) : visible.delete(e.target); });
+    var current = sections.find(function(s){ return visible.has(s); })
+      || sections.slice().reverse().find(function(s){ return s.getBoundingClientRect().top <= 120; });
+    if (current) setCurrent(current.id);
+  }, {rootMargin: '-60px 0px -75% 0px'});
+  sections.forEach(function(s){ spy.observe(s); });
+
+  /* --- Print: open all details, restore after. --- */
+  var reopened = [];
+  addEventListener('beforeprint', function(){
+    reopened = [].slice.call(document.querySelectorAll('details:not([open])'));
+    reopened.forEach(function(d){ d.open = true; });
+  });
+  addEventListener('afterprint', function(){
+    reopened.forEach(function(d){ d.open = false; });
+    reopened = [];
+  });
+})();
+</script>
+</body>
+</html>
