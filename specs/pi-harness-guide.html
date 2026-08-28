@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="planf3 spec: build a standalone HTML field guide to the Pi coding harness (pi.dev) — quickstart, recommended setup, advanced extension authoring, VS Code/Cursor TypeScript setup, the package ecosystem, and IndyDevDan's Pi work — then import it into oh-my-html-docs.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F4F2ED">
+<title>Plan: Pi Coding Harness — Field Guide</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23F4F2ED'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-style='italic' font-size='20' text-anchor='middle' fill='%233D6E9E'%3E%CF%80%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ===== Synced visual identity — Pi's "engineer's notebook": paper, ink, steel blue, rust.
+     Derived from pi.dev itself: paper/graph-grid ground, serif italic display (Plantin on
+     pi.dev → Source Serif 4 here), small-caps mono labels (Commit/Departure Mono → IBM Plex
+     Mono), accent #6a9fcc (darkened to #3D6E9E for AA on paper), rust #8f3222 secondary.
+     Any generated images match this identity. ===== */
+  :root{
+    --bg:#F4F2ED; --bg-soft:#EDEAE3; --surface:#FBFAF7; --surface-2:#F1EEE7;
+    --border:#D8D3C8; --border-bright:#C2BBAC;
+    --text:#1C222B; --muted:#4A5361; --faint:#7A8290;
+    --accent:#3D6E9E;                 /* steel-blue ink — the ONE accent */
+    --accent-dim:#6A9FCC;             /* pi.dev's raw accent — fills/borders only */
+    --accent-glow:rgba(106,159,204,.16);
+    --accent-2:#8F3222;               /* pi.dev's rust — warnings / "verify" */
+    --ok:#2E7D4F;                     /* done / confirmed */
+    --grid:rgba(28,34,43,.045);       /* graph-paper line color */
+    --maxw:1140px;
+    --bar-h:52px;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Source Serif 4',Georgia,'Times New Roman',serif;
+    --body:'Inter',-apple-system,system-ui,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+  body{color:var(--text);font-family:var(--body);font-size:17px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;background:var(--bg);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:24px 24px}
+  ::selection{background:var(--accent);color:var(--bg)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+  main{max-width:var(--maxw);margin:0 auto;padding:34px 26px 90px}
+
+  header h1{font-family:var(--disp);font-style:italic;font-weight:600;letter-spacing:-.012em;
+    line-height:1.12;font-size:clamp(30px,5vw,52px);margin:10px 0 6px}
+  header h1::before{content:"PLANF3 · SPEC";display:block;font-family:var(--mono);font-style:normal;
+    font-size:12px;letter-spacing:.26em;color:var(--accent);margin-bottom:14px}
+  details.meta{margin:22px 0 8px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+  details.meta summary{cursor:pointer;padding:12px 18px;font-family:var(--mono);font-size:11.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  details.meta dl{display:grid;grid-template-columns:140px 1fr;gap:8px 18px;padding:6px 20px 18px}
+  details.meta dt{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-top:2px}
+  details.meta dd{font-size:14px;color:var(--text);word-break:break-word}
+  details.meta dd code{font-size:.85em}
+
+  h2{font-family:var(--disp);font-style:italic;font-weight:600;letter-spacing:-.012em;
+    font-size:clamp(24px,3.4vw,36px);line-height:1.14}
+  h2::before{content:"";display:block;height:2px;width:56px;margin:0 0 14px;
+    background:linear-gradient(90deg,var(--accent-dim),transparent);border-radius:2px}
+  h3{font-family:var(--disp);font-weight:600;font-size:21.5px;margin:26px 0 8px}
+  h4{font-family:var(--mono);font-weight:600;font-size:14px;letter-spacing:.04em;margin:22px 0 6px;color:var(--text)}
+  section{padding:64px 0 10px;border-top:1px solid var(--border);margin-top:44px;
+    scroll-margin-top:calc(var(--bar-h) + 18px)}
+  section:first-of-type{border-top:none;margin-top:0}
+  p{margin:13px 0;color:var(--text);opacity:.95;max-width:80ch}
+  strong{color:var(--text)}
+  ul{margin:12px 0 12px 4px;padding-left:20px}
+  li{margin:7px 0;color:var(--text);opacity:.94}
+  li::marker{color:var(--accent)}
+
+  figure{margin:32px auto;max-width:920px}
+  figure img{width:100%;display:block;border:1px solid var(--border-bright);border-radius:14px;
+    box-shadow:0 14px 34px -18px rgba(28,34,43,.35)}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--faint);text-align:center;margin-top:10px;letter-spacing:.04em}
+
+  code{font-family:var(--mono);font-size:.86em;color:#24466E;background:var(--accent-glow);
+    border:1px solid rgba(106,159,204,.35);padding:1px 6px;border-radius:5px;
+    overflow-wrap:anywhere;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  pre{background:#1C222B;border:1px solid var(--border-bright);border-radius:12px;padding:16px 18px;
+    overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0;max-width:100%}
+  pre code{background:none;border:none;padding:0;color:#E8ECF2;overflow-wrap:normal}
+
+  .tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;padding:2px 9px;border-radius:999px;margin-right:8px;vertical-align:1px}
+  .tag.existing{color:var(--faint);border:1px solid var(--border-bright);background:var(--bg-soft)}
+  .tag.new{color:var(--ok);border:1px solid rgba(46,125,79,.4);background:rgba(46,125,79,.08)}
+  /* Hanging indent: the chip sits out of flow so wrapped lines clear it. */
+  .files li{list-style:none;margin:9px 0;padding:11px 15px 11px 96px;position:relative;
+    background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:14.5px}
+  .files li>.tag{position:absolute;left:15px;top:12px;margin-right:0}
+  .files ul{padding-left:0}
+  .files li code{font-size:.92em}
+
+  .phase{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:12px;padding:24px 28px;margin:22px 0}
+  .phase h3{margin-top:0}
+  .checklist{list-style:none;padding-left:0;margin:10px 0}
+  /* Marker absolutely positioned so the text flows as normal prose (not flex). */
+  .checklist li{margin:8px 0;padding:9px 13px 9px 46px;position:relative;background:var(--bg-soft);
+    border:1px solid var(--border);border-radius:9px;font-size:14.5px}
+  .checklist li>.status{position:absolute;left:13px;top:10px}
+  .status{font-family:var(--mono);font-size:12.5px;color:var(--accent-2);background:none;border:none;padding:0}
+  .status[data-state="idle"]{color:var(--faint)}
+  .status[data-state="wip"]{color:#A56A1E}
+  .status[data-state="done"]{color:var(--ok)}
+  .status[data-state="fail"]{color:#B3362A}
+  .checklist li:has(>.status[data-state="done"]){border-color:rgba(46,125,79,.4)}
+  .checklist li:has(>.status[data-state="fail"]){border-color:rgba(179,54,42,.45)}
+  .loop{background:var(--bg-soft);border:1px solid var(--accent-dim);border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin:20px 0 6px;font-size:14.5px}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:16px 0}
+  .tbl{overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin:18px 0;background:var(--surface)}
+  .tbl table{margin:0;min-width:560px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--bg-soft)}
+  tr:last-child td{border-bottom:none}
+
+  .callout{background:var(--bg-soft);border:1px solid var(--border);border-left:3px solid var(--accent-2);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin:20px 0;font-size:15px}
+  .callout .ct{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent-2);margin-bottom:6px}
+
+  #questionables details, #amendments details{border:1px solid var(--border);border-radius:11px;
+    background:var(--surface);margin:12px 0}
+  #questionables summary, #amendments summary{cursor:pointer;padding:13px 18px;font-family:var(--disp);
+    font-weight:600;font-size:15.5px}
+  #questionables summary::marker{color:var(--accent)}
+  .qa-answer{padding:2px 20px 16px;font-size:14.5px;color:var(--muted)}
+  #amendments details p{padding:2px 20px 16px;font-size:14.5px;color:var(--muted)}
+
+  /* ===== Sticky topbar + scroll progress + scroll-spy TOC ===== */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(244,242,237,.85);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border)}
+  .topbar-in{max-width:var(--maxw);margin:0 auto;padding:0 26px;height:var(--bar-h);
+    display:flex;align-items:center;gap:20px}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--accent);
+    flex:none;text-decoration:none}
+  .brand:hover{text-decoration:none;color:var(--text)}
+  .toc{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;flex:1;margin:0;padding:0;list-style:none}
+  .toc::-webkit-scrollbar{display:none}
+  .toc a{display:block;white-space:nowrap;font-size:12.5px;color:var(--faint);
+    padding:5px 9px;border-radius:7px;text-decoration:none}
+  .toc a:hover{color:var(--text);background:var(--surface-2);text-decoration:none}
+  .toc a[aria-current="true"]{color:var(--accent);background:var(--accent-glow)}
+  .progress{position:absolute;left:0;bottom:-1px;height:2px;width:0;
+    background:linear-gradient(90deg,var(--accent-dim),var(--accent));transition:width .08s linear}
+
+  .to-top{position:fixed;right:22px;bottom:22px;z-index:60;width:42px;height:42px;
+    display:grid;place-items:center;border-radius:50%;cursor:pointer;
+    background:var(--surface);border:1px solid var(--border-bright);color:var(--accent);
+    font-size:17px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s,background .2s}
+  .to-top.on{opacity:1;pointer-events:auto}
+  .to-top:hover{background:var(--surface-2);transform:translateY(-2px)}
+
+  /* ===== Collapsible phase cards ===== */
+  .phase>h3{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+  .phase>h3::after{content:"";flex:none;width:8px;height:8px;margin-left:auto;
+    border-right:2px solid var(--faint);border-bottom:2px solid var(--faint);
+    transform:rotate(45deg);transition:transform .18s}
+  .phase.collapsed>h3::after{transform:rotate(-45deg)}
+  .phase>h3:hover::after{border-color:var(--accent)}
+  .phase-count{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--faint);
+    border:1px solid var(--border-bright);background:var(--bg-soft);
+    padding:2px 8px;border-radius:999px;flex:none}
+  .phase-count[data-complete="true"]{color:var(--ok);border-color:rgba(46,125,79,.45)}
+  .phase.collapsed>*:not(h3){display:none}
+
+  /* ===== Responsive ===== */
+  @media (max-width:640px){
+    body{font-size:16px}
+    main{padding:26px 16px 72px}
+    .topbar-in{padding:0 16px;gap:14px}
+    details.meta dl{grid-template-columns:1fr;gap:2px 0}
+    details.meta dt{padding-top:10px}
+    section{padding:44px 0 10px;margin-top:32px}
+    figure{margin:24px auto}
+    .phase{padding:18px 16px}
+    .checklist li{padding:9px 12px 9px 40px}
+  }
+
+  @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+    html,body{background:var(--bg) !important}
+    .topbar,.to-top{display:none !important}
+    section{break-before:page;padding:40px 0 10px}
+    figure,.phase,.callout,.loop,.tbl,.checklist li,pre{break-inside:avoid}
+    h2,h3,h4{break-after:avoid}
+    .phase.collapsed>*{display:revert !important}
+    .phase>h3::after,.phase-count{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== STICKY NAV + SCROLL PROGRESS ===== -->
+<nav class="topbar" aria-label="Section navigation">
+  <div class="topbar-in">
+    <a class="brand" href="#top">PLANF3 · SPEC</a>
+    <ul class="toc">
+      <li><a href="#purpose">Purpose</a></li>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#solution">Solution</a></li>
+      <li><a href="#files">Files</a></li>
+      <li><a href="#phases">Phases</a></li>
+      <li><a href="#validation">Validation</a></li>
+      <li><a href="#questionables">Questionables</a></li>
+      <li><a href="#notes">Notes</a></li>
+      <li><a href="#amendments">Amendments</a></li>
+    </ul>
+  </div>
+  <div class="progress" id="progress"></div>
+</nav>
+
+<main id="top">
+
+  <!-- ===== HEADER + UPDATABLE METADATA ===== -->
+  <header>
+    <h1>Plan: Pi Coding Harness — Field Guide</h1>
+    <details class="meta" open>
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-08-27</dd>
+        <dt>modified</dt>     <dd>2026-08-27, 2026-08-28</dd>
+        <dt>commits</dt>      <dd><code>b9d9190</code> (feat: add Pi coding harness field guide), <a href="https://github.com/bossjones/oh-my-html-docs/pull/5">PR #5</a></dd>
+        <dt>agent name</dt>   <dd>Claude Fable 5 (Claude Code)</dd>
+        <dt>session id</dt>   <dd>18550623-d328-44aa-8617-633309bf82ce</dd>
+        <dt>back refs</dt>    <dd><code>specs/codex-cli-vs-claude-code.html</code> and <code>specs/copilot-cli-vs-claude-code.html</code> (structural models — research-first workflow, importer + playwright validation), <a href="https://pi.dev/docs/latest">Pi docs</a>, <a href="https://github.com/earendil-works/pi">earendil-works/pi</a>, <code>~/dev/disler-aka-indydevdan/</code> (local clones of disler's Pi repos)</dd>
+        <dt>forward refs</dt> <dd><code>specs/pi-harness-guide/doc/index.html</code>, <code>specs/pi-harness-guide/research/</code>, <code>docs/pages/pi-harness-guide/</code>, <code>docs/library/guides/pi-harness-guide.md</code>, <code>docs/assets/previews/pi-harness-guide.png</code></dd>
+      </dl>
+    </details>
+  </header>
+
+  <!-- Hero image — synced to the :root visual identity. -->
+  <figure>
+    <!-- {{HERO_IMAGE: a single terminal window drawn in ink on graph paper, a small pi glyph as its prompt, radiating thin steel-blue circuit lines to plug-in modules, captioned THE HARNESS THAT IS YOURS}} -->
+    <figcaption>Fig. 0 · The doc this plan builds: a from-zero field guide to Pi — the minimal, programmable coding harness.</figcaption>
+  </figure>
+
+  <!-- ===== PURPOSE / PROBLEM / SOLUTION ===== -->
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>Build a single self-contained standalone HTML field guide — <strong>“Pi — The Coding Harness”</strong> — for an engineer who does <em>not yet have Pi installed</em> and wants to go from zero to a well-configured, extended, editor-integrated setup. The guide covers, in reading order: what Pi is (<a href="https://github.com/earendil-works/pi">earendil-works/pi</a> — unified LLM API, agent loop, TUI, coding-agent CLI; v0.84.3, MIT, ~98K stars), a <strong>Quickstart</strong> (install → auth → first session), a <strong>Recommended Setup</strong> (Node ≥ 22.19.0, terminal + tmux <code>csi-u</code>, settings, AGENTS.md, trust model, a starter package stack), an <strong>Advanced Setup</strong> (writing TypeScript extensions against <code>ExtensionAPI</code>, authoring/publishing packages, custom providers, SDK/RPC modes, containerization), a <strong>VS Code / Cursor</strong> section so extension TypeScript resolves cleanly in the editor, a curated tour of <strong>12 ecosystem packages</strong>, and a dedicated section on <strong>IndyDevDan (disler)</strong>’s Pi work — grounded in the local clones under <code>~/dev/disler-aka-indydevdan/</code>. Every claim carries a deep link to <a href="https://pi.dev/docs/latest">pi.dev/docs</a>, the GitHub repo, or a disler repo file. The finished doc is imported into <code>oh-my-html-docs</code>, validated end-to-end with <code>playwright-cli</code>, committed conventionally, and shipped as a PR.</p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>Pi’s docs are excellent but distributed: install lives in Quickstart, the tmux <code>csi-u</code> fix on its own page, the trust model under Security, MCP support isn’t in core at all (it arrives via the <code>pi-mcp-adapter</code> package — the registry’s #1 at 628K downloads/month), and the extension API is documented separately from the editor setup needed to write one comfortably. A newcomer must also discover non-obvious facts the hard way: Pi needs <strong>Node ≥ 22.19.0</strong> (a <code>legacy-node20</code> dist-tag exists at 0.74.2); <code>npm install -g</code> wants <code>--ignore-scripts</code>; Pi does <strong>not</strong> auto-load <code>.env</code> — keys must be exported before launch; Gemini reads <code>GEMINI_API_KEY</code>, not <code>GOOGLE_GENERATIVE_AI_API_KEY</code>; and project-local extensions only load after an explicit <code>/trust</code>. Meanwhile the best working examples of “Pi as a programmable platform” — 18 extensions in <code>pi-vs-claude-code</code>, a full observability stack, a multi-model fusion harness, a builder/verifier two-agent system — live scattered across IndyDevDan’s repos with no single map. There is no one page that takes an engineer from “never installed it” to “extended it, in my editor, with the ecosystem’s best packages.”</p>
+    <figure>
+      <!-- {{PROBLEM_IMAGE: scattered loose paper notes and doc pages drifting apart on a graph-paper desk, one empty terminal in the middle, captioned SCATTERED KNOWLEDGE, NO MAP}} -->
+      <figcaption>Fig. 1 · The failure mode: a minimal core whose real power lives in scattered docs, packages, and example repos.</figcaption>
+    </figure>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>Author a new standalone bundle in a <strong>Pi-synced identity</strong> — the “engineer’s notebook”: paper <code>#F4F2ED</code> with a graph-paper grid, ink <code>#1C222B</code>, steel-blue accent (<code>#3D6E9E</code>, derived from pi.dev’s <code>#6a9fcc</code>), rust <code>#8F3222</code> secondary, serif-italic display + mono labels — echoing pi.dev itself rather than the house dark family. Structure it as a progressive setup ladder: <em>Quickstart → Recommended → Advanced</em>, each rung ending in a verifiable state. Reuse the proven interaction skeleton from the sibling guides (sticky TOC + scroll-spy, copy-button command blocks, print CSS) re-skinned to paper. Ground everything research-first: commit the harvested pi.dev/docs facts and the disler repo survey into <code>specs/pi-harness-guide/research/</code> before writing a glyph — <strong>no claim without a source link</strong>. Diagrams ship as inline SVG in the guide (self-contained, no image requests); generated PNGs are used only for this plan and the card preview. Then import via <code>scripts/new_doc.py</code>, validate with the repo’s playwright-cli recipe, and open a conventional-commit PR.</p>
+    <figure>
+      <!-- {{SOLUTION_IMAGE: a three-rung ladder drawn in ink rising across graph paper from an empty terminal to a fully wired one with plug-in modules, captioned QUICKSTART, RECOMMENDED, ADVANCED}} -->
+      <figcaption>Fig. 2 · The shape of the fix: one page, a three-rung setup ladder, every claim deep-linked.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== RELEVANT FILES ===== -->
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+
+    <h3>Existing Files</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>specs/codex-cli-vs-claude-code/doc/index.html</code> — donor for the interaction skeleton: topbar/TOC/scroll-spy JS, <code>.copy-btn</code>/<code>data-prompt</code> pattern, print CSS. Re-skinned to the paper identity, not copied wholesale.</li>
+      <li><span class="tag existing">existing</span> <code>specs/codex-cli-vs-claude-code.html</code> + <code>specs/copilot-cli-vs-claude-code.html</code> — structural models for this plan and the research-first workflow.</li>
+      <li><span class="tag existing">existing</span> <code>scripts/new_doc.py</code> — the importer; called directly (not via <code>just add</code> — it drops quoting on multi-word titles). Does <strong>not</strong> generate the preview PNG.</li>
+      <li><span class="tag existing">existing</span> <code>docs/library/index.md</code> — hand-maintained landing page; needs the new bullet under <code>## guides</code>.</li>
+      <li><span class="tag existing">existing</span> <code>.rumdl.toml</code> — <code>exclude</code> list needs <code>specs/pi-harness-guide/research/**</code>.</li>
+      <li><span class="tag existing">existing</span> <code>CLAUDE.md</code> — the playwright-cli validation recipe executed verbatim in Phase 5.</li>
+      <li><span class="tag existing">existing</span> <code>~/dev/disler-aka-indydevdan/pi-vs-claude-code</code>, <code>pi-agent-observability</code>, <code>fusion-harness</code>, <code>the-verifier-agent</code>, <code>live-bench</code>, <code>bash-damage-from-within</code> — read-only source material for §Dan; snippets quoted with repo+path attribution, never copied wholesale.</li>
+    </ul>
+
+    <h3>New Files</h3>
+    <ul>
+      <li><span class="tag new">new</span> <code>specs/pi-harness-guide.html</code> — this plan.</li>
+      <li><span class="tag new">new</span> <code>specs/pi-harness-guide/*.png</code> — this plan’s generated images (paper identity).</li>
+      <li><span class="tag new">new</span> <code>specs/pi-harness-guide/research/pi-docs.md</code> — consolidated pi.dev/docs + GitHub + npm facts (versions, install, API surface, package data), each with source URL and harvest date.</li>
+      <li><span class="tag new">new</span> <code>specs/pi-harness-guide/research/disler-pi-survey.md</code> — the local-repo survey: what each disler repo does with Pi, key file paths, quotable snippets.</li>
+      <li><span class="tag new">new</span> <code>specs/pi-harness-guide/doc/index.html</code> + <code>doc/images/</code> (favicon.svg + 6 WebP figures) — the guide, staged as a bundle.</li>
+      <li><span class="tag new">new</span> <code>specs/pi-harness-guide/gen.sh</code> + <code>png-src/</code> — image-generation batch script and archived PNG originals + logs (herdr pattern).</li>
+      <li><span class="tag new">new</span> <code>specs/pi-harness-guide/research/BUILD_PROMPT.md</code> — the executable build prompt distilled from the herdr-guide session pipeline.</li>
+      <li><span class="tag new">new</span> <code>docs/pages/pi-harness-guide/</code> — verbatim bundle created by the importer.</li>
+      <li><span class="tag new">new</span> <code>docs/library/guides/pi-harness-guide.md</code> — generated card plus hand-added preview line.</li>
+      <li><span class="tag new">new</span> <code>docs/assets/previews/pi-harness-guide.png</code> — playwright screenshot for the card.</li>
+    </ul>
+  </section>
+
+  <!-- ===== IMPLEMENTATION PHASES ===== -->
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. All start as <code>[]</code>; the Build Plan workflow updates them as it works.</p>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 1: Research Consolidation</h3>
+      <p>Every fact the guide asserts already exists in two harvested reports (pi.dev/docs + GitHub/npm APIs; the disler repo survey). Commit them as auditable research files <em>before</em> authoring, re-verifying the volatile numbers at build time. Also probe whether pi.dev serves machine-readable doc twins (an <code>llms.txt</code> or <code>.md</code> endpoints) — if yes, add <code>just pidocs</code>/<code>pidoc</code> recipes mirroring <code>ccdocs</code>/<code>ccdoc</code>; if no, record the probe result and move on (the docs have on-site <code>⌘K</code> search for build-time lookups).</p>
+
+      <h4>1.1 Commit the research corpus</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Write <code>research/pi-docs.md</code>: positioning, monorepo packages (<code>pi-telemetry</code>/<code>pi-ai</code>/<code>pi-agent-core</code>/<code>pi-coding-agent</code>/<code>pi-tui</code>), install methods, auth matrix, slash commands, keybindings, settings schema, extension API + events, package system, theming, compaction, the 12 package profiles, and the deep-link URL map — every entry cited.</li>
+        <li><code class="status">[x]</code> Write <code>research/disler-pi-survey.md</code>: per-repo purpose, remotes, key files, snippets (≤20 lines each), video links, and the doctrine themes.</li>
+        <li><code class="status">[x]</code> Add <code>specs/pi-harness-guide/research/**</code> to <code>.rumdl.toml</code>’s <code>exclude</code>.</li>
+      </ul>
+      <h4>1.2 Re-verify volatile numbers (day-of-build)</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> npm: latest version + <code>engines.node</code> for <code>@earendil-works/pi-coding-agent</code> (harvested 2026-08-27: <strong>0.84.3</strong>, <code>&gt;=22.19.0</code>, <code>legacy-node20</code> → 0.74.2).</li>
+        <li><code class="status">[x]</code> GitHub API: stars/forks (harvested: 98,281 / 12,156) — round in prose (“~98K”).</li>
+        <li><code class="status">[x]</code> <a href="https://pi.dev/packages">pi.dev/packages</a> count (harvested: 5,467) and per-package versions/downloads for the 12 profiles.</li>
+        <li><code class="status">[x]</code> Re-check <code>https://pi.dev/packages/@companion-ai/feynman</code> — returned HTTP 500 at harvest; if still down, link the card to the registry listing instead.</li>
+      </ul>
+      <h4>1.3 Probe for doc recipes (optional — <code>[f]</code> allowed)</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>curl -fsSL https://pi.dev/llms.txt</code> and <code>curl -fsSL https://pi.dev/docs/latest/quickstart.md</code> — if either serves markdown, add <code>just pidocs</code>/<code>pidoc</code> recipes; else record “no machine-readable twins as of 2026-08” in the research file.</li>
+      </ul>
+      <h4>1.4 Testing Strategy</h4>
+      <p>File-level checks only — this phase produces committed markdown, not code.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>ls specs/pi-harness-guide/research/ | wc -l</code> ≥ 2 — both research files exist.</li>
+        <li><code class="status">[x]</code> <code>just lint</code> — clean with the research directory excluded.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 2: Guide Skeleton &amp; Paper Identity</h3>
+      <p>Stand up <code>specs/pi-harness-guide/doc/index.html</code>: the paper-and-ink identity defined in this plan’s <code>:root</code>, Google Fonts (Source Serif 4 italic display, Inter body, IBM Plex Mono), graph-grid background, and the sibling guides’ proven JS ported over (sticky TOC + scroll-spy, <code>.copy-btn</code> with <code>data-prompt</code> and a fixed restore label, back-to-top, print handlers). Dark <em>code blocks on light paper</em> — terminal chrome reads as “a terminal sitting on the desk.”</p>
+      <figure>
+        <!-- {{PHASE_IMAGE: ink wireframe of a webpage on graph paper — serif italic headline, small dark terminal blocks, steel-blue link underlines, captioned PAPER, INK, TERMINAL}} -->
+        <figcaption>Fig. 3 · Phase 2: the engineer’s-notebook identity — light page, dark terminals, one steel-blue accent.</figcaption>
+      </figure>
+      <h4>2.1 Build the skeleton</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>:root</code> tokens copied from this plan (paper/ink/steel-blue/rust); graph-grid via two repeating <code>linear-gradient</code>s at 24px; <code>meta color-scheme light</code>.</li>
+        <li><code class="status">[x]</code> New <code>favicon.svg</code> — italic serif <code>π</code> in steel blue on a paper tile (matches this plan’s data-URI favicon).</li>
+        <li><code class="status">[x]</code> Port topbar/TOC/scroll-spy/copy-btn/print JS from the codex guide; verify the copy-button restore label matches its button text.</li>
+        <li><code class="status">[x]</code> Hero: title, pi.dev’s own tagline as the pull-quote (“There are many agent harnesses but this one is yours”), stat badges — v0.84.3 · MIT · ~98K stars · Node ≥ 22.19.0 · 15+ providers · 5,467 packages · 4 core write tools.</li>
+      </ul>
+      <h4>2.2 Testing Strategy</h4>
+      <p>Static checks on the skeleton before content lands.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Open the bare skeleton via <code>playwright-cli</code>: fonts load, grid renders, zero console errors.</li>
+        <li><code class="status">[x]</code> Tag-balance check (parser or <code>python -c</code> with <code>html.parser</code>) returns no mismatches.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 3: Author the Guide Sections</h3>
+      <p>Thirteen sections, 00–12, forming the setup ladder. Rule of evidence: <strong>every factual claim links its source</strong> (pi.dev doc page, GitHub file, npm, or a disler repo path). Command blocks are copyable; diagrams are inline SVG in the identity palette (no external image requests — the bundle stays self-contained).</p>
+      <figure>
+        <!-- {{PHASE_IMAGE: thirteen small ink index cards fanned across graph paper, three highlighted in steel blue forming ascending steps, captioned THIRTEEN SECTIONS, ONE LADDER}} -->
+        <figcaption>Fig. 4 · Phase 3: the section map — orientation, the three setup rungs, ecosystem, Dan, sources.</figcaption>
+      </figure>
+
+      <h4>3.1 Orientation</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <strong>§00 What Pi is</strong> — “minimal harness, maximal programmability”: monorepo map (<code>ai/ agent/ tui/ coding-agent/</code>), the four operating modes (TUI · <code>-p</code> print · <code>--mode json</code> · <code>--mode rpc</code>) + SDK embedding, the minimal-core thesis (default toolset <code>read write edit bash</code> + read-only <code>grep find ls</code>; MCP/subagents/background tasks arrive as packages, not core). Inline SVG #1: core ring with package sockets.</li>
+        <li><code class="status">[x]</code> <strong>§01 Quickstart</strong> — prereq callout (Node ≥ 22.19.0, check with <code>node --version</code>; <code>legacy-node20</code> tag exists); install trio as copy blocks (<code>curl -fsSL https://pi.dev/install.sh | sh</code> · <code>npm install -g --ignore-scripts @earendil-works/pi-coding-agent</code> · Windows <code>irm https://pi.dev/install.ps1 | iex</code>); auth two ways (<code>/login</code> OAuth for ChatGPT/Claude Pro–Max/Copilot/xAI/OpenRouter subscriptions; env-var table for API keys) + credential resolution order; first session walkthrough (<code>cd project &amp;&amp; pi</code>, <code>@</code> file refs, <code>!cmd</code>, one-shot <code>pi -p</code>, piping); uninstall note (preserves <code>~/.pi/agent/</code>).</li>
+      </ul>
+
+      <h4>3.2 The setup ladder</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <strong>§02 Recommended setup</strong> — Node via a version manager (recommend <code>mise use -g node@22</code>; <code>nvm</code>/<code>fnm</code> equivalents); terminal setup + the tmux <code>csi-u</code> fix as a featured copy block (<code>set -g extended-keys on</code> / <code>set -g extended-keys-format csi-u</code> per <a href="https://pi.dev/docs/latest/tmux">docs/tmux</a>); a commented starter <code>~/.pi/agent/settings.json</code> (theme, compaction defaults, <code>defaultProjectTrust: "ask"</code>); config-tree diagram of <code>~/.pi/agent/</code> vs project <code>.pi/</code>; context files (<code>AGENTS.md</code>, <code>CLAUDE.md</code> compatibility, <code>AGENTS.override.md</code>, <code>.pi/SYSTEM.md</code>); the trust model (<code>/trust</code>, <code>trust.json</code>) with a rust security callout; env-key hygiene (Pi does <strong>not</strong> read <code>.env</code>; <code>GEMINI_API_KEY</code> gotcha).</li>
+        <li><code class="status">[x]</code> <strong>§03 Daily driving</strong> — slash-command reference table (all ~25 from <a href="https://pi.dev/docs/latest/usage">docs/usage</a>); keybindings table (Ctrl+L model · Ctrl+P cycle · Shift+Tab thinking · Ctrl+O tool output · Ctrl+G editor · Alt+Enter follow-up · Escape abort …) + <code>keybindings.json</code> customization; sessions as a <em>tree</em> (branching, <code>/fork</code>, <code>/tree</code>, <code>pi -c</code>/<code>-r</code>, HTML export, <code>/share</code> gist) — inline SVG #2: session tree with a branch summary; compaction explained (reserve/keep thresholds, <code>/compact</code>).</li>
+        <li><code class="status">[x]</code> <strong>§04 The package ecosystem</strong> — how installs work (<code>pi install npm:…</code> / <code>git:…</code> / local path, <code>pi list/update/remove</code>, trial via <code>pi -e npm:…</code>); the full-system-access security warning (rust callout, quoting the packages doc); then <strong>12 package cards</strong> (name · author · version · downloads/mo · one-paragraph what-it-does · install copy-line · registry link): pi-mcp-adapter, pi-web-access, pi-subagents, @companion-ai/feynman, pi-background-tasks, context-mode, pi-lens, @plannotator/pi-extension, @dietrichgebert/ponytail, pi-memory, @ersintarhan/pi-toolkit, @gotgenes/pi-github-tools; close with an opinionated <strong>starter stack</strong> (web-access + mcp-adapter + subagents + lens) as one copyable multi-line install block.</li>
+        <li><code class="status">[x]</code> <strong>§05 Advanced setup: extensions</strong> — the <code>export default function (pi: ExtensionAPI)</code> contract; jiti = no build step; discovery paths + <code>pi -e</code> + <code>/reload</code>; event catalog table (lifecycle / agent / interception / <code>tool_call</code>·<code>tool_result</code> / input) with one-line “what you’d use it for” each; <code>pi.registerTool</code> with TypeBox parameters, <code>registerCommand</code>, <code>registerShortcut</code>, <code>ctx.ui</code>; a complete worked example — disler’s <code>minimal.ts</code> footer extension (attributed, linked) — plus a from-scratch “ban <code>rm -rf</code> via <code>tool_call</code>” 15-liner. Inline SVG #3: the event loop with extension hook points.</li>
+        <li><code class="status">[x]</code> <strong>§06 Advanced setup: packages, providers, embedding</strong> — authoring a package (<code>package.json</code> with <code>"keywords": ["pi-package"]</code> + <code>"pi": {extensions, skills, prompts, themes}</code>, convention dirs); publishing = plain <code>npm publish</code>, the registry auto-discovers; skills (SKILL.md frontmatter, <code>/skill:name</code>, shared <code>~/.agents/skills</code> standard) and prompt templates; themes (51-token JSON schema, hot reload, <code>--use-theme</code>); custom/local models via <code>models.json</code> (Ollama/LM Studio/vLLM) and <code>pi.registerProvider</code>; SDK embedding (<code>createAgentSession</code>) and RPC/JSON modes in brief; containerization pointer (<a href="https://pi.dev/docs/latest/containerization">docs/containerization</a>).</li>
+        <li><code class="status">[x]</code> <strong>§07 VS Code / Cursor setup</strong> — the extension-dev folder recipe: <code>package.json</code> with <code>devDependencies: {"@earendil-works/pi-coding-agent": "^0.84.0", "typebox": …}</code> + <code>npm install --ignore-scripts</code> so imports resolve; a working <code>tsconfig.json</code> (<code>module/moduleResolution: "bundler"</code> or <code>nodenext</code>, <code>strict</code>, <code>noEmit</code>, <code>types: ["node"]</code>, <code>skipLibCheck</code>) — jiti runs the TS directly, tsc is <em>only</em> for editor diagnostics; <code>.vscode/settings.json</code> (workspace TypeScript SDK, format-on-save off for <code>research/</code>) and <code>.vscode/extensions.json</code> recommendations kept minimal; note Cursor inherits all of it; link the repo’s <code>packages/coding-agent/examples/extensions/</code> as the reference corpus.</li>
+      </ul>
+
+      <h4>3.3 The IndyDevDan section + closing</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <strong>§08 IndyDevDan on Pi</strong> — framing: Pi as the “programmable platform” hedge (his <code>COMPARISON.md</code>: ~200-token system prompt, 4 tools, in-process TypeScript extensions vs Claude Code’s batteries-included ~10K-token harness). Repo cards with GitHub links + key-file paths: <strong>pi-vs-claude-code</strong> (18 extensions: damage-control safety auditing, coms/coms-net Pi-to-Pi messaging, agent-team dispatcher, cross-agent <code>.claude</code>/<code>.gemini</code>/<code>.codex</code> reuse, minimal.ts), <strong>pi-agent-observability</strong> (drop-in <code>-e pi-observability.ts</code> telemetry → Bun+SQLite server → single/swimlane/race views; the performance-speed-cost trifecta), <strong>fusion-harness</strong> (2–5 frontier models: architect/builder/secondaries, single-writer lease, <code>/fh-*</code> commands, YAML model stacks), <strong>the-verifier-agent</strong> (builder + input-locked verifier over a unix socket; “structurally un-promptable”), <strong>bash-damage-from-within</strong> (5 safety levels, Claude Code and Pi side-by-side), <strong>live-bench</strong> (Pi drives the agentic benchmark). Doctrine pull-quotes (“AND, not OR” · “spend tokens to save time” · “build the system that builds the system”); video links; note his repos standardize on <strong>Bun ≥ 1.3.2</strong> + <code>just</code> while Pi itself needs Node ≥ 22.19.0.</li>
+        <li><code class="status">[x]</code> <strong>§09 Pi vs Claude Code in one table</strong> — a short 8–10 row orientation matrix distilled from disler’s COMPARISON.md (system-prompt size, tool count, extension model, permission default, provider count, config surface), clearly attributed and dated (Pi v0.52.10 snapshot, Feb 2026) with a “verify against current versions” caveat.</li>
+        <li><code class="status">[x]</code> <strong>§10 Open questions</strong> — mirror this plan’s Questionables as reader-facing yes/no items with our working assumptions (the user asked that open questions ship <em>in the page</em>).</li>
+        <li><code class="status">[x]</code> <strong>§11 Copy-pair cheat sheet</strong> — 10 copyable blocks: install, login, tmux conf, starter settings.json, starter stack install, first extension file, <code>pi -e</code> trial, package-manifest stub, tsconfig, <code>models.json</code> Ollama stanza.</li>
+        <li><code class="status">[x]</code> <strong>§12 Sources</strong> — the full deep-link map: every <code>pi.dev/docs/latest/*</code> page used, GitHub repo paths, npm, the 12 package pages, disler repos + videos, harvest date.</li>
+      </ul>
+
+      <h4>3.4 Testing Strategy</h4>
+      <p>Static integrity + a full playwright pass on the staged doc (file URL), before import.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Every <code>href="#sNN"</code> resolves to a real section id; zero <code>TODO</code>/<code>{{</code> markers; tag-balance clean.</li>
+        <li><code class="status">[x]</code> External-link audit: <code>grep -o 'https://[^"]*'</code> → deduped list spot-checked with <code>curl -s -o /dev/null -w "%{http_code}"</code> (allow 200/301/302; note any 4xx/5xx in research caveats).</li>
+        <li><code class="status">[x]</code> <code>playwright-cli</code>: title correct, zero console errors, copy buttons copy their exact <code>data-prompt</code>, TOC scroll-spy activates, inline SVGs render.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 4: Import into the Site</h3>
+      <p>Make the guide a first-class document: verbatim bundle, generated card, preview screenshot, library index bullet.</p>
+
+      <h4>4.1 Import</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Run <code>scripts/new_doc.py</code> directly: <code>uv run scripts/new_doc.py specs/pi-harness-guide/doc --title "Pi — The Coding Harness" --slug pi-harness-guide --category guides --tags pi,harness,agents,typescript,extensions,indydevdan --source "pi.dev docs + earendil-works/pi + disler repos, August 2026"</code> (flag names verified against the script before running).</li>
+        <li><code class="status">[x]</code> Capture <code>docs/assets/previews/pi-harness-guide.png</code> via playwright screenshot of the built page; hand-insert the linked preview-image line into the card, matching the sibling cards’ pattern.</li>
+        <li><code class="status">[x]</code> Add the bullet to <code>docs/library/index.md</code> under <code>## guides</code> (alphabetical position), crediting Pi (earendil-works) and IndyDevDan.</li>
+      </ul>
+      <h4>4.2 Testing Strategy</h4>
+      <p>Repo gates — the same three every sibling guide passed.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Bundle at <code>docs/pages/pi-harness-guide/</code> and card front matter correct (title/description/tags/category/html/source/added).</li>
+        <li><code class="status">[x]</code> <code>just build</code> — strict build passes.</li>
+        <li><code class="status">[x]</code> <code>just lint</code> — ruff + rumdl clean.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 5: Site Validation End-to-End</h3>
+      <p>The repo’s standard playwright-cli recipe from <code>CLAUDE.md</code> against the real built site, plus Pagefind and the importer test suite.</p>
+
+      <h4>5.1 Testing Strategy</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>just search</code> — build + Pagefind index include the new card and page.</li>
+        <li><code class="status">[x]</code> Serve <code>site/</code>; open <code>/pages/pi-harness-guide/index.html</code> — title correct, layout intact, screenshot reviewed at desktop and mobile widths.</li>
+        <li><code class="status">[x]</code> Image eval returns all <code>ok: true</code> (preview PNG on the card; the guide itself is SVG-only); <code>playwright-cli console</code> clean bar favicon.</li>
+        <li><code class="status">[x]</code> Card page <code>/library/guides/pi-harness-guide/</code>: preview renders and “Open the document →” resolves to the verbatim doc.</li>
+        <li><code class="status">[x]</code> Built <code>site/library/index.html</code> contains the new bullet.</li>
+        <li><code class="status">[x]</code> <code>uv run pytest</code> — importer tests green.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 6: Ship — Conventional Commit &amp; PR</h3>
+      <p>The user asked for a conventional commit and a PR. Work is already on the worktree branch <code>claude/pi-harness-html-page-2fba0c</code>.</p>
+
+      <h4>6.1 Commit &amp; PR</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Stage everything this plan produced (plan + images, research, doc bundle, pages, card, preview, index bullet, <code>.rumdl.toml</code>); commit as <code>feat: add Pi coding harness field guide</code> with a body summarizing scope.</li>
+        <li><code class="status">[x]</code> Push the branch; open a PR to <code>main</code> via <code>gh pr create</code> — body covers the guide’s sections, the research provenance, and a test-plan checklist mirroring Phases 4–5.</li>
+      </ul>
+      <h4>6.2 Testing Strategy</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>git status</code> clean after commit; <code>gh pr view --json url</code> returns the PR URL (recorded in this plan’s metadata <code>commits</code> + Amendments).</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GLOBAL VALIDATION ===== -->
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these commands to validate the entire plan is complete:</p>
+    <ul class="checklist">
+      <li><code class="status">[x]</code> <code>just lint</code> — python + markdown lint clean across the repo.</li>
+      <li><code class="status">[x]</code> <code>just build</code> — strict MkDocs build succeeds with the new bundle + card.</li>
+      <li><code class="status">[x]</code> <code>just search</code> — Pagefind indexes the guide.</li>
+      <li><code class="status">[x]</code> <code>uv run pytest</code> — importer tests green.</li>
+      <li><code class="status">[x]</code> playwright: page renders on the built site, console clean, copy buttons copy exact <code>data-prompt</code>, card button resolves, preview PNG loads.</li>
+      <li><code class="status">[x]</code> <code>grep -rn 'TODO\|{{' docs/pages/pi-harness-guide specs/pi-harness-guide/doc</code> returns nothing.</li>
+      <li><code class="status">[x]</code> PR open against <code>main</code> with the conventional-commit title.</li>
+    </ul>
+    <div class="loop">
+      🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong>
+    </div>
+  </section>
+
+  <!-- ===== QUESTIONABLES ===== -->
+  <section id="questionables">
+    <h2>Questionables</h2>
+    <p>Open decisions, phrased yes/no (the user’s stated preference). Each carries the working assumption the build proceeds on — flip any of these and the plan adapts. Per the user’s request, these also ship <em>inside the guide</em> as §10.</p>
+    <figure>
+      <!-- {{QUESTIONABLES_IMAGE: a paper checklist with ink checkboxes, half marked with steel-blue YES stamps, one rust question mark hovering, captioned YES OR NO}} -->
+      <figcaption>Fig. 5 · Nine yes/no decisions, each pre-answered with a defensible default.</figcaption>
+    </figure>
+    <details>
+      <summary>Q1 — Use Pi’s paper-light “engineer’s notebook” identity instead of the house dark-guide family? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes (recommended).</strong> pi.dev is graph-paper light with serif-italic display and mono labels — echoing it makes the guide instantly read as “Pi,” and cmux-guide already broke from the dark family. Code blocks stay dark-on-light so terminals read as terminals. Flip to “no” and Phase 2 swaps <code>:root</code> for the shared dark palette with steel blue as the accent; nothing else changes.</p>
+    </details>
+    <details>
+      <summary>Q2 — Lead the Quickstart with <code>curl https://pi.dev/install.sh | sh</code> rather than <code>npm -g</code>? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> It’s pi.dev’s own first-listed method and sidesteps the reader’s Node/npm state. The npm route (with the documented <code>--ignore-scripts</code>) and Windows PowerShell line sit directly beneath it as copy blocks, and the Node ≥ 22.19.0 prereq callout precedes all three.</p>
+    </details>
+    <details>
+      <summary>Q3 — Recommend <code>mise</code> as the Node version manager in Recommended Setup? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes, softly.</strong> One blessed path keeps the rung copy-paste-able (<code>mise use -g node@22</code>); <code>nvm</code>/<code>fnm</code> one-liners appear as alternatives. Pi’s hard floor (Node ≥ 22.19.0, npm engines field) is stated regardless of manager.</p>
+    </details>
+    <details>
+      <summary>Q4 — Ship the guide’s diagrams as inline SVG rather than generated PNGs? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> Inline SVG keeps the bundle fully self-contained, crisp at print/zoom, and palette-synced by construction. Generated PNGs are reserved for this plan’s figures and the card preview screenshot. (Also degrades gracefully if <code>OPENAI_API_KEY</code> is unavailable at build time — see Notes.) <em>Updated 2026-08-27:</em> flipped to the herdr-guide precedent at the user’s direction — guide figures are <strong>generated PNGs converted to WebP</strong> via a committed <code>gen.sh</code> (run from the main checkout so <code>.env</code> resolves), with inline SVG demoted to the no-key fallback. See the Amendment and <code>research/BUILD_PROMPT.md</code>.</p>
+    </details>
+    <details>
+      <summary>Q5 — Feature all 12 requested packages as cards AND bless a smaller “starter stack”? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> All 12 get equal-format cards (the user linked each one), ordered by monthly downloads; a closing callout blesses web-access + mcp-adapter + subagents + lens as the day-one install so newcomers aren’t choosing among twelve.</p>
+    </details>
+    <details>
+      <summary>Q6 — Include the disler <code>COMPARISON.md</code>-derived “Pi vs Claude Code” table even though it snapshots Pi v0.52.10 (Feb 2026)? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes, clearly dated.</strong> It’s the sharpest articulation of <em>why</em> Pi’s minimalism matters and anchors §Dan. The table carries an attribution + “snapshot, verify current” caveat rather than being silently updated — it’s his argument, not ours.</p>
+    </details>
+    <details>
+      <summary>Q7 — Embed IndyDevDan YouTube links as plain links (no thumbnails/iframes)? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> Iframes and remote thumbnails would break the self-contained rule and add tracking surface. Styled link rows (title + duration-free) keep the page offline-safe.</p>
+    </details>
+    <details>
+      <summary>Q8 — Keep the <code>.vscode/</code> guidance as copyable snippets in the guide rather than committing actual <code>.vscode/</code> files to this repo? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> The editor setup applies to the reader’s <em>extension projects</em>, not to oh-my-html-docs (a Python/MkDocs repo). §07 ships complete <code>package.json</code> / <code>tsconfig.json</code> / <code>.vscode/settings.json</code> blocks the reader pastes into their own extension folder.</p>
+    </details>
+    <details>
+      <summary>Q9 — Title the card “Pi — The Coding Harness” with slug <code>pi-harness-guide</code>? (yes/no)</summary>
+      <p class="qa-answer"><strong>Assumption: yes.</strong> Matches the sibling naming rhythm (<code>cmux-guide</code>, <code>opus-5-mastery</code>) and the worktree’s own name. Alternative “Pi Coding Agent Field Guide” loses the harness framing the user used.</p>
+    </details>
+  </section>
+
+  <!-- ===== NOTES ===== -->
+  <section id="notes">
+    <h2>Notes</h2>
+
+    <h3>Verified facts the builder can trust (harvested 2026-08-27 — re-verify volatile ones in Phase 1.2)</h3>
+    <div class="tbl"><table>
+      <tr><th>Fact</th><th>Value</th><th>Source</th></tr>
+      <tr><td>Latest version / license</td><td>0.84.3 (2026-08-24) · MIT</td><td>npm registry</td></tr>
+      <tr><td>Node requirement</td><td><code>engines.node &gt;= 22.19.0</code>; <code>legacy-node20</code> dist-tag → 0.74.2</td><td>npm registry</td></tr>
+      <tr><td>GitHub</td><td>~98,281 ★ · 12,156 forks · created 2025-08-09 · same-day push activity</td><td>api.github.com</td></tr>
+      <tr><td>Registry size</td><td>5,467 packages</td><td>pi.dev/packages</td></tr>
+      <tr><td>Install (macOS/Linux)</td><td><code>curl -fsSL https://pi.dev/install.sh | sh</code></td><td>pi.dev, docs/quickstart</td></tr>
+      <tr><td>Install (npm)</td><td><code>npm install -g --ignore-scripts @earendil-works/pi-coding-agent</code></td><td>docs/quickstart</td></tr>
+      <tr><td>Default tools</td><td><code>read write edit bash</code> (+<code>powershell</code> on Windows) + read-only <code>grep find ls</code></td><td>docs/quickstart</td></tr>
+      <tr><td>OAuth logins</td><td>ChatGPT Plus/Pro (OpenAI-endorsed) · Claude Pro/Max · GitHub Copilot · xAI · OpenRouter · Radius</td><td>docs/providers</td></tr>
+      <tr><td>Config root</td><td><code>~/.pi/agent/</code> (settings, auth, keybindings, trust, sessions, extensions, skills, themes, npm, git) · project <code>.pi/</code></td><td>docs/settings</td></tr>
+      <tr><td>Compaction defaults</td><td><code>reserveTokens</code> 16384 · <code>keepRecentTokens</code> 20000</td><td>docs/compaction</td></tr>
+      <tr><td>Package install</td><td><code>pi install npm:&lt;name&gt;</code> / <code>git:host/path@ref</code> / local path; trial <code>pi -e npm:&lt;name&gt;</code></td><td>docs/packages</td></tr>
+      <tr><td>Publishing</td><td><code>npm publish</code> with keyword <code>pi-package</code> — registry auto-discovers</td><td>docs/packages</td></tr>
+      <tr><td>Theme schema</td><td>51 required color tokens; hot-reloads while editing</td><td>docs/themes</td></tr>
+    </table></div>
+
+    <h3>Gotchas the guide must feature (each earned a callout)</h3>
+    <ul>
+      <li><strong>Pi does not auto-load <code>.env</code></strong> — export keys before launch (documented across disler’s READMEs; bit him in pi-vs-claude-code).</li>
+      <li><strong><code>GEMINI_API_KEY</code>, not <code>GOOGLE_GENERATIVE_AI_API_KEY</code></strong> (fusion-harness README gotcha, confirmed by docs/providers).</li>
+      <li><strong><code>--ignore-scripts</code> on npm installs</strong> — Pi needs no lifecycle scripts; skipping them shrinks supply-chain surface.</li>
+      <li><strong>Project extensions load only after <code>/trust</code></strong>; <code>defaultProjectTrust</code> governs the prompt. Packages run with full system access — quote the docs’ own warning verbatim.</li>
+      <li><strong>tmux swallows Shift+Enter / Ctrl+Enter without <code>csi-u</code></strong> — the two-line <code>~/.tmux.conf</code> fix, then a full tmux restart.</li>
+      <li><strong>MCP is not in core</strong> — <code>pi-mcp-adapter</code> provides it as a ~200-token proxy tool; it reads standard <code>.mcp.json</code>, so Claude Code MCP configs carry over.</li>
+      <li><strong>Uninstalling preserves <code>~/.pi/agent/</code></strong> — sessions/credentials survive reinstalls; mention for the “try it safely” reader.</li>
+      <li><strong>Feynman’s pi.dev detail page 500’d at harvest</strong> — re-check at build; fall back to the registry listing + <code>github.com/companion-inc/feynman</code>.</li>
+    </ul>
+
+    <h3>Builder-ready asset: the §07 editor stanza (verify against current docs, then paste)</h3>
+    <pre><code># extension project layout (reader's own repo)
+my-pi-extension/
+├── package.json      # devDeps: @earendil-works/pi-coding-agent, typebox
+├── tsconfig.json     # editor diagnostics only — jiti executes the TS directly
+├── .vscode/settings.json
+└── index.ts          # export default function (pi: ExtensionAPI) { ... }
+
+# tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "preserve", "moduleResolution": "bundler",
+    "strict": true, "noEmit": true, "skipLibCheck": true, "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}</code></pre>
+    <p>Rationale: <code>noEmit</code> because Pi loads TypeScript through jiti with no compile step; the devDependency exists purely so <code>ExtensionAPI</code>, <code>typebox</code>, and <code>@earendil-works/pi-tui</code> types resolve in VS Code/Cursor. <code>npm install --ignore-scripts</code> inside the extension folder; Pi picks up <code>node_modules/</code> automatically.</p>
+
+    <h3>Design decisions &amp; rejected alternatives</h3>
+    <ul>
+      <li><strong>Setup-ladder structure over reference structure.</strong> The user is a from-zero reader; each rung ends in a verifiable state (“pi runs” → “pi is comfortable” → “pi is yours”). The reference material (commands, keybindings, events) is embedded in the rung where it becomes relevant, then aggregated in §11/§12.</li>
+      <li><strong>Rejected: a Claude Code comparison as the guide’s spine.</strong> The sibling guides own the conversion-table genre; this guide is a <em>setup</em> guide. The comparison appears once, short, attributed to disler (§09).</li>
+      <li><strong>Rejected: reproducing disler code wholesale.</strong> His repos are MIT but the guide quotes ≤20-line snippets with repo/path/video attribution and links out — the section is a map to his work, not a mirror of it.</li>
+      <li><strong>Research is committed, not scratch</strong> — same provenance discipline as the codex/copilot guides; volatile numbers (stars, downloads, versions) are dated in prose.</li>
+      <li><strong>Plan images degrade gracefully.</strong> The image scripts need <code>OPENAI_API_KEY</code> (loaded from a cwd <code>.env</code>, which tooling here can’t inspect). Generation is attempted; on failure the <code>&lt;figure&gt;</code> placeholders remain as comments — exactly how the codex and copilot plan docs shipped — and the guide itself never depends on generated images (Q4).</li>
+      <li><strong>Dependencies:</strong> none added to this repo. The guide is self-contained HTML + Google Fonts links, matching every sibling.</li>
+    </ul>
+
+    <h3>Deep-link map the guide will use (§12 source list)</h3>
+    <p>Docs: <a href="https://pi.dev/docs/latest">index</a> · quickstart · usage · providers · security · containerization · settings · keybindings · sessions · compaction · extensions · skills · prompt-templates · themes · packages · models · custom-provider · sdk · rpc · json · tui · session-format · environment-variables · windows · termux · tmux · terminal-setup · shell-aliases · development (all under <code>pi.dev/docs/latest/</code>). Ecosystem: <a href="https://pi.dev/packages">packages registry</a> · <a href="https://pi.dev/models">models</a> · <a href="https://github.com/earendil-works/pi">repo</a> (examples at <code>packages/coding-agent/examples/extensions/</code>) · npm. Dan: github.com/disler/{pi-vs-claude-code, pi-agent-observability, fusion-harness, the-verifier-agent, live-bench, bash-damage-from-within} · youtu.be/{f8cfH5XX-XU, PIdETjcXNIk, o4KZH_KSqYQ, rqZHR-hRllI, EnXKysJNz_8, 00Y-p62sk0s} · <a href="https://agenticengineer.com">agenticengineer.com</a>.</p>
+
+    <figure>
+      <!-- {{NOTES_IMAGE: an ink map on graph paper — a central pi terminal node linked by steel-blue paths to labeled islands DOCS, PACKAGES, DAN, EDITOR, captioned ONE PAGE, FOUR TERRITORIES}} -->
+      <figcaption>Fig. 6 · The guide as a map: docs, ecosystem, IndyDevDan’s work, and the editor — one navigable page.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== AMENDMENTS ===== -->
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <details>
+      <summary>2026-08-27 — Plan created; no amendments yet</summary>
+      <p>Amendments are appended here by the Update Plan / Update References workflows once the plan has been executed. None yet.</p>
+    </details>
+    <details open>
+      <summary>2026-08-27 — Herdr-guide pipeline adopted; research corpus committed; build prompt authored</summary>
+      <p>At the user's direction, the build now follows the pipeline that produced <code>docs/pages/herdr-guide/</code> (feature-herdr branch, session 2026-08-26), reconstructed from session memory and branch artifacts. Deltas over the original phases: <strong>(1) Guide figures are generated, not inline-SVG-only</strong> — a committed <code>specs/pi-harness-guide/gen.sh</code> batches 13 images (6 guide figures → <code>doc/images/</code>, 7 plan figures) through <code>generate_gpt_image.py</code> in parallel with per-image logs, using one shared paper-identity style block (&lt;8 words of text per image); guide PNGs convert to WebP via <code>cwebp -q 82</code> (herdr: 6.8&nbsp;MB → 116&nbsp;KB) and PNG sources archive to <code>png-src/</code>; inline SVG becomes the no-key fallback (Q4 updated). <strong>(2)</strong> The bundle gains an <code>images/</code> subdir + <code>favicon.svg</code>, matching herdr’s layout. <strong>(3)</strong> gen.sh must run with the <em>main checkout</em> as cwd so python-dotenv finds its <code>.env</code> (the worktree has none — this is how the herdr session succeeded). <strong>(4)</strong> QA inherits herdr’s hard-won checks: <code>&amp;quot;</code> not backslash-escapes inside <code>data-prompt</code> (8 escaped quotes once blew the body out to 2115px), <code>body.scrollWidth === innerWidth</code> at 1440×900 and 390×844, eyeball-review of section screenshots, and capturing the 1200×750 preview PNG <em>before</em> <code>just build</code> (strict mode fails on the card’s missing image). Phase 1.1 was completed in-session: <code>research/pi-docs.md</code> and <code>research/disler-pi-survey.md</code> committed, <code>.rumdl.toml</code> exclusion added. The full executable prompt lives at <code>specs/pi-harness-guide/research/BUILD_PROMPT.md</code>.</p>
+    </details>
+    <details open>
+      <summary>2026-08-28 — Plan executed end-to-end; guide built, imported, validated, shipped</summary>
+      <p>All six phases completed; every checklist box is <code>[x]</code>. The 1,220-line guide (13 sections, 26 copy buttons, 4 gotcha flip-cards, 10-row cheat sheet, ~70 audited external links) was staged, imported via <code>scripts/new_doc.py</code> (slug <code>pi-harness-guide</code>), and validated: <code>just lint</code> / <code>just build --strict</code> / <code>just search</code> / <code>pytest</code> all green; playwright confirmed correct title, <strong>zero console messages</strong>, copy buttons round-tripping (“Copied ✓” → restore), flip cards with correct <code>aria-expanded</code>, no horizontal overflow at 1440×900 <em>and</em> 390×844, the card preview loading, and the card button resolving to the verbatim doc. <strong>One deviation:</strong> image generation failed everywhere — <code>OPENAI_API_KEY</code> is not present in this environment (worktree <em>or</em> main checkout), so per the documented fallback the guide’s five figures shipped as <strong>inline SVG</strong> in the identity palette (arguably the better outcome: zero image requests), <code>gen.sh</code> remains committed and re-runnable, the plan’s seven figure slots stay as commented placeholders, and there is no <code>png-src/</code>. Volatile numbers re-verified day-of-build: npm 0.84.3 / engines ≥ 22.19.0 unchanged; stars 98,694 (“~98K” stands); <code>pi.dev/llms.txt</code> 404 and no <code>.md</code> doc twins → the optional <code>just pidocs</code> recipes were correctly skipped (Phase 1.3’s probe result, recorded here). The feynman package page still returns HTTP 500, so its card links <code>github.com/companion-inc/feynman</code> (200) with a registry pointer, exactly as Phase 1.2 planned. Shipped as <code>feat: add Pi coding harness field guide</code> on <code>claude/pi-harness-html-page-2fba0c</code>; PR URL recorded in the metadata <code>commits</code> field by the follow-up reference commit.</p>
+    </details>
+  </section>
+
+</main>
+
+<button class="to-top" id="toTop" type="button" aria-label="Back to top">↑</button>
+
+<script>
+(() => {
+  'use strict';
+
+  /* --- Status markers: stamp a state from the marker text so CSS can colour them. --- */
+  const STATES = {'[]':'idle', '[wip]':'wip', '[x]':'done', '[f]':'fail'};
+  const stamp = () => document.querySelectorAll('.status').forEach(el => {
+    el.dataset.state = STATES[el.textContent.trim()] || 'idle';
+  });
+  stamp();
+
+  /* --- Collapsible phase cards with a live done/total count --- */
+  document.querySelectorAll('.phase').forEach(phase => {
+    const head = phase.querySelector('h3');
+    if (!head) return;
+    const boxes = phase.querySelectorAll('.checklist .status');
+    const done = [...boxes].filter(b => b.dataset.state === 'done').length;
+    const count = document.createElement('span');
+    count.className = 'phase-count';
+    count.textContent = `${done}/${boxes.length}`;
+    if (boxes.length && done === boxes.length) count.dataset.complete = 'true';
+    head.append(count);
+
+    head.tabIndex = 0;
+    head.setAttribute('role', 'button');
+    head.setAttribute('aria-expanded', 'true');
+    const toggle = () => {
+      const collapsed = phase.classList.toggle('collapsed');
+      head.setAttribute('aria-expanded', String(!collapsed));
+    };
+    head.addEventListener('click', toggle);
+    head.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  /* --- Scroll progress rail --- */
+  const bar = document.getElementById('progress');
+  const toTop = document.getElementById('toTop');
+  let ticking = false;
+  const onScroll = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (max > 0 ? (scrollY / max) * 100 : 0) + '%';
+    toTop.classList.toggle('on', scrollY > 1200);
+    ticking = false;
+  };
+  addEventListener('scroll', () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+  }, {passive: true});
+  onScroll();
+
+  toTop.addEventListener('click', () => scrollTo({top: 0, behavior: 'smooth'}));
+
+  /* --- Scroll-spy: mark the section currently nearest the top of the viewport --- */
+  const links = new Map();
+  document.querySelectorAll('.toc a').forEach(a => links.set(a.hash.slice(1), a));
+  const sections = [...document.querySelectorAll('section[id]')].filter(s => links.has(s.id));
+  const visible = new Set();
+  const setCurrent = id => links.forEach((a, key) =>
+    a.setAttribute('aria-current', String(key === id)));
+
+  const spy = new IntersectionObserver(entries => {
+    entries.forEach(e => e.isIntersecting ? visible.add(e.target) : visible.delete(e.target));
+    const current = sections.find(s => visible.has(s))
+      || [...sections].reverse().find(s => s.getBoundingClientRect().top <= 120);
+    if (current) setCurrent(current.id);
+  }, {rootMargin: '-60px 0px -75% 0px'});
+  sections.forEach(s => spy.observe(s));
+
+  /* --- Print: open every <details> so collapsed answers aren't dropped, then restore. --- */
+  let reopened = [];
+  addEventListener('beforeprint', () => {
+    reopened = [...document.querySelectorAll('details:not([open])')];
+    reopened.forEach(d => d.open = true);
+  });
+  addEventListener('afterprint', () => {
+    reopened.forEach(d => d.open = false);
+    reopened = [];
+  });
+})();
+</script>
+</body>
+</html>
